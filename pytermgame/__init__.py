@@ -1,7 +1,7 @@
 # commonly used names
 
 from .sprite import Sprite, Group
-from .matrixstring import MatrixString
+from .surface import Surface
 from .game import Game
 from . import terminal, event, key
 

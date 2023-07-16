@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .matrixstring import MatrixString
+from .surface import Surface
 from . import terminal
 from .game import Game
 import gc
@@ -14,7 +14,7 @@ import gc
 DEBUG = False
 
 class Sprite:
-    costume: MatrixString
+    surf: Surface
     group: Group | None = None
 
     def __init__(self, active_render: bool = False):
@@ -45,20 +45,20 @@ class Sprite:
     
     @property
     def width(self):
-        return self.costume.width
+        return self.surf.width
     
     @property
     def height(self):
-        return self.costume.height
+        return self.surf.height
 
     def render(self, flush=True, erase=False):
         if erase:
-            mstr = self.costume.to_blank()
+            surf = self.surf.to_blank()
             tx, ty = terminal.transform_coords(self._lx, self._ly)
         else:
-            mstr = self.costume
+            surf = self.surf
             tx, ty = terminal.transform_coords(self.x, self.y)
-        for i, line in enumerate(mstr.lines()):
+        for i, line in enumerate(surf.lines()):
             terminal.goto(tx, ty + i)
             terminal.write(line)
         if flush:

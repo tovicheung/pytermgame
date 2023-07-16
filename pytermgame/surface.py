@@ -1,4 +1,4 @@
-class MatrixString:
+class Surface:
     data: list[str]
 
     def __init__(self, string: str):
@@ -41,7 +41,7 @@ class MatrixString:
         return type(self).strip(string)
     
 if __name__ == "__main__":
-    mstr = MatrixString(
+    mstr = Surface(
 """
 abc
 defg

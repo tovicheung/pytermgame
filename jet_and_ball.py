@@ -1,10 +1,10 @@
 import pytermgame as ptg
 
 class Jet(ptg.Sprite):
-    costume = ptg.MatrixString("--->")
+    surf = ptg.Surface("--->")
 
 class Ball(ptg.Sprite):
-    costume = ptg.MatrixString("O")
+    surf = ptg.Surface("O")
     # any new instances will be added to this group on init
     group = ptg.Group()
 
