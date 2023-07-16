@@ -20,10 +20,13 @@ class Game:
                 fps: int | None = 20,
                 alternate_screen: bool = True,
                 show_cursor: bool = False,
+                silent_errors: tuple[BaseException] = (KeyboardInterrupt,)
                 ):
         self.fps = fps
         self.alternate_screen = alternate_screen
         self.show_cursor = show_cursor
+        self.silent_errors = silent_errors
+
         self.sprites: list[Sprite] = []
         self.timers: list[Repeat] = []
 
@@ -35,6 +38,8 @@ class Game:
 
     def __exit__(self, typ, val, tb):
         self.cleanup()
+        if typ in self.silent_errors:
+            return True
 
     def add_timer(self, timer: Repeat):
         # assumed to be called after game start
@@ -75,6 +80,10 @@ class Game:
         self.start()
         try:
             f()
+        except BaseException as e:
+            # except self.silent_errors: ... does not work well with linters like pylance (although it works)
+            if type(e) not in self.silent_errors:
+                raise
         finally:
             self.cleanup()
 
