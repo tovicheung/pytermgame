@@ -5,12 +5,6 @@ from . import terminal
 from .game import Game
 import gc
 
-# from ._instructions import Instruction
-# def asfunc(cls):
-#     def _inner(*args, **kwargs):
-#         return cls(*args, **kwargs)
-#     return _inner
-
 DEBUG = False
 
 class Sprite:
@@ -65,13 +59,6 @@ class Sprite:
             terminal.flush() # flush at once, not every line
         self._lx = self.x
         self._ly = self.y
-
-    # @asfunc
-    # class goto(Instruction):
-    #     def __init__(self, sprite, x, y):
-    #         self.sprite = sprite
-    #         self.x = x
-    #         self.y = y
     
     def goto(self, x, y):
         self._x = x
