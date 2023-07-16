@@ -1,0 +1,50 @@
+import pytermgame as ptg
+
+class Jet(ptg.Sprite):
+    costume = ptg.MatrixString("--->")
+
+class Ball(ptg.Sprite):
+    costume = ptg.MatrixString("O")
+    group = ptg.Group()
+
+    def init(self):
+        self.goto(ptg.terminal.width, ptg.randy())
+
+    def update(self):
+        self.move(-1, 0)
+        if self.x == 0:
+            self.kill()
+            return
+        if self.touching(myjet):
+            global running
+            running = False
+
+with ptg.Game() as game:
+    # Custom event
+    MYEVENT = ptg.event.USEREVENT + 1
+    ptg.event.set_timer(MYEVENT, 1000)
+
+    # Jet
+    myjet = Jet()
+    myjet.goto(4, 4)
+
+    # game loop
+    running = True
+    while running:
+        for event in ptg.event.get():
+
+            if event.type == ptg.event.KEYEVENT:
+                if event.value == ptg.key.UP:
+                    if myjet.y > 0:
+                        myjet.move(0, -1)
+                elif event.value == ptg.key.DOWN:
+                    if myjet.y < ptg.terminal.height - 1:
+                        myjet.move(0, 1)
+
+            elif event.type == MYEVENT:
+                Ball()
+                # not binded to name to prevent hogging up memory
+
+        Ball.group.update()
+        game.update() # update screen
+        game.tick() # wait for next tick
