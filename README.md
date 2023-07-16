@@ -1,7 +1,7 @@
 # pytermgame
 Like pygame, but in the terminal
 
-Working example: `test.py`
+Working example: `jet_and_ball.py`
 
 `pip install pytermgame`
 

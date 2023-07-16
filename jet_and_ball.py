@@ -5,12 +5,14 @@ class Jet(ptg.Sprite):
 
 class Ball(ptg.Sprite):
     costume = ptg.MatrixString("O")
+    # any new instances will be added to this group on init
     group = ptg.Group()
 
     def init(self):
         self.goto(ptg.terminal.width, ptg.randy())
 
     def update(self):
+        # called from Ball.group.update()
         self.move(-1, 0)
         if self.x == 0:
             self.kill()
@@ -21,8 +23,8 @@ class Ball(ptg.Sprite):
 
 with ptg.Game() as game:
     # Custom event
-    MYEVENT = ptg.event.USEREVENT + 1
-    ptg.event.set_timer(MYEVENT, 1000)
+    NEWBALL = ptg.event.USEREVENT + 1
+    ptg.event.set_timer(NEWBALL, 1000)
 
     # Jet
     myjet = Jet()
@@ -41,7 +43,7 @@ with ptg.Game() as game:
                     if myjet.y < ptg.terminal.height - 1:
                         myjet.move(0, 1)
 
-            elif event.type == MYEVENT:
+            elif event.type == NEWBALL:
                 Ball()
                 # not binded to name to prevent hogging up memory
 
