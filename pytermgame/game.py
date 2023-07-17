@@ -14,6 +14,7 @@ if not terminal.WINDOWS:
     import os
 
 class Game:
+    # holds reference to currently active game
     active: Game | None = None
 
     def __init__(self,
@@ -48,7 +49,7 @@ class Game:
 
     def start(self): # determine the control codes to send
         if not terminal.WINDOWS:
-            # Set terminal attributes to raw mode
+            # set terminal attributes to raw mode
             self._nix_fd = fd = sys.stdin.fileno()
             self._nix_old_term = termios.tcgetattr(fd)
             new_term = termios.tcgetattr(fd)
@@ -68,7 +69,7 @@ class Game:
 
     def cleanup(self):
         for timer in self.timers: # must be done first (error may occur below and stop the cleanup process, leaving unkilled threads)
-            timer.stop()
+            timer.cancel()
         terminal.disable_alternate_buffer()
         terminal.show_cursor()
         if not terminal.WINDOWS:
@@ -81,7 +82,7 @@ class Game:
         try:
             f()
         except BaseException as e:
-            # except self.silent_errors: ... does not work well with linters like pylance (although it works)
+            # `except self.silent_errors: ...` does not work well with linters like pylance (although it works)
             if type(e) not in self.silent_errors:
                 raise
         finally:
@@ -100,10 +101,7 @@ class Game:
         self.last_tick = time.time()
 
     def update(self):
-        # terminal.home()
-        # terminal.clear()
         for sprite in self.sprites:
             sprite.render(flush=False, erase=True)
             sprite.render(flush=False)
-        # terminal.home()
         terminal.flush()

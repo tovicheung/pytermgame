@@ -16,6 +16,7 @@ class Sprite:
         self._y = 0
         self._lx = 0
         self._ly = 0
+        self.hidden = False
         self._active_render = active_render
         self._groups: list[Group] = []
         Game.active.register(self)
@@ -46,6 +47,8 @@ class Sprite:
         return self.surf.height
 
     def render(self, flush=True, erase=False):
+        if self.hidden:
+            erase = True
         if erase:
             surf = self.surf.to_blank()
             tx, ty = terminal.transform_coords(self._lx, self._ly)
@@ -72,6 +75,12 @@ class Sprite:
         if self._active_render:
             self.render()
 
+    def hide(self):
+        self.hidden = True
+
+    def show(self):
+        self.hidden = False
+
     def kill(self):
         self.render(flush=False, erase=True)
         # frees all references and destroyed by garbage collector
@@ -85,6 +94,8 @@ class Sprite:
             assert gc.get_referrers() == []
 
     def touching(self, other: Sprite):
+        if other.hidden:
+            return False
         if self.x >= other.x + other.width: # self at right
             return False
         if self.y >= other.y + other.height: # self at down

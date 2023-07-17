@@ -24,7 +24,8 @@ class Ball(ptg.Sprite):
 with ptg.Game() as game:
     # Custom event
     NEWBALL = ptg.event.USEREVENT + 1
-    ptg.event.set_timer(NEWBALL, 1000)
+    SHOWJET = ptg.event.USEREVENT + 2
+    ptg.event.set_timer(NEWBALL, 500)
 
     # Jet
     myjet = Jet()
@@ -42,10 +43,16 @@ with ptg.Game() as game:
                 elif event.value == ptg.key.DOWN:
                     if myjet.y < ptg.terminal.height - 1:
                         myjet.move(0, 1)
+                elif event.value == "h":
+                    myjet.hide()
+                    ptg.event.delay(SHOWJET, 3000)
 
             elif event.type == NEWBALL:
                 Ball()
                 # not binded to name to prevent hogging up memory
+
+            elif event.type == SHOWJET:
+                myjet.show()
 
         Ball.group.update()
         game.update() # update screen

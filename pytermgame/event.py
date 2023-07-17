@@ -26,11 +26,12 @@ class Repeat(threading.Timer):
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
 
-    def stop(self):
-        self.finished.set()
-
 def set_timer(event: int, millis: int):
     def _func():
         queue.append(Event(event))
     Game.active.add_timer(Repeat(interval=millis / 1000, function=_func))
 
+def delay(event: int, millis: int):
+    def _func():
+        queue.append(Event(event))
+    Game.active.add_timer(threading.Timer(millis / 1000, _func))
