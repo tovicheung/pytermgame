@@ -9,12 +9,14 @@ class Ball(ptg.Sprite):
     group = ptg.Group()
 
     def init(self):
-        self.goto(ptg.terminal.width, ptg.randy())
+        self.goto(ptg.terminal.width, ptg.randint(0, ptg.terminal.height - 1))
 
     def update(self):
         # called from Ball.group.update()
         self.move(-1, 0)
         if self.x == 0:
+            global score
+            score += 1
             self.kill()
             return
         if self.touching(myjet):
@@ -27,16 +29,18 @@ with ptg.Game() as game:
     SHOWJET = ptg.event.USEREVENT + 2
     ptg.event.set_timer(NEWBALL, 500)
 
+    score = 0
+    t = ptg.Text("Dodge the balls!", 0, 0).place()
+
     # Jet
-    myjet = Jet()
-    myjet.goto(4, 4)
+    myjet = Jet(4, 4).place()
 
     # game loop
     running = True
     while running:
         for event in ptg.event.get():
-
             if event.type == ptg.event.KEYEVENT:
+
                 if event.value == ptg.key.UP:
                     if myjet.y > 0:
                         myjet.move(0, -1)
@@ -44,16 +48,17 @@ with ptg.Game() as game:
                     if myjet.y < ptg.terminal.height - 1:
                         myjet.move(0, 1)
                 elif event.value == "h":
-                    myjet.hide()
-                    ptg.event.delay(SHOWJET, 3000)
+                    if not myjet.hidden:
+                        myjet.hide()
+                        ptg.event.delay(SHOWJET, 3000)
 
             elif event.type == NEWBALL:
-                Ball()
+                Ball().place()
                 # not binded to name to prevent hogging up memory
 
             elif event.type == SHOWJET:
                 myjet.show()
 
         Ball.group.update()
-        game.update() # update screen
+        game.render() # update screen
         game.tick() # wait for next tick

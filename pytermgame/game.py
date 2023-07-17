@@ -41,6 +41,10 @@ class Game:
         self.cleanup()
         if typ in self.silent_errors:
             return True
+        
+    @property
+    def nextz(self):
+        return len(self.sprites)
 
     def add_timer(self, timer: Repeat):
         # assumed to be called after game start
@@ -100,8 +104,10 @@ class Game:
             ...
         self.last_tick = time.time()
 
-    def update(self):
-        for sprite in self.sprites:
+    def render(self):
+        queue = sorted(filter(lambda sprite: sprite._dirty, self.sprites), key=lambda sprite: sprite.z)
+        for sprite in queue:
             sprite.render(flush=False, erase=True)
+        for sprite in queue:
             sprite.render(flush=False)
         terminal.flush()

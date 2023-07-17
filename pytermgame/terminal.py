@@ -41,5 +41,5 @@ def clear():
 def home():
     write("\033[H")
 
-def fullclear(): # currently unused, may cause flickering
+def full_clear(): # currently unused, may cause flickering
     os.system("cls" if os.name == "nt" else "clear")

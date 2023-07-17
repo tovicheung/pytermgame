@@ -1,6 +1,6 @@
 # commonly used names
 
-from .sprite import Sprite, Group
+from .sprite import Sprite, Group, Text
 from .surface import Surface
 from .game import Game
 from . import terminal, event, key

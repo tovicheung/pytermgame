@@ -4,6 +4,7 @@ from .surface import Surface
 from . import terminal
 from .game import Game
 import gc
+from functools import cached_property
 
 DEBUG = False
 
@@ -11,24 +12,53 @@ class Sprite:
     surf: Surface
     group: Group | None = None
 
-    def __init__(self, active_render: bool = False):
-        self._x = 0
-        self._y = 0
-        self._lx = 0
-        self._ly = 0
+    def __init__(self, x: int = 0, y: int = 0):
+        self._x = x
+        self._y = y
+        self._lx = x
+        self._ly = y
+        self._z = Game.active.nextz
+        self._dirty = 0
+        self.placed = False
         self.hidden = False
-        self._active_render = active_render
         self._groups: list[Group] = []
+        self.init()
+
+    def place(self, x: int | None = None, y: int | None = None):
+        # attribute shortcuts
+        if x is not None:
+            self._x = x
+        if y is not None:
+            self._y = y
+        # add to groups
         Game.active.register(self)
         if self.group is not None:
             self.group.add(self)
-        self.init()
+        self._lx = self.x
+        self._ly = self.y
+        self._dirty = 1 # initial render
+        self.placed = True
+        return self # for convenience
 
     def init(self):
         """called after __init__"""
 
     def update(self):
         """generic method, can be customized to receive arguments"""
+
+    @property
+    def collisions(self) -> list[Sprite]:
+        c = []
+        for sprite in Game.active.sprites:
+            if self.touching(sprite) and sprite is not self:
+                c.append(sprite)
+        return c
+    
+    def _reveal_collisions(self):
+        if not self.placed:
+            return
+        for sprite in self.collisions:
+            sprite._dirty = 1
 
     @property
     def x(self):
@@ -39,6 +69,10 @@ class Sprite:
         return self._y
     
     @property
+    def z(self):
+        return self._z
+    
+    @property
     def width(self):
         return self.surf.width
     
@@ -47,6 +81,7 @@ class Sprite:
         return self.surf.height
 
     def render(self, flush=True, erase=False):
+        self._dirty = 0
         if self.hidden:
             erase = True
         if erase:
@@ -64,22 +99,25 @@ class Sprite:
         self._ly = self.y
     
     def goto(self, x, y):
+        self._reveal_collisions()
         self._x = x
         self._y = y
-        if self._active_render:
-            self.render()
+        self._dirty = 1
 
     def move(self, dx, dy):
+        self._reveal_collisions()
         self._x += dx
         self._y += dy
-        if self._active_render:
-            self.render()
+        self._dirty = 1
 
     def hide(self):
         self.hidden = True
+        self._dirty = 1
+        self._reveal_collisions()
 
     def show(self):
         self.hidden = False
+        self._dirty = 1
 
     def kill(self):
         self.render(flush=False, erase=True)
@@ -134,3 +172,12 @@ class Group:
     def update(self):
         for sprite in self:
             sprite.update()
+
+class Text(Sprite):
+    def __init__(self, text: str, x: int = 0, y: int = 0):
+        super().__init__(x, y)
+        self.surf = Surface(text)
+
+    # def render(self, *args, **kwargs):
+    #     print("RENDER")
+    #     super().render(*args, **kwargs)
