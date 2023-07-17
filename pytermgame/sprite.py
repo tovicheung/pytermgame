@@ -97,27 +97,39 @@ class Sprite:
             terminal.flush() # flush at once, not every line
         self._lx = self.x
         self._ly = self.y
+
+    def movement(f):
+        def _inner(self: Sprite, *args, **kwargs):
+            self._reveal_collisions()
+            self._dirty = 1
+            return f(self, *args, **kwargs)
+        return _inner
     
+    @movement
     def goto(self, x, y):
-        self._reveal_collisions()
         self._x = x
         self._y = y
-        self._dirty = 1
 
+    @movement
     def move(self, dx, dy):
-        self._reveal_collisions()
         self._x += dx
         self._y += dy
-        self._dirty = 1
 
+    @movement
+    def set_x(self, x):
+        self._x = x
+
+    @movement
+    def set_y(self, y):
+        self._y = y
+
+    @movement
     def hide(self):
         self.hidden = True
-        self._dirty = 1
-        self._reveal_collisions()
 
+    @movement
     def show(self):
         self.hidden = False
-        self._dirty = 1
 
     def kill(self):
         self.render(flush=False, erase=True)
@@ -172,12 +184,3 @@ class Group:
     def update(self):
         for sprite in self:
             sprite.update()
-
-class Text(Sprite):
-    def __init__(self, text: str, x: int = 0, y: int = 0):
-        super().__init__(x, y)
-        self.surf = Surface(text)
-
-    # def render(self, *args, **kwargs):
-    #     print("RENDER")
-    #     super().render(*args, **kwargs)

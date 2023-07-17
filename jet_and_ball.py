@@ -15,8 +15,7 @@ class Ball(ptg.Sprite):
         # called from Ball.group.update()
         self.move(-1, 0)
         if self.x == 0:
-            global score
-            score += 1
+            score.increment()
             self.kill()
             return
         if self.touching(myjet):
@@ -27,10 +26,12 @@ with ptg.Game() as game:
     # Custom event
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
-    ptg.event.set_timer(NEWBALL, 500)
+    ptg.event.set_timer(NEWBALL, 300)
 
-    score = 0
-    t = ptg.Text("Dodge the balls!", 0, 0).place()
+    # text and scores
+    ptg.Text("Score:").place(0, 1)
+    score = ptg.Counter(0).place(7, 1) # you can specify initial coords in place()
+    t = ptg.Text("Dodge the balls!", 0, 0).place() # or in the constructor
 
     # Jet
     myjet = Jet(4, 4).place()
