@@ -43,3 +43,9 @@ def home():
 
 def full_clear(): # currently unused, may cause flickering
     os.system("cls" if os.name == "nt" else "clear")
+
+def enable_autowrap():
+    write("\033[?7h")
+
+def disable_autowrap():
+    write("\033[?7l")

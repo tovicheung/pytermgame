@@ -9,10 +9,9 @@ class Ball(ptg.Sprite):
     group = ptg.Group()
 
     def init(self):
-        self.goto(ptg.terminal.width, ptg.randint(0, ptg.terminal.height - 1))
+        self.goto(ptg.terminal.width, ptg.randint(2, ptg.terminal.height - 1))
 
     def update(self):
-        # called from Ball.group.update()
         self.move(-1, 0)
         if self.x == 0:
             score.increment()
@@ -21,12 +20,29 @@ class Ball(ptg.Sprite):
         if self.touching(myjet):
             global running
             running = False
+        if self.touching(myline):
+            self.color_all("\033[31m")
+        else:
+            self.color_all("\033[m")
+
+class Line(ptg.Sprite):
+    surf = ptg.Surface("-" * (ptg.terminal.width))
+
+    def init(self):
+        self.color_all("\033[38;5;245m")
+
+    def update(self):
+        if myjet.y != self.y:
+            self.set_y(myjet.y)
 
 with ptg.Game() as game:
     # Custom event
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
-    ptg.event.set_timer(NEWBALL, 300)
+    # ptg.clock.set_timer(NEWBALL, 300)
+    ptg.clock.set_interval(NEWBALL, 5)
+
+    myline = Line().place(0, 0)
 
     # text and scores
     ptg.Text("Score:").place(0, 1)
@@ -34,7 +50,7 @@ with ptg.Game() as game:
     t = ptg.Text("Dodge the balls!", 0, 0).place() # or in the constructor
 
     # Jet
-    myjet = Jet(4, 4).place()
+    myjet = Jet().place(4, 4)
 
     # game loop
     running = True
@@ -51,7 +67,7 @@ with ptg.Game() as game:
                 elif event.value == "h":
                     if not myjet.hidden:
                         myjet.hide()
-                        ptg.event.delay(SHOWJET, 3000)
+                        ptg.clock.delay(SHOWJET, 3000)
 
             elif event.type == NEWBALL:
                 Ball().place()
@@ -60,6 +76,6 @@ with ptg.Game() as game:
             elif event.type == SHOWJET:
                 myjet.show()
 
-        Ball.group.update()
+        game.update()
         game.render() # update screen
         game.tick() # wait for next tick

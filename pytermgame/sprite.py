@@ -4,7 +4,6 @@ from .surface import Surface
 from . import terminal
 from .game import Game
 import gc
-from functools import cached_property
 
 DEBUG = False
 
@@ -17,10 +16,10 @@ class Sprite:
         self._y = y
         self._lx = x
         self._ly = y
-        self._z = Game.active.nextz
         self._dirty = 0
         self.placed = False
         self.hidden = False
+        self._ansi = "\033[m"
         self._groups: list[Group] = []
         self.init()
 
@@ -31,6 +30,7 @@ class Sprite:
         if y is not None:
             self._y = y
         # add to groups
+        self._z = Game.active.nextz
         Game.active.register(self)
         if self.group is not None:
             self.group.add(self)
@@ -46,6 +46,13 @@ class Sprite:
     def update(self):
         """generic method, can be customized to receive arguments"""
 
+    def set_dirty(self):
+        if self._dirty == 1:
+            return
+        self._dirty = 1
+        for sprite in self.collisions:
+            sprite.set_dirty()
+
     @property
     def collisions(self) -> list[Sprite]:
         c = []
@@ -54,7 +61,7 @@ class Sprite:
                 c.append(sprite)
         return c
     
-    def _reveal_collisions(self):
+    def _reveal_behind(self):
         if not self.placed:
             return
         for sprite in self.collisions:
@@ -79,6 +86,9 @@ class Sprite:
     @property
     def height(self):
         return self.surf.height
+    
+    def color_all(self, ansi: str):
+        self._ansi = ansi
 
     def render(self, flush=True, erase=False):
         self._dirty = 0
@@ -92,7 +102,8 @@ class Sprite:
             tx, ty = terminal.transform_coords(self.x, self.y)
         for i, line in enumerate(surf.lines()):
             terminal.goto(tx, ty + i)
-            terminal.write(line)
+            terminal.write(self._ansi + line)
+        terminal.write("\033[m")
         if flush:
             terminal.flush() # flush at once, not every line
         self._lx = self.x
@@ -100,9 +111,11 @@ class Sprite:
 
     def movement(f):
         def _inner(self: Sprite, *args, **kwargs):
-            self._reveal_collisions()
+            self.set_dirty()
             self._dirty = 1
-            return f(self, *args, **kwargs)
+            result = f(self, *args, **kwargs)
+            # self._reveal_behind() # required if sprite goes UNDER another sprite
+            return result
         return _inner
     
     @movement

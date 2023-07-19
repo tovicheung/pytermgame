@@ -4,7 +4,7 @@ from .sprite import Sprite, Group
 from .sprites import Text, Value, Counter
 from .surface import Surface
 from .game import Game
-from . import terminal, event, key
+from . import terminal, event, key, clock
 
 # purely for convenience
 from time import sleep

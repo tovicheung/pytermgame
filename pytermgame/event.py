@@ -1,7 +1,5 @@
-import threading
-
-from .game import Game
 from ._get_key import get_keys
+
 class Event:
     __slots__ = ("type", "value")
     def __init__(self, type, value = None):
@@ -11,7 +9,7 @@ class Event:
 KEYEVENT = 2
 USEREVENT = 31
 
-queue = []
+queue = [] # should not be exposed
 
 def get():
     for key in get_keys():
@@ -21,17 +19,5 @@ def get():
     for event in queued:
         yield event
 
-class Repeat(threading.Timer):
-    def run(self):
-        while not self.finished.wait(self.interval):
-            self.function(*self.args, **self.kwargs)
-
-def set_timer(event: int, millis: int):
-    def _func():
-        queue.append(Event(event))
-    Game.active.add_timer(Repeat(interval=millis / 1000, function=_func))
-
-def delay(event: int, millis: int):
-    def _func():
-        queue.append(Event(event))
-    Game.active.add_timer(threading.Timer(millis / 1000, _func))
+def add_event(event: int):
+    queue.append(Event(event))

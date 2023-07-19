@@ -39,7 +39,7 @@ class Surface:
         for line in self.lines():
             string += " " * len(line) + "\n"
         return type(self).strip(string)
-    
+
 if __name__ == "__main__":
     mstr = Surface(
 """
