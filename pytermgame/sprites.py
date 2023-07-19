@@ -5,7 +5,6 @@ from .sprite import Sprite
 from .surface import Surface
 
 _T = TypeVar("_T")
-# for from sprites import *
 
 class Text(Sprite):
     def __init__(self, text: str, x: int = 0, y: int = 0):

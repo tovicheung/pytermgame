@@ -1,3 +1,4 @@
+import time
 import threading
 from .game import Game
 from .event import Event, add_event
@@ -19,3 +20,5 @@ def delay(event: int, millis: int):
     def _func():
         add_event(Event(event))
     Game.active.add_timer(threading.Timer(millis / 1000, _func))
+
+wait = sleep = time.sleep

@@ -3,7 +3,6 @@ from __future__ import annotations
 from .surface import Surface
 from . import terminal
 from .game import Game
-import gc
 
 DEBUG = False
 
@@ -24,27 +23,28 @@ class Sprite:
         self.init()
 
     def place(self, x: int | None = None, y: int | None = None):
-        # attribute shortcuts
         if x is not None:
             self._x = x
         if y is not None:
             self._y = y
-        # add to groups
         self._z = Game.active.nextz
+
+        # add to groups
         Game.active.register(self)
         if self.group is not None:
             self.group.add(self)
+
         self._lx = self.x
         self._ly = self.y
         self._dirty = 1 # initial render
         self.placed = True
-        return self # for convenience
+        return self # for convenient assignment: name = Sprite(...).place(...)
 
     def init(self):
-        """called after __init__"""
+        """called after __init__, can be customized"""
 
     def update(self):
-        """generic method, can be customized to receive arguments"""
+        """can be customized"""
 
     def set_dirty(self):
         if self._dirty == 1:
@@ -109,13 +109,10 @@ class Sprite:
         self._lx = self.x
         self._ly = self.y
 
-    def movement(f):
+    def movement(f): # could be removed since it only adds one line of code?
         def _inner(self: Sprite, *args, **kwargs):
             self.set_dirty()
-            self._dirty = 1
-            result = f(self, *args, **kwargs)
-            # self._reveal_behind() # required if sprite goes UNDER another sprite
-            return result
+            return f(self, *args, **kwargs)
         return _inner
     
     @movement
@@ -152,8 +149,8 @@ class Sprite:
         for group in self._groups:
             group.remove(self)
         
-        
-        if DEBUG:
+        if DEBUG: # important for performance control
+            import gc
             assert gc.get_referrers() == []
 
     def touching(self, other: Sprite):
@@ -197,3 +194,7 @@ class Group:
     def update(self):
         for sprite in self:
             sprite.update()
+
+    def render(self):
+        for sprite in self:
+            sprite.render()

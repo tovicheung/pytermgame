@@ -128,6 +128,10 @@ class Game:
             if self.ntick % interval[1] == 0:
                 add_event(interval[0])
 
+    def update(self):
+        for sprite in self.sprites:
+            sprite.update()
+
     def render(self):
         queue = sorted(filter(lambda sprite: sprite._dirty, self.sprites), key=lambda sprite: sprite.z)
         for sprite in queue:
@@ -135,7 +139,3 @@ class Game:
         for sprite in queue:
             sprite.render(flush=False)
         terminal.flush()
-
-    def update(self):
-        for sprite in self.sprites:
-            sprite.update()

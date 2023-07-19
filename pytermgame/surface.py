@@ -39,15 +39,3 @@ class Surface:
         for line in self.lines():
             string += " " * len(line) + "\n"
         return type(self).strip(string)
-
-if __name__ == "__main__":
-    mstr = Surface(
-"""
-abc
-defg
-weeeeee
-""".strip("\n")
-    )
-    assert mstr[2] == "weeeeee"
-    assert mstr[1][1] == "e"
-    assert mstr[1, 1] == mstr[1][1] == "e"

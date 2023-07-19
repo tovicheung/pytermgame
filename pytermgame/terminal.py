@@ -1,6 +1,7 @@
 import sys
 import os
 import platform
+from random import randint
 
 WINDOWS = platform.system() == "Windows"
 
@@ -20,7 +21,8 @@ def goto(x: int, y: int):
     write(f"\033[{y};{x}H")
 
 def transform_coords(x: int, y: int):
-    # screen coords -> terminal coords
+    # screen coords (0, 0) based -> terminal coords (1, 1) based
+    # may support extended axis scrolling in the future
     return x + 1, y + 1
 
 def enable_alternate_buffer():
@@ -49,3 +51,9 @@ def enable_autowrap():
 
 def disable_autowrap():
     write("\033[?7l")
+
+# code helpers
+def randy():
+    return randint(0, height - 1)
+def randx():
+    return randint(0, width - 1)
