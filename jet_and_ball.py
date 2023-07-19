@@ -9,7 +9,7 @@ class Ball(ptg.Sprite):
     group = ptg.Group()
 
     def init(self):
-        self.goto(ptg.terminal.width, ptg.randint(2, ptg.terminal.height - 1))
+        self.goto(ptg.terminal.width, ptg.terminal.randy())
 
     def update(self):
         self.move(-1, 0)
@@ -71,11 +71,11 @@ with ptg.Game() as game:
 
             elif event.type == NEWBALL:
                 Ball().place()
-                # not binded to name to prevent hogging up memory
+                # do not bind to name to prevent hogging up memory
 
             elif event.type == SHOWJET:
                 myjet.show()
 
-        game.update()
-        game.render() # update screen
+        game.update() # calls update() on every sprite
+        game.render() # calls render() on appropriate sprites
         game.tick() # wait for next tick
