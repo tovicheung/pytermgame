@@ -2,7 +2,7 @@
 
 # class-based
 from .sprite import Sprite, Group
-from .sprites import Text, Value, Counter
+from .sprites import Text, FText, Value, Counter
 from .surface import Surface
 from .game import Game
 

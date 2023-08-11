@@ -1,3 +1,10 @@
+"""
+pytermgame example: jet and ball
+Use up and down arrow keys to control your jet
+Dodge the balls
+The grey line is for alignment
+"""
+
 import pytermgame as ptg
 
 class Jet(ptg.Sprite):
@@ -47,7 +54,7 @@ with ptg.Game() as game:
     # text and scores
     ptg.Text("Score:").place(0, 1)
     score = ptg.Counter(0).place(7, 1) # you can specify initial coords in place()
-    t = ptg.Text("Dodge the balls!", 0, 0).place() # or in the constructor
+    ptg.Text("Dodge the balls!", 0, 0).place() # or in the constructor
 
     # Jet
     myjet = Jet().place(4, 4)

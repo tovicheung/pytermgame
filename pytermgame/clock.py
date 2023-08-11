@@ -21,4 +21,6 @@ def delay(event: int, millis: int):
         add_event(Event(event))
     Game.active.add_timer(threading.Timer(millis / 1000, _func))
 
+# Convenient aliases
 wait = sleep = time.sleep
+gettime = time.time

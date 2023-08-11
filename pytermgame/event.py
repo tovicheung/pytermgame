@@ -19,5 +19,7 @@ def get():
     for event in queued:
         yield event
 
-def add_event(event: int):
-    queue.append(Event(event))
+def add_event(event: int | Event):
+    if not isinstance(event, Event):
+        event = Event(event)
+    queue.append(event)

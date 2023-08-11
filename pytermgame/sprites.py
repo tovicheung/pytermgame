@@ -11,6 +11,19 @@ class Text(Sprite):
         super().__init__(x, y)
         self.surf = Surface(text)
 
+class FText(Sprite):
+    # Formatted text
+    def __init__(self, string: str, x: int = 0, y: int = 0):
+        super().__init__(x, y)
+        self.string = string
+        self.surf = None
+        self.oldsurf = None
+
+    def format(self, *args, **kwargs):
+        self.oldsurf = self.surf
+        self.surf = Surface(self.string.format(*args, **kwargs))
+        self._dirty = 1
+
 # currently unused, this descriptor may replace Value.value in the future
 class _Value:
     def __init__(self, value: _T):
