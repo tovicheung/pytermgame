@@ -49,7 +49,7 @@ with ptg.Game() as game:
             if event.type == ptg.event.KEYEVENT:
                 if event.value == "q":
                     running = False
-                elif event.value == " ":
+                elif event.value == ptg.key.SPACE:
                     # Prevent holding
                     time = ptg.clock.gettime()
                     if True or time - 0.1 > space_last_pressed:
