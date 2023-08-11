@@ -8,18 +8,18 @@ class Repeat(threading.Timer):
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
 
-def set_timer(event: EventLike, millis: int):
+def set_timer(event: EventLike, secs: float):
     def _func():
         add_event(event)
-    Game.active.add_timer(Repeat(interval=millis / 1000, function=_func))
+    Game.active.add_timer(Repeat(interval=secs, function=_func))
 
 def set_interval(event: EventLike, ticks: int):
     Game.active.add_interval(event, ticks)
 
-def delay(event: EventLike, millis: int):
+def delay(event: EventLike, secs: float):
     def _func():
         add_event(event)
-    Game.active.add_timer(threading.Timer(millis / 1000, _func))
+    Game.active.add_timer(threading.Timer(secs, _func))
 
 # Convenient aliases
 wait = sleep = time.sleep

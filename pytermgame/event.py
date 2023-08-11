@@ -9,7 +9,7 @@ class Event:
             self.type = type
             self.value = value
 
-EventLike: int | tuple[int, int] | Event
+EventLike = int | tuple[int, int] | Event
 
 KEYEVENT = 2
 USEREVENT = 31

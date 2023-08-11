@@ -63,7 +63,7 @@ with ptg.Game() as game:
                         if score >= factory[2]:
                             score -= factory[2]
                             scoreboard.format(score)
-                            ptg.clock.set_timer(ptg.event.USEREVENT + num, 1000)
+                            ptg.clock.set_timer(ptg.event.USEREVENT + num, 1)
             elif event.type > ptg.event.USEREVENT:
                 score += factories[event.type - ptg.event.USEREVENT - 1][1]
                 scoreboard.format(score)
