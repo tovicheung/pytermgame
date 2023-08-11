@@ -52,7 +52,7 @@ with ptg.Game() as game:
                 elif event.value == ptg.key.SPACE:
                     # Prevent holding
                     time = ptg.clock.gettime()
-                    if True or time - 0.1 > space_last_pressed:
+                    if time - 0.1 > space_last_pressed:
                         score += 1
                         scoreboard.format(score)
                     space_last_pressed = time
