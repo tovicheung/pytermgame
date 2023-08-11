@@ -2,9 +2,14 @@ from ._get_key import get_keys
 
 class Event:
     __slots__ = ("type", "value")
-    def __init__(self, type, value = None):
-        self.type = type
-        self.value = value
+    def __init__(self, type: int | tuple[int, int], value = None):
+        if isinstance(type, tuple):
+            self.type, self.value = type
+        else:
+            self.type = type
+            self.value = value
+
+EventLike: int | tuple[int, int] | Event
 
 KEYEVENT = 2
 USEREVENT = 31
@@ -19,7 +24,7 @@ def get():
     for event in queued:
         yield event
 
-def add_event(event: int | Event):
+def add_event(event: EventLike):
     if not isinstance(event, Event):
         event = Event(event)
     queue.append(event)

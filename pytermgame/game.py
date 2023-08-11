@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING
 import time
 
 from . import terminal
-from .event import add_event
+from .event import add_event, EventLike
 if TYPE_CHECKING:
     from .sprite import Sprite
-    from .clock import Repeat
+    from threading import Timer
 
 if not terminal.WINDOWS:
     import sys
@@ -14,7 +14,7 @@ if not terminal.WINDOWS:
     import fcntl
     import os
 
-Interval = tuple[int, int]
+Interval = tuple[EventLike, int]
 
 class Game:
     # holds reference to currently active game
@@ -34,7 +34,7 @@ class Game:
         self.text_wrapping = text_wrapping
 
         self.sprites: list[Sprite] = []
-        self.timers: list[Repeat] = []
+        self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
 
         self.last_tick = 0
@@ -53,7 +53,7 @@ class Game:
     def nextz(self):
         return len(self.sprites)
 
-    def add_timer(self, timer: Repeat):
+    def add_timer(self, timer: Timer):
         # assumed to be called after game start
         self.timers.append(timer)
         timer.start()
