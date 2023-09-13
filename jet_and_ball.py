@@ -16,7 +16,7 @@ class Ball(ptg.Sprite):
     group = ptg.Group()
 
     def init(self):
-        self.goto(ptg.terminal.width, ptg.terminal.randy())
+        self.goto(ptg.terminal.width(), ptg.terminal.randy())
 
     def update(self):
         self.move(-1, 0)
@@ -33,7 +33,7 @@ class Ball(ptg.Sprite):
             self.color_all("\033[m")
 
 class Line(ptg.Sprite):
-    surf = ptg.Surface("-" * (ptg.terminal.width))
+    surf = ptg.Surface("-" * (ptg.terminal.width()))
 
     def init(self):
         self.color_all("\033[38;5;245m")
@@ -69,7 +69,7 @@ with ptg.Game() as game:
                     if myjet.y > 0:
                         myjet.move(0, -1)
                 elif event.value == ptg.key.DOWN:
-                    if myjet.y < ptg.terminal.height - 1:
+                    if myjet.y < ptg.terminal.height() - 1:
                         myjet.move(0, 1)
                 elif event.value == "h":
                     if not myjet.hidden:

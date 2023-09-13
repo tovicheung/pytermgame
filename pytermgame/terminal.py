@@ -5,7 +5,13 @@ from random import randint
 
 WINDOWS = platform.system() == "Windows"
 
-width, height = os.get_terminal_size()
+def width():
+    return os.get_terminal_size().lines
+
+def height():
+    return os.get_terminal_size().columns
+
+
 
 def write(string: str):
     sys.stdout.write(string)
@@ -54,6 +60,6 @@ def disable_autowrap():
 
 # code helpers
 def randy():
-    return randint(0, height - 1)
+    return randint(0, height() - 1)
 def randx():
-    return randint(0, width - 1)
+    return randint(0, width() - 1)
