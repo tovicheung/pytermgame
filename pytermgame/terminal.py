@@ -6,10 +6,10 @@ from random import randint
 WINDOWS = platform.system() == "Windows"
 
 def width():
-    return os.get_terminal_size().lines
+    return os.get_terminal_size().columns
 
 def height():
-    return os.get_terminal_size().columns
+    return os.get_terminal_size().lines
 
 
 
