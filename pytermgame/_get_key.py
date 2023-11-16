@@ -31,7 +31,7 @@ else:
     
     fd = sys.stdin.fileno()
     
-    def get_keys() -> list[str]:
+    def     get_keys() -> list[str]:
         chars = []
         while True:
             r, w, x = select.select([sys.stdin], [], [], 0.0)

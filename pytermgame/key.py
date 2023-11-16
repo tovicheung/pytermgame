@@ -11,8 +11,11 @@ if WINDOWS:
     PAGEUP = "\x00I"
     PAGEDOWN = "\x00Q"
 
+    DELETE = "\x00S"
+
     SPACE = " "
     ENTER = "\r"
+    TAB = "\t"
 else:
     UP = "\x1b[A"
     DOWN = "\x1b[B"
@@ -24,6 +27,9 @@ else:
     PAGEUP = "\x1b[5~"
     PAGEDOWN = "\x1b[6~"
 
+    DELETE = "\x1b[3~"
+
     # Linux, why?
     SPACE = ""
     ENTER = ""
+    TAB = ""
