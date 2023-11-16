@@ -6,11 +6,24 @@ if WINDOWS:
     LEFT = "\x00K"
     RIGHT = "\x00M"
 
+    HOME = "\x00G"
+    END = "\x00O"
+    PAGEUP = "\x00I"
+    PAGEDOWN = "\x00Q"
+
     SPACE = " "
+    ENTER = "\r"
 else:
     UP = "\x1b[A"
     DOWN = "\x1b[B"
     LEFT = "\x1b[D"
     RIGHT = "\x1b[C"
 
-    SPACE = "" # Linux, why?
+    HOME = "\x1b[H"
+    END = "\x1b[F"
+    PAGEUP = "\x1b[5~"
+    PAGEDOWN = "\x1b[6~"
+
+    # Linux, why?
+    SPACE = ""
+    ENTER = ""

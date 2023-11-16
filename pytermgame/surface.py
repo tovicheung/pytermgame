@@ -1,15 +1,17 @@
 class Surface:
-    data: list[str]
+    """Represents a 2D string surface"""
 
     def __init__(self, string: str):
         self.data = string.splitlines()
 
     @classmethod
     def blank(cls, width: int, height: int):
+        """Generate a blank rectangular surface"""
         return cls((" " * width + "\n") * height)
     
     @classmethod
     def strip(cls, string: str):
+        """For easy formatting"""
         return cls(string.strip("\n"))
     
     @property
@@ -35,6 +37,7 @@ class Surface:
             yield line
 
     def to_blank(self):
+        # Transform to whitespaces for erasing
         string = ""
         for line in self.lines():
             string += " " * len(line) + "\n"

@@ -7,16 +7,29 @@ from .surface import Surface
 _T = TypeVar("_T")
 
 class Text(Sprite):
+    """Text display"""
+
     def __init__(self, text: str, x: int = 0, y: int = 0):
         super().__init__(x, y)
         self.surf = Surface(text)
 
 class FText(Sprite):
-    # Formatted text
+    """Fstring display
+    
+    Example
+    ```python
+    counter = FText("You have {} points").place(5, 5)
+    ...
+    counter.format(6) # -> You have 6 points
+    counter.format(7) # -> You have 7 points
+    counter.format(8) # -> You have 8 points
+    ```
+
+    """
+
     def __init__(self, string: str, x: int = 0, y: int = 0):
         super().__init__(x, y)
         self.string = string
-        self.surf = None
         self.oldsurf = None
 
     def format(self, *args, **kwargs):
@@ -25,8 +38,9 @@ class FText(Sprite):
         self._dirty = 1
 
 # currently unused, this descriptor may replace Value.value in the future
-class _Value:
+class _Value(Generic[_T]):
     def __init__(self, value: _T):
+        raise Exception("unused")
         self.value = value
 
     def __get__(self, obj, objtype=None) -> _T:
@@ -37,6 +51,8 @@ class _Value:
         obj.update_surf()
 
 class Value(Sprite, Generic[_T]):
+    "Value display"
+
     def __init__(self, value: _T, x: int = 0, y: int = 0):
         super().__init__(x, y)
         self.value = value

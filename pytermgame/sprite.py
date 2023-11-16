@@ -6,6 +6,13 @@ from .game import Game
 
 DEBUG = False
 
+def ensure_game(f):
+    def _new(*args, **kwargs):
+        if Game._active is None:
+            raise RuntimeError("Invalid call, no active game")
+        return f(*args, **kwargs)
+    return _new
+
 class Sprite:
     surf: Surface
     group: Group | None = None
@@ -27,10 +34,10 @@ class Sprite:
             self._x = x
         if y is not None:
             self._y = y
-        self._z = Game.active.nextz
+        self._z = Game.get_active().nextz
 
         # add to groups
-        Game.active.register(self)
+        Game.get_active().register(self)
         if self.group is not None:
             self.group.add(self)
 
@@ -56,7 +63,7 @@ class Sprite:
     @property
     def collisions(self) -> list[Sprite]:
         c = []
-        for sprite in Game.active.sprites:
+        for sprite in Game.get_active().sprites:
             if self.touching(sprite) and sprite is not self:
                 c.append(sprite)
         return c
@@ -109,43 +116,37 @@ class Sprite:
         self._lx = self.x
         self._ly = self.y
 
-    def movement(f): # could be removed since it only adds one line of code?
-        def _inner(self: Sprite, *args, **kwargs):
-            self.set_dirty()
-            return f(self, *args, **kwargs)
-        return _inner
-    
-    @movement
     def goto(self, x, y):
         self._x = x
         self._y = y
+        self.set_dirty()
 
-    @movement
     def move(self, dx, dy):
         self._x += dx
         self._y += dy
+        self.set_dirty()
 
-    @movement
     def set_x(self, x):
         self._x = x
+        self.set_dirty()
 
-    @movement
     def set_y(self, y):
         self._y = y
+        self.set_dirty()
 
-    @movement
     def hide(self):
         self.hidden = True
+        self.set_dirty()
 
-    @movement
     def show(self):
         self.hidden = False
+        self.set_dirty()
 
     def kill(self):
         self.render(flush=False, erase=True)
         # frees all references and destroyed by garbage collector
         # tested with gc.get_referrers()
-        Game.active.sprites.remove(self)
+        Game.get_active().sprites.remove(self)
         for group in self._groups:
             group.remove(self)
         

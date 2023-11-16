@@ -4,6 +4,7 @@ import time
 
 from . import terminal
 from .event import add_event, EventLike
+
 if TYPE_CHECKING:
     from .sprite import Sprite
     from threading import Timer
@@ -17,14 +18,16 @@ if not terminal.WINDOWS:
 Interval = tuple[EventLike, int]
 
 class Game:
+    """Represents a game"""
+
     # holds reference to currently active game
-    active: Game | None = None
+    _active: Game | None = None
 
     def __init__(self,
                 fps: int | None = 20,
                 alternate_screen: bool = True,
                 show_cursor: bool = False,
-                silent_errors: tuple[BaseException] = (KeyboardInterrupt,),
+                silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
                 text_wrapping: bool = False,
                 ):
         self.fps = fps
@@ -49,6 +52,12 @@ class Game:
         if typ in self.silent_errors:
             return True
         
+    @classmethod
+    def get_active(cls):
+        if cls._active is None:
+            raise RuntimeError("Invalid call, no active game")
+        return cls._active
+        
     @property
     def nextz(self):
         return len(self.sprites)
@@ -61,7 +70,8 @@ class Game:
     def add_interval(self, event: int, ticks: int):
         self.intervals.append((event, ticks))
 
-    def start(self): # determine the control codes to send
+    def start(self):
+        # determine the control codes to send
         if not terminal.WINDOWS:
             # set terminal attributes to raw mode
             self._nix_fd = fd = sys.stdin.fileno()
@@ -85,7 +95,7 @@ class Game:
         for timer in self.timers:
             timer.start()
 
-        type(self).active = self
+        type(self)._active = self
         self.ntick = -1
         self.tick(force=True)
 
@@ -97,16 +107,14 @@ class Game:
         if not terminal.WINDOWS:
             termios.tcsetattr(self._nix_fd, termios.TCSAFLUSH, self._nix_old_term)
             fcntl.fcntl(self._nix_fd, fcntl.F_SETFL, self._nix_old_flags)
-        type(self).active = None
+        type(self)._active = None
 
     def wrapper(self, f):
         self.start()
         try:
             f()
-        except BaseException as e:
-            # `except self.silent_errors: ...` does not work well with linters like pylance (although it works)
-            if type(e) not in self.silent_errors:
-                raise
+        except self.silent_errors as e:
+            pass
         finally:
             self.cleanup()
 
@@ -120,7 +128,7 @@ class Game:
         if not force:
             next_tick = self.last_tick + 1 / self.fps
             while time.time() < next_tick:
-                ...
+                pass
         self.last_tick = time.time()
         self.ntick += 1
 
