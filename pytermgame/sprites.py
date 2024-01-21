@@ -27,13 +27,12 @@ class FText(Sprite):
 
     """
 
-    def __init__(self, string: str, x: int = 0, y: int = 0):
-        super().__init__(x, y)
+    def __init__(self, string: str, *args, **kwargs):
+        super().__init__(0, 0)
         self.string = string
-        self.oldsurf = None
+        self.format(*args, **kwargs)
 
     def format(self, *args, **kwargs):
-        self.oldsurf = self.surf
         self.surf = Surface(self.string.format(*args, **kwargs))
         self._dirty = 1
 

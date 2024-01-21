@@ -32,8 +32,7 @@ with ptg.Game() as game:
     mycookie = Cookie().place(2, 2)
     ptg.Text("Press Space").place(0, 8)
 
-    scoreboard = ptg.FText("You have {} cookies!").place(0, 0)
-    scoreboard.format(0)
+    scoreboard = ptg.FText("You have {} cookies!", 0).place(0, 0)
     score = 0
 
     ptg.Text("Use number keys").place(20, 1)
