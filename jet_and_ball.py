@@ -15,7 +15,7 @@ class Ball(ptg.Sprite):
     # any new instances will be added to this group on init
     group = ptg.Group()
 
-    def init(self):
+    def on_placed(self):
         self.goto(ptg.terminal.width(), ptg.terminal.randy())
 
     def update(self):
@@ -46,18 +46,18 @@ with ptg.Game() as game:
     # Custom event
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
-    # ptg.clock.set_timer(NEWBALL, 300)
+
     ptg.clock.set_interval(NEWBALL, 5)
 
-    myline = Line().place(0, 0)
+    myline = Line().place((0, 0))
 
     # text and scores
-    ptg.Text("Score:").place(0, 1)
-    score = ptg.Counter(0).place(7, 1) # you can specify initial coords in place()
-    ptg.Text("Dodge the balls!", 0, 0).place() # or in the constructor
+    ptg.Text("Score:").place((0, 1))
+    score = ptg.Counter(0).place((7, 1))
+    ptg.Text("Dodge the balls!").place((0, 0))
 
     # Jet
-    myjet = Jet().place(4, 4)
+    myjet = Jet().place((4, 4))
 
     # game loop
     running = True
@@ -78,7 +78,7 @@ with ptg.Game() as game:
 
             elif event.type == NEWBALL:
                 Ball().place()
-                # do not bind to name to prevent hogging up memory
+                # do not bind to name so that it can be garbage collected
 
             elif event.type == SHOWJET:
                 myjet.show()

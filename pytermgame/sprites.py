@@ -9,8 +9,8 @@ _T = TypeVar("_T")
 class Text(Sprite):
     """Text display"""
 
-    def __init__(self, text: str, x: int = 0, y: int = 0):
-        super().__init__(x, y)
+    def __init__(self, text: str):
+        super().__init__()
         self.surf = Surface(text)
 
 class FText(Sprite):
@@ -28,7 +28,7 @@ class FText(Sprite):
     """
 
     def __init__(self, string: str, *args, **kwargs):
-        super().__init__(0, 0)
+        super().__init__()
         self.string = string
         self.format(*args, **kwargs)
 
@@ -52,8 +52,8 @@ class _Value(Generic[_T]):
 class Value(Sprite, Generic[_T]):
     "Value display"
 
-    def __init__(self, value: _T, x: int = 0, y: int = 0):
-        super().__init__(x, y)
+    def __init__(self, value: _T):
+        super().__init__()
         self.value = value
         self.update_surf()
 

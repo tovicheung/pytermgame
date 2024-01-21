@@ -3,12 +3,8 @@ import os
 import platform
 from random import randint
 
-WINDOWS = platform.system() == "Windows"
-
-def transform_coords(x: int, y: int):
-    # screen coords (0, 0) based -> terminal coords (1, 1) based
-    # may support extended axis scrolling in the future
-    return x + 1, y + 1
+# WINDOWS = platform.system() == "Windows"
+WINDOWS = sys.platform == "win32" # most stubs use this
 
 # Terminal size
 

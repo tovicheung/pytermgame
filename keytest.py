@@ -1,4 +1,4 @@
-# for testing keys cross platform, ignore
+# for testing keys cross platform
 from pytermgame._get_key import get_keys
 from pytermgame import Game
 

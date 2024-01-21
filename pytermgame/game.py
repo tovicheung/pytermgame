@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import time
+import sys
 
 from . import terminal
 from .event import add_event, EventLike
@@ -10,7 +11,6 @@ if TYPE_CHECKING:
     from threading import Timer
 
 if not terminal.WINDOWS:
-    import sys
     import termios
     import fcntl
     import os
@@ -72,7 +72,9 @@ class Game:
 
     def start(self):
         # determine the control codes to send
-        if not terminal.WINDOWS:
+
+        # if not terminal.WINDOWS:
+        if sys.platform != "win32": # align with stubs and reduce errors
             # set terminal attributes to raw mode
             self._nix_fd = fd = sys.stdin.fileno()
             self._nix_old_term = termios.tcgetattr(fd)
@@ -81,6 +83,7 @@ class Game:
             termios.tcsetattr(fd, termios.TCSANOW, new_term)
             self._nix_old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, self._nix_old_flags | os.O_NONBLOCK)
+        
         if self.alternate_screen:
             terminal.enable_alternate_buffer()
         if self.show_cursor:
@@ -104,7 +107,8 @@ class Game:
             timer.cancel()
         terminal.disable_alternate_buffer()
         terminal.show_cursor()
-        if not terminal.WINDOWS:
+        # if not terminal.WINDOWS:
+        if sys.platform != "win32": # align with stubs and reduce errors
             termios.tcsetattr(self._nix_fd, termios.TCSAFLUSH, self._nix_old_term)
             fcntl.fcntl(self._nix_fd, fcntl.F_SETFL, self._nix_old_flags)
         type(self)._active = None

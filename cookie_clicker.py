@@ -29,15 +29,15 @@ with ptg.Game() as game:
     NEWCOOKIE3 = ptg.event.USEREVENT + 3
     NEWCOOKIE4 = ptg.event.USEREVENT + 4
 
-    mycookie = Cookie().place(2, 2)
-    ptg.Text("Press Space").place(0, 8)
+    mycookie = Cookie().place((2, 2))
+    ptg.Text("Press Space").place((0, 8))
 
-    scoreboard = ptg.FText("You have {} cookies!", 0).place(0, 0)
+    scoreboard = ptg.FText("You have {} cookies!", 0).place((0, 0))
     score = 0
 
-    ptg.Text("Use number keys").place(20, 1)
+    ptg.Text("Use number keys").place((20, 1))
     for i, factory in enumerate(factories, start=1):
-        ptg.Text(f"[{i}] {factory[0]}: {factory[1]}/s for {factory[2]}").place(20, i + 1)
+        ptg.Text(f"[{i}] {factory[0]}: {factory[1]}/s for {factory[2]}").place((20, i + 1))
     
 
     space_last_pressed = 0
