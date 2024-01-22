@@ -1,3 +1,8 @@
+"""ptg.game
+
+This module contains the Game class, which controls the entire game.
+"""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import time
@@ -30,6 +35,15 @@ class Game:
                 silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
                 text_wrapping: bool = False,
                 ):
+        """Initialize a game
+        Arguments:
+        - fps - frames per second, execute as fast as possible if set to None
+        - alternate_screen - whether to use an alternate terminal screen
+        - show_cursor - whether to show the cursor
+        - silent_errors - what errors should not be displayed
+        - text_wrapping - whether to wrap overflow in terminal
+        
+        """
         self.fps = fps
         self.alternate_screen = alternate_screen
         self.show_cursor = show_cursor
@@ -58,12 +72,10 @@ class Game:
             raise RuntimeError("Invalid call, no active game")
         return cls._active
         
-    @property
-    def nextz(self):
+    def _next_z(self):
         return len(self.sprites)
 
     def add_timer(self, timer: Timer):
-        # assumed to be called after game start
         self.timers.append(timer)
         timer.start()
 
@@ -126,6 +138,8 @@ class Game:
         self.sprites.extend(sprites)
 
     def tick(self, force=False):
+        # blocking unless force is set
+
         if self.fps is None:
             return
 

@@ -9,11 +9,13 @@ class Repeat(threading.Timer):
             self.function(*self.args, **self.kwargs)
 
 def set_timer(event: EventLike, secs: float):
+    # Timer runs on separate threads
     def _func():
         add_event(event)
     Game.get_active().add_timer(Repeat(interval=secs, function=_func))
 
 def set_interval(event: int, ticks: int):
+    # Intervals runs on the same thread and is managed by Game
     Game.get_active().add_interval(event, ticks)
 
 def delay(event: EventLike, secs: float):

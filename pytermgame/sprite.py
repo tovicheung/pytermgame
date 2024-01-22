@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import wraps
+
 from .surface import Surface
 from . import terminal
 from .game import Game
@@ -14,6 +16,14 @@ def ensure_game(f):
         return f(*args, **kwargs)
     return _new
 
+def after_placed(f):
+    @wraps(f)
+    def _new(self: Sprite, *args, **kwargs):
+        if not self.placed:
+            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it (by calling Sprite.placed())")
+        return f(self, *args, **kwargs)
+    return _new
+
 class Sprite:
     surf: Surface
     group: Group | None = None
@@ -21,10 +31,6 @@ class Sprite:
     def __init__(self):
         self._coords = Coords.ORIGIN
         self._oldcoords = self._coords
-        # self._x = x
-        # self._y = y
-        # self._lx = x
-        # self._ly = y
         self._dirty = 0
         self._ansi = "\033[m"
         self._groups: list[Group] = []
@@ -38,7 +44,7 @@ class Sprite:
     def place(self, coords: XY = Coords.ORIGIN):
         self._coords = Coords.make(coords)
 
-        self._z = Game.get_active().nextz
+        self._z = Game.get_active()._next_z()
 
         # add to groups
         Game.get_active().register(self)
@@ -54,15 +60,20 @@ class Sprite:
 
         return self # for convenient assignment: name = Sprite(...).place(...)
 
+    # Overridable hooks, these can be overridden without super()
+
     def init(self):
-        """called after __init__, can be customized"""
+        """called AUTOMATICALLY after __init__"""
 
     def on_placed(self):
-        """called after place, can be customized"""
+        """called AUTOMATICALLY after place()
+        Uses: customize initial coordinates / styles
+        """
 
     def update(self):
-        """called manually from gruops, can be customized"""
+        """called MANUALLY, likely from group.update()"""
 
+    @after_placed
     def set_dirty(self):
         if self._dirty == 1:
             return
@@ -70,6 +81,7 @@ class Sprite:
         for sprite in self.get_movement_collisions():
             sprite.set_dirty()
 
+    @after_placed
     def get_collisions(self) -> list[Sprite]:
         c = []
         for sprite in Game.get_active().sprites:
@@ -77,6 +89,7 @@ class Sprite:
                 c.append(sprite)
         return c
 
+    @after_placed
     def get_old_collisions(self) -> list[Sprite]:
         c = []
         for sprite in Game.get_active().sprites:
@@ -84,6 +97,7 @@ class Sprite:
                 c.append(sprite)
         return c
     
+    @after_placed
     def get_movement_collisions(self) -> list[Sprite]:
         """Get collisions of BOTH old and new coords"""
         c = []
@@ -163,6 +177,7 @@ class Sprite:
         self.hidden = False
         self.set_dirty()
 
+    @after_placed
     def kill(self):
         self.render(flush=False, erase=True)
         # frees all references and destroyed by garbage collector
@@ -176,6 +191,7 @@ class Sprite:
             import gc
             assert gc.get_referrers() == []
 
+    @after_placed
     def was_touching(self, other: Sprite):
         if other.hidden:
             return False
@@ -189,7 +205,7 @@ class Sprite:
             return False
         return True
 
-
+    @after_placed
     def touching(self, other: Sprite):
         if other.hidden:
             return False
@@ -204,13 +220,15 @@ class Sprite:
         return True
 
 class Group:
+    # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
+
     def __init__(self, *sprites: Sprite):
-        self.sprites = list(sprites)
+        self.sprites = set(sprites)
 
     # Group operations
 
     def add(self, *sprites: Sprite):
-        self.sprites.extend(sprites)
+        self.sprites.update(sprites)
         for sprite in sprites:
             sprite._groups.append(self)
 
@@ -225,6 +243,9 @@ class Group:
 
     def __iter__(self):
         return iter(self.sprites)
+    
+    def __len__(self):
+        return len(self.sprites)
     
     # Sprite operations
     

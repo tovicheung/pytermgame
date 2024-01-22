@@ -63,24 +63,26 @@ with ptg.Game() as game:
     running = True
     while running:
         for event in ptg.event.get():
-            if event.type == ptg.event.KEYEVENT:
+            if event.is_key(ptg.key.UP):
+                if myjet.y > 0:
+                    myjet.move(0, -1)
+                    
+            elif event.is_key(ptg.key.DOWN):
+                if myjet.y < ptg.terminal.height() - 1:
+                    myjet.move(0, 1)
 
-                if event.value == ptg.key.UP:
-                    if myjet.y > 0:
-                        myjet.move(0, -1)
-                elif event.value == ptg.key.DOWN:
-                    if myjet.y < ptg.terminal.height() - 1:
-                        myjet.move(0, 1)
-                elif event.value == "h":
-                    if not myjet.hidden:
-                        myjet.hide()
-                        ptg.clock.delay(SHOWJET, 3)
+            elif event.is_key("h"):
+                if not myjet.hidden:
+                    myjet.hide()
+                    ptg.clock.delay(SHOWJET, 3)
 
-            elif event.type == NEWBALL:
+            elif event.is_key(): ... # block all key events
+
+            elif event == NEWBALL:
                 Ball().place()
                 # do not bind to name so that it can be garbage collected
 
-            elif event.type == SHOWJET:
+            elif event == SHOWJET:
                 myjet.show()
 
         game.update() # calls update() on every sprite

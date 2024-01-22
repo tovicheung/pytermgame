@@ -1,6 +1,10 @@
+"""ptg.terminal
+
+This submodule can be used independently for controlling the terminal.
+"""
+
 import sys
 import os
-import platform
 from random import randint
 
 # WINDOWS = platform.system() == "Windows"
@@ -26,7 +30,7 @@ def fwrite(string: str):
     write(string)
     flush()
 
-# Terminal config
+# Terminal configuration
 
 def enable_alternate_buffer():
     fwrite("\033[?1049h")
