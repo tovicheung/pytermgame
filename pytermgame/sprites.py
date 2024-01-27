@@ -30,11 +30,17 @@ class FText(Sprite):
     def __init__(self, string: str, *args, **kwargs):
         super().__init__()
         self.string = string
+        self.surf = Surface("")
         self.format(*args, **kwargs)
 
     def format(self, *args, **kwargs):
+        self._oldsurf = self.surf
         self.surf = Surface(self.string.format(*args, **kwargs))
         self._dirty = 1
+
+    def render(self, flush=True, erase=False):
+        super().render(flush, True, _surf=self._oldsurf)
+        super().render(flush, erase)
 
 # currently unused, this descriptor may replace Value.value in the future
 class _Value(Generic[_T]):

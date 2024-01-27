@@ -131,17 +131,20 @@ class Sprite:
     def color_all(self, ansi: str):
         self._ansi = ansi
 
-    def render(self, flush=True, erase=False):
+    def render(self, flush=True, erase=False, _surf=None):
         self._dirty = 0
 
         if self.hidden:
             erase = True
 
+        surf = self.surf
+        if _surf is not None:
+            surf = _surf
+
         if erase:
-            surf = self.surf.to_blank()
+            surf = surf.to_blank()
             tcoords = self._oldcoords.to_term()
         else:
-            surf = self.surf
             tcoords = self._coords.to_term()
 
         if tcoords.x + self.width < 1 or \
