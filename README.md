@@ -15,6 +15,7 @@ You've seen frameworks for making terminal apps (`textual`, `pytermgraphics`, `a
 ## Tested on
 - Windows 10
 - Ubuntu (WSL) 22.04
+
 Unfortunately i am too broke to afford a mac
 
 ## Examples
