@@ -39,7 +39,7 @@ with ptg.Game() as game:
 
     ptg.Text("Use number keys").place(main, (20, 1))
     for i, factory in enumerate(factories, start=1):
-        ptg.Text(f"[{i}] {factory[0]}: {factory[1]}/s for {factory[2]}").place(main, (20, i + 1))
+        ptg.Text(f"Press [{i}] to buy a {factory[0]} using {factory[2]} cookies: {factory[1]} cps ").place(main, (20, i + 1))
     
 
     space_last_pressed = 0
