@@ -1,13 +1,18 @@
 # commonly used names
 
 # class-based
-from .sprite import Sprite, Group
+from .coords import Coords
+from .game import Game
+from .group import Group
+from .scene import Scene
+from .sprite import Sprite
 from .sprites import Text, FText, Value, Counter
 from .surface import Surface
-from .game import Game
 
 # function-based
-from . import terminal, event, key, clock
+from . import clock, event, key, terminal
+
+# terminal test
 
 try:
     terminal.width()

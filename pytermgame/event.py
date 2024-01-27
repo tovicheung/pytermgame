@@ -24,13 +24,24 @@ class Event:
     def as_pair(self):
         return (self.type, self.value)
 
-    def __eq__(self, other: tuple[int, Any] | int):
+    def __eq__(self, other: "EventLike"):
         if isinstance(other, int):
             # used as event == TYPE
             return self.is_type(other)
+        elif isinstance(other, type(self)):
+            return other.type == self.type and other.value == self.value
         return self.as_pair() == other
+    
+    def passes(self, func):
+        try:
+            return func(self.value)
+        except Exception:
+            return False
+        
+    def is_user(self):
+        return self.type >= USEREVENT
 
-EventLike = int | tuple[int, int] | Event
+EventLike = int | tuple[int, Any] | Event
 
 EXIT = 1 # unused for now
 KEYEVENT = 2
@@ -54,3 +65,9 @@ def add_event(event: EventLike):
     if not isinstance(event, Event):
         event = Event(event)
     queue.append(event)
+
+def wait(event: EventLike):
+    while True:
+        for e in get():
+            if event == e:
+                return

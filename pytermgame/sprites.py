@@ -65,6 +65,9 @@ class Value(Sprite, Generic[_T]):
         self.value = value
         self.update_surf()
 
+    def __str__(self):
+        return str(self.value)
+
 class Counter(Value[int]):
     def increment(self, by: int = 1):
         self.value += by

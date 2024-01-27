@@ -12,7 +12,7 @@ class Jet(ptg.Sprite):
 
 class Ball(ptg.Sprite):
     surf = ptg.Surface("O")
-    # any new instances will be added to this group on init
+    # any new instances will be added to this group automatically
     group = ptg.Group()
 
     def on_placed(self):
@@ -43,23 +43,25 @@ class Line(ptg.Sprite):
             self.set_y(myjet.y)
 
 with ptg.Game() as game:
+    main = game.scene
+
     # Custom event
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
 
     ptg.clock.set_interval(NEWBALL, 5)
 
-    myline = Line().place((0, 0))
+    myline = Line().place(main, (0, 0))
 
-    # text and scores
-    ptg.Text("Score:").place((0, 1))
-    score = ptg.Counter(0).place((7, 1))
-    ptg.Text("Dodge the balls!").place((0, 0))
+    # Text
+    ptg.Text("Score:").place(main, (0, 1))
+    score = ptg.Counter(0).place(main, (7, 1))
+    ptg.Text("Dodge the balls!").place(main, (0, 0))
 
     # Jet
-    myjet = Jet().place((4, 4))
+    myjet = Jet().place(main, (4, 4))
 
-    # game loop
+    # Main game loop
     running = True
     while running:
         for event in ptg.event.get():
@@ -79,7 +81,7 @@ with ptg.Game() as game:
             elif event.is_key(): ... # block all key events
 
             elif event == NEWBALL:
-                Ball().place()
+                Ball().place(main)
                 # do not bind to name so that it can be garbage collected
 
             elif event == SHOWJET:
@@ -88,3 +90,11 @@ with ptg.Game() as game:
         game.update() # calls update() on every sprite
         game.render() # calls render() on appropriate sprites
         game.tick() # wait for next tick
+
+    end = ptg.Scene()
+
+    ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place(end)
+    
+    game.set_scene(end)
+
+    ptg.event.wait((ptg.event.KEYEVENT, ptg.key.SPACE))

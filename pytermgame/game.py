@@ -10,6 +10,7 @@ import sys
 
 from . import terminal
 from .event import add_event, EventLike
+from .scene import Scene
 
 if TYPE_CHECKING:
     from .sprite import Sprite
@@ -50,9 +51,10 @@ class Game:
         self.silent_errors = silent_errors
         self.text_wrapping = text_wrapping
 
-        self.sprites: list[Sprite] = []
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
+
+        self.scene = Scene()
 
         self.last_tick = 0
         self.ntick = 0
@@ -71,15 +73,27 @@ class Game:
         if cls._active is None:
             raise RuntimeError("Invalid call, no active game")
         return cls._active
-        
-    def _next_z(self):
-        return len(self.sprites)
+    
+    # shouldn't be used ... ?
+
+    @classmethod
+    def get_scene(cls):
+        return cls.get_active().scene
+    
+    @classmethod
+    def get_sprites(cls):
+        return cls.get_scene().sprites
+    
+    def set_scene(self, scene: Scene):
+        self.scene.render(flush=False, erase=True)
+        self.scene = scene
+        self.scene.render()
 
     def add_timer(self, timer: Timer):
         self.timers.append(timer)
         timer.start()
 
-    def add_interval(self, event: int, ticks: int):
+    def add_interval(self, event: EventLike, ticks: int):
         self.intervals.append((event, ticks))
 
     def start(self):
@@ -134,8 +148,7 @@ class Game:
         finally:
             self.cleanup()
 
-    def register(self, *sprites: Sprite):
-        self.sprites.extend(sprites)
+    # Methods to be called each game loop
 
     def tick(self, force=False):
         # blocking unless force is set
@@ -155,13 +168,20 @@ class Game:
                 add_event(interval[0])
 
     def update(self):
-        for sprite in self.sprites:
-            sprite.update()
+        self.scene.update()
 
     def render(self):
-        queue = sorted(filter(lambda sprite: sprite._dirty, self.sprites), key=lambda sprite: sprite.z)
-        for sprite in queue:
-            sprite.render(flush=False, erase=True)
-        for sprite in queue:
-            sprite.render(flush=False)
-        terminal.flush()
+        self.scene.rerender()
+
+# # hack around cyclic imports
+# def _make_group() -> Group: ...
+# 
+# class SingleSceneGame(Game):
+#     def start(self):
+#         self._sprites = _make_group()
+#         super().start()
+# 
+#     @classmethod
+#     def get_scene(cls):
+#         raise Exception("SingleSceneGame does not have a scene")
+        

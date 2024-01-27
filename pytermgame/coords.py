@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeAlias, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from .sprite import Sprite
-# from .game import Game
+from typing import TypeAlias
 
 class Coords:
     # should be immutable
@@ -37,6 +33,10 @@ class Coords:
     def to_term(self):
         """Converts 0-based coordinates to 1-based terminal coordinates"""
         return type(self)(self.x + 1, self.y + 1)
+    
+    def d(self, other: XY):
+        other = Coords.make(other)
+        return self.dx(other.x).dy(other.y)
     
     def dx(self, dx):
         return type(self)(self.x + dx, self.y)
