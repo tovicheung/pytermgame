@@ -13,7 +13,6 @@ from .event import add_event, EventLike
 from .scene import Scene
 
 if TYPE_CHECKING:
-    from .sprite import Sprite
     from threading import Timer
 
 if not terminal.WINDOWS:
@@ -173,15 +172,6 @@ class Game:
     def render(self):
         self.scene.rerender()
 
-# # hack around cyclic imports
-# def _make_group() -> Group: ...
-# 
-# class SingleSceneGame(Game):
-#     def start(self):
-#         self._sprites = _make_group()
-#         super().start()
-# 
-#     @classmethod
-#     def get_scene(cls):
-#         raise Exception("SingleSceneGame does not have a scene")
-        
+from . import _active
+_active.Game = Game
+_active.initialized = True

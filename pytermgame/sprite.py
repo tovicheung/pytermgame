@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Iterable
 from functools import wraps
 
 from .surface import Surface
-from . import terminal
+from . import terminal, _active
 from .coords import Coords, XY
+from .scene import Scene
 
 if TYPE_CHECKING:
-    from .scene import Scene
     from .group import Group
 
 DEBUG = True
@@ -42,7 +42,12 @@ class Sprite:
 
         self.init()
 
-    def place(self, scene: Scene, coords: XY = Coords.ORIGIN):
+    def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
+        if scene is None:
+            if Scene._creating is not None:
+                scene = Scene._creating
+            else:
+                scene = _active.get_scene()
         self._scene = scene
         self._coords = Coords.make(coords)
 

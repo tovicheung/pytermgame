@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from .coords import Coords, XY
 from .group import Group, SpriteList
 from . import terminal
 
 class Scene(Group):
+    _creating: Scene | None = None
+
     def __init__(self):
         super().__init__()
 
@@ -29,3 +33,12 @@ class Scene(Group):
 
     def _next_z(self):
         return len(self.sprites)
+    
+    def __enter__(self):
+        if Scene._creating is not None:
+            raise Exception("Cannot enter more than one scene")
+        Scene._creating = self
+        return self
+    
+    def __exit__(self, typ, val, tb):
+        Scene._creating = None
