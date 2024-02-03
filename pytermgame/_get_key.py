@@ -1,20 +1,22 @@
+# Apdated from the readchar module
+
 from .terminal import WINDOWS
 
 if WINDOWS:
     import msvcrt
-    def getchar():
+    def _getchar():
         if msvcrt.kbhit():
             return chr(int.from_bytes(msvcrt.getch(), "big"))
 
-    def getkey() -> str:
-        ch = getchar()
+    def _getkey() -> str | None:
+        ch = _getchar()
         if ch is None:
             return ch
         # if it is a normal character, return it
         if ch not in "\x00\xe0":
             return ch
         # if it is a special key, read second half
-        ch2 = getchar()
+        ch2 = _getchar()
         if ch2 is None:
             return ch
         return "\x00" + ch2
@@ -22,7 +24,7 @@ if WINDOWS:
     def get_keys() -> list[str]:
         keys = []
         while msvcrt.kbhit():
-            keys.append(getkey())
+            keys.append(_getkey())
         return keys
 else:
     import sys
@@ -31,7 +33,7 @@ else:
     
     fd = sys.stdin.fileno()
     
-    def     get_keys() -> list[str]:
+    def get_keys() -> list[str]:
         chars = []
         while True:
             r, w, x = select.select([sys.stdin], [], [], 0.0)

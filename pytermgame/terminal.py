@@ -8,7 +8,7 @@ import os
 from random import randint
 
 # WINDOWS = platform.system() == "Windows"
-WINDOWS = sys.platform == "win32" # most stubs use this
+WINDOWS = sys.platform == "win32"
 
 # Terminal size
 

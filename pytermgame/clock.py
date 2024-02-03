@@ -25,4 +25,4 @@ def delay(event: EventLike, secs: float):
 
 # Convenient aliases
 wait = sleep = time.sleep
-gettime = time.time
+get_time = gettime = time.time

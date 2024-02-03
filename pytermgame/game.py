@@ -191,6 +191,8 @@ class Game:
         terminal.reset()
         scene.render()
 
+# Initialize ptg._active
+
 from . import _active
 _active.Game = Game
 _active.initialized = True
