@@ -10,7 +10,7 @@ from .sprites import Text, FText, Value, Counter
 from .surface import Surface
 
 # function-based
-from . import clock, event, key, terminal
+from . import clock, event, key, terminal, transition
 
 # terminal test
 

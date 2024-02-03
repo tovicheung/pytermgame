@@ -47,6 +47,7 @@ def disable_autowrap():
 # Cursor
 
 def goto(x: int, y: int):
+    """Noted: 1-based"""
     write(f"\033[{y};{x}H")
 
 def hide_cursor():
@@ -60,8 +61,12 @@ def home():
 
 # Clear
 
+def reset():
+    write("\033c")
+
 def clear():
     write("\033[2J")
+    home() # scroll so that dirty screen is pushed away
 
 def full_clear():
     # currently unused, may cause flickering

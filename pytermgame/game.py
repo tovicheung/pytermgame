@@ -11,9 +11,11 @@ import sys
 from . import terminal
 from .event import add_event, EventLike
 from .scene import Scene
+from . import transition as _transition
 
 if TYPE_CHECKING:
     from threading import Timer
+    from .transition import Transition
 
 if not terminal.WINDOWS:
     import termios
@@ -29,7 +31,7 @@ class Game:
     _active: Game | None = None
 
     def __init__(self,
-                fps: int | None = 20,
+                fps: int | None = 30,
                 alternate_screen: bool = True,
                 show_cursor: bool = False,
                 silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
@@ -171,6 +173,23 @@ class Game:
 
     def render(self):
         self.scene.rerender()
+
+    def switch_scene(self, scene: Scene, transition: Transition, ticks: int):
+        switched = False
+        for flags in transition(ticks):
+            if flags & _transition.F_SWITCH:
+                self.scene = scene
+                switched = True
+            if flags & _transition.F_RENDER:
+                self.scene.render(flush=False)
+            self.tick()
+        
+        if not switched:
+            self.scene = scene
+
+        terminal.clear()
+        terminal.reset()
+        scene.render()
 
 from . import _active
 _active.Game = Game
