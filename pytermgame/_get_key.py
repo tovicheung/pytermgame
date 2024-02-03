@@ -38,7 +38,7 @@ else:
         while True:
             r, w, x = select.select([sys.stdin], [], [], 0.0)
             if r:
-                key = os.read(fd, 1024).decode().strip()
+                key = os.read(fd, 1024).decode()
                 chars.append(key)
             else:
                 break
@@ -47,7 +47,7 @@ else:
         while len(chars):
             c1 = chars.pop(0)
 
-            if c1 != "\x1B":
+            if c1 != "\x1B" or len(chars) == 0:
                 keys.append(c1)
                 continue
 
