@@ -60,6 +60,15 @@ class Group:
             terminal.flush()
 
 class SpriteList(Group):
+    """List of sprites
+    
+    Differences from Group:
+    * sprites are not aware of being in a SpriteList
+        * therefore, spritelists MUST be destructed as soon as possible
+    * order is preserved
+        * eg. sprites are sorted by sprite.z    
+    """
+
     def __init__(self, sprites: Iterable[Sprite]):
         self.sprites = list(sprites)
 

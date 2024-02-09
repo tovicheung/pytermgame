@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Generator, Iterable
 from functools import wraps
 
 from .surface import Surface
@@ -13,7 +13,14 @@ if TYPE_CHECKING:
 
 DEBUG = True
 
-def active(f):
+def ensure_placed(f):
+    """Ensures that the method is called only after placing the sprite
+    
+    Attributes only available after placing:
+    * sprite._scene
+    * sprite._z
+    * sprite._coords (initially 0, 0)
+    """
     @wraps(f)
     def _new(self: Sprite, *args, **kwargs):
         if not self.placed:
@@ -24,7 +31,7 @@ def active(f):
     return _new
 
 class Sprite:
-    surf: Surface
+    surf: Surface # needs to be specified by subclasses
     group: Group | None = None
 
     def __init__(self):
@@ -44,8 +51,8 @@ class Sprite:
 
     def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
         if scene is None:
-            if Scene._creating is not None:
-                scene = Scene._creating
+            if Scene._active_context is not None:
+                scene = Scene._active_context
             else:
                 scene = _active.get_scene()
         self._scene = scene
@@ -80,7 +87,7 @@ class Sprite:
     def update(self):
         """called MANUALLY, likely from group.update()"""
 
-    @active
+    @ensure_placed
     def set_dirty(self):
         if self._dirty == 1:
             return
@@ -88,30 +95,24 @@ class Sprite:
         for sprite in self.get_movement_collisions():
             sprite.set_dirty()
 
-    @active
-    def get_collisions(self) -> list[Sprite]:
-        c = []
+    @ensure_placed
+    def get_collisions(self) -> Generator[Sprite, None, None]:
         for sprite in self._scene.sprites:
             if self.touching(sprite) and sprite is not self:
-                c.append(sprite)
-        return c
+                yield sprite
 
-    @active
-    def get_old_collisions(self) -> list[Sprite]:
-        c = []
+    @ensure_placed
+    def get_old_collisions(self) -> Generator[Sprite, None, None]:
         for sprite in self._scene.sprites:
             if self.was_touching(sprite) and sprite is not self:
-                c.append(sprite)
-        return c
+                yield sprite
     
-    @active
-    def get_movement_collisions(self) -> list[Sprite]:
+    @ensure_placed
+    def get_movement_collisions(self) -> Generator[Sprite, None, None]:
         """Get collisions of BOTH old and new coords"""
-        c = []
         for sprite in self._scene.sprites:
             if self.touching(sprite) or self.was_touching(sprite) and sprite is not self:
-                c.append(sprite)
-        return c
+                yield sprite
 
     @property
     def x(self):
@@ -193,8 +194,11 @@ class Sprite:
         self.hidden = False
         self.set_dirty()
 
-    @active
+    @ensure_placed
     def kill(self):
+        """For sprite to be truly killed, it should not be bound to any names.
+        Sprite.kill() is recommended to be called in Sprite.update(), so that it can be cleaned by Group.update()
+        """
         self.zombie = True
         self.render(flush=False, erase=True)
 
@@ -203,16 +207,15 @@ class Sprite:
         Called when it is safe to be removed from groups (not iterating)
         """
         # frees all references and destroyed by garbage collector
-        # tested with gc.get_referrers()
         for group in self._groups:
             group.remove(self)
         
         # prevent sprites from not being destroyed
-        if DEBUG: # important for performance control
+        if DEBUG: # important for performance
             import gc
             assert gc.get_referrers() == []
 
-    @active
+    @ensure_placed
     def was_touching(self, other: Sprite):
         if other.hidden:
             return False
@@ -226,7 +229,7 @@ class Sprite:
             return False
         return True
 
-    @active
+    @ensure_placed
     def touching(self, other: Sprite):
         if other.hidden:
             return False

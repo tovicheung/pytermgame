@@ -5,7 +5,7 @@ from .group import Group, SpriteList
 from . import terminal
 
 class Scene(Group):
-    _creating: Scene | None = None
+    _active_context: Scene | None = None
 
     def __init__(self):
         super().__init__()
@@ -22,6 +22,7 @@ class Scene(Group):
         return coords.d(self.offset)
     
     def get_dirty(self) -> Group:
+        # SpriteList is used because order is preserved! (sorted by sprite.z here)
         return SpriteList(sorted(filter(lambda sprite: sprite._dirty, self.sprites), key=lambda sprite: sprite.z))
     
     def rerender(self):
@@ -35,10 +36,10 @@ class Scene(Group):
         return len(self.sprites)
     
     def __enter__(self):
-        if Scene._creating is not None:
+        if Scene._active_context is not None:
             raise Exception("Cannot enter more than one scene")
-        Scene._creating = self
+        Scene._active_context = self
         return self
     
     def __exit__(self, typ, val, tb):
-        Scene._creating = None
+        Scene._active_context = None
