@@ -17,7 +17,7 @@ def active(f):
     @wraps(f)
     def _new(self: Sprite, *args, **kwargs):
         if not self.placed:
-            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it (by calling Sprite.placed())")
+            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it (by calling Sprite.place())")
         if self.zombie:
             raise RuntimeError(f"this sprite is dead (zombie, waiting to be garbage collected)")
         return f(self, *args, **kwargs)

@@ -7,7 +7,6 @@ import sys
 import os
 from random import randint
 
-# WINDOWS = platform.system() == "Windows"
 WINDOWS = sys.platform == "win32"
 
 # Terminal size
@@ -47,7 +46,7 @@ def disable_autowrap():
 # Cursor
 
 def goto(x: int, y: int):
-    """Noted: 1-based"""
+    """Note: 1-based"""
     write(f"\033[{y};{x}H")
 
 def hide_cursor():
@@ -68,7 +67,7 @@ def clear():
     write("\033[2J")
     home() # scroll so that dirty screen is pushed away
 
-def full_clear():
+def system_clear():
     # currently unused, may cause flickering
     os.system("cls" if os.name == "nt" else "clear")
 
