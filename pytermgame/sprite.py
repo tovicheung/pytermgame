@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Iterable
+from typing import TYPE_CHECKING, Generator
 from functools import wraps
 
 from .surface import Surface
@@ -242,3 +242,13 @@ class Sprite:
         if self.y + self.height <= other.y: # self at up
             return False
         return True
+
+def Object(surf: Surface):
+    """Fast singular sprite creator
+    
+    usage:
+    >>> myarrow = ptg.Object(ptg.Surface("--->"))
+    """
+    sprite = Sprite()
+    sprite.surf = surf
+    return sprite

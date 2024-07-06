@@ -5,7 +5,7 @@ from .coords import Coords
 from .game import Game
 from .group import Group
 from .scene import Scene
-from .sprite import Sprite
+from .sprite import Sprite, Object
 from .sprites import Text, FText, Value, Counter
 from .surface import Surface
 
