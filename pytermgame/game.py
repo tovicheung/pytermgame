@@ -139,7 +139,7 @@ class Game:
 
         type(self)._active = self
         self.ntick = -1
-        self.tick(force=True)
+        self.tick(timeless=True)
 
     def cleanup(self):
         for timer in self.timers: # must be done first (error may occur below and stop the cleanup process, leaving unkilled threads)

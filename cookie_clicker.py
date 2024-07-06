@@ -24,22 +24,20 @@ factories = (
 )
 
 with ptg.Game() as game:
-    main = game.scene
-
     NEWCOOKIE1 = ptg.event.USEREVENT + 1
     NEWCOOKIE2 = ptg.event.USEREVENT + 2
     NEWCOOKIE3 = ptg.event.USEREVENT + 3
     NEWCOOKIE4 = ptg.event.USEREVENT + 4
 
-    mycookie = Cookie().place(main, (2, 2))
-    ptg.Text("Press Space").place(main, (0, 8))
+    mycookie = Cookie().place((2, 2))
+    ptg.Text("Press Space").place((0, 8))
 
-    scoreboard = ptg.FText("You have {} cookies!", 0).place(main, (0, 0))
+    scoreboard = ptg.FText("You have {} cookies!", 0).place((0, 0))
     score = 0
 
-    ptg.Text("Use number keys").place(main, (20, 1))
+    ptg.Text("Use number keys").place((20, 1))
     for i, factory in enumerate(factories, start=1):
-        ptg.Text(f"Press [{i}] to buy a {factory[0]} using {factory[2]} cookies: {factory[1]} cps ").place(main, (20, i + 1))
+        ptg.Text(f"Press [{i}] to buy a {factory[0]} using {factory[2]} cookies: {factory[1]} cps ").place((20, i + 1))
     
 
     space_last_pressed = 0

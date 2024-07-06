@@ -95,4 +95,4 @@ with ptg.Game() as game:
     
     game.set_scene(end)
 
-    ptg.event.wait((ptg.event.KEYEVENT, ptg.key.SPACE))
+    ptg.event.wait_until((ptg.event.KEYEVENT, ptg.key.SPACE))
