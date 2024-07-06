@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TypeAlias
+from typing import TypeAlias, Sequence
 
 class Coords:
     # should be immutable
@@ -15,8 +15,8 @@ class Coords:
     def make(cls, obj: XY) -> Coords:
         if isinstance(obj, cls):
             return obj
-        if isinstance(obj, tuple):
-            assert len(obj) == 2, "Coordinate should be tuple with 2 integers"
+        if isinstance(obj, Sequence):
+            assert len(obj) == 2, "Coordinate should be sequence with 2 integers"
             try:
                 x = int(obj[0])
             except ValueError:

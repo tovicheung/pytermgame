@@ -27,26 +27,27 @@ Interval = tuple[EventLike, int]
 class Game:
     """Represents a game"""
 
-    # holds reference to currently active game
+    # reference to currently active game
     _active: Game | None = None
 
     def __init__(self,
-                fps: int | None = 30,
-                alternate_screen: bool = True,
-                show_cursor: bool = False,
-                silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
-                text_wrapping: bool = False,
-                clear_first: bool = False,
-                ):
-        """Initialize a game
-        Arguments:
+            fps: int | None = 30,
+            alternate_screen: bool = True,
+            show_cursor: bool = False,
+            silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
+            text_wrapping: bool = False,
+            clear_first: bool = False,
+            ):
+        """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
         - alternate_screen - whether to use an alternate terminal screen
         - show_cursor - whether to show the cursor
         - silent_errors - what errors should not be displayed
         - text_wrapping - whether to wrap overflow in terminal
-        
+        - clear_first - whether to clear the terminal before starting
         """
+
+        # Initialization options
         self.fps = fps
         self.alternate_screen = alternate_screen
         self.show_cursor = show_cursor
@@ -57,6 +58,7 @@ class Game:
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
 
+        # A game must have a scene at all times
         self.scene = Scene()
 
         self.last_tick = 0
@@ -70,21 +72,25 @@ class Game:
         self.cleanup()
         if typ in self.silent_errors:
             return True
+    
+    def is_active(self):
+        return self is type(self)._active 
         
     @classmethod
     def get_active(cls):
+        """Get the currently active game"""
         if cls._active is None:
             raise RuntimeError("Invalid call, no active game")
         return cls._active
     
-    # shouldn't be used ... ?
-
     @classmethod
     def get_scene(cls):
+        """Get the scene of the currently active game"""
         return cls.get_active().scene
     
     @classmethod
     def get_sprites(cls):
+        """Get the sprites of the scene of the currently active game"""
         return cls.get_scene().sprites
     
     def set_scene(self, scene: Scene):
@@ -94,7 +100,8 @@ class Game:
 
     def add_timer(self, timer: Timer):
         self.timers.append(timer)
-        timer.start()
+        if self.is_active():
+            timer.start()
 
     def add_interval(self, event: EventLike, ticks: int):
         self.intervals.append((event, ticks))
@@ -156,13 +163,13 @@ class Game:
 
     # Methods to be called each game loop
 
-    def tick(self, force=False):
+    def tick(self, timeless=False):
         # blocking unless force is set
 
         if self.fps is None:
             return
 
-        if not force:
+        if not timeless:
             next_tick = self.last_tick + 1 / self.fps
             while time.time() < next_tick:
                 pass

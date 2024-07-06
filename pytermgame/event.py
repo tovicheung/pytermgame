@@ -1,10 +1,20 @@
+from __future__ import annotations
+
 from typing import Any
 
 from ._get_key import get_keys
 
 class Event:
     __slots__ = ("type", "value")
+
     def __init__(self, type: int | tuple[int, int], value: Any = None):
+        """
+        Method 1:
+        >>> myevent = Event(typ, val)
+        
+        Method 2:
+        >>> myevent = Event((typ, val))
+        """
         if isinstance(type, tuple):
             self.type, self.value = type
         else:
@@ -24,7 +34,7 @@ class Event:
     def as_pair(self):
         return (self.type, self.value)
 
-    def __eq__(self, other: "EventLike"):
+    def __eq__(self, other: EventLike):
         if isinstance(other, int):
             # used as event == TYPE
             return self.is_type(other)
@@ -42,6 +52,8 @@ class Event:
         return self.type >= USEREVENT
 
 EventLike = int | tuple[int, Any] | Event
+# 2 == Event(type=2, value=None)
+# (2, False) == Event(type=2, value=False)
 
 EXIT = 1 # unused for now
 KEYEVENT = 2
@@ -56,6 +68,8 @@ queue: list[Event] = [] # should not be exposed
 def get():
     for key in get_keys():
         yield Event(KEYEVENT, key)
+    
+    # new events may be triggered when looping over get()
     queued = queue.copy()
     queue.clear()
     for event in queued:
@@ -66,8 +80,20 @@ def add_event(event: EventLike):
         event = Event(event)
     queue.append(event)
 
-def wait(event: EventLike):
+def wait_until(event: EventLike):
     while True:
         for e in get():
             if event == e:
                 return
+
+def gather_until(event: EventLike, include_this = True):
+    """Gather events until a certain event is triggered.
+    Returns the list of events gathered."""
+    saved = []
+    while True:
+        for e in get():
+            if event == e:
+                if include_this:
+                    saved.append(e)
+                return saved
+            saved.append(e)
