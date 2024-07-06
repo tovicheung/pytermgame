@@ -55,6 +55,9 @@ class Game:
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
 
+        # Don't compute every tick
+        self.spf = 1 / self.fps
+
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
 
@@ -170,7 +173,7 @@ class Game:
             return
 
         if not timeless:
-            next_tick = self.last_tick + 1 / self.fps
+            next_tick = self.last_tick + self.spf
             while time.time() < next_tick:
                 pass
         self.last_tick = time.time()

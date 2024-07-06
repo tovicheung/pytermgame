@@ -8,12 +8,15 @@ class Repeat(threading.Timer):
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
 
-def set_timer(event: EventLike, secs: float):
+def set_timer(event: EventLike, secs: float, as_interval = False):
     """Triggers an event every n seconds.
     Timers run on separate seconds."""
-    def _func():
-        add_event(event)
-    Game.get_active().add_timer(Repeat(interval=secs, function=_func))
+    if as_interval:
+        set_interval(event, round(secs * Game.get_active().fps))
+    else:
+        def _func():
+            add_event(event)
+        Game.get_active().add_timer(Repeat(interval=secs, function=_func))
 
 def set_interval(event: int, ticks: int):
     """Triggers an event every n ticks.
