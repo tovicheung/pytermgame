@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Generator
 from functools import wraps
 
-from .surface import Surface
+from .surface import Surface, SurfaceLike
 from . import terminal, _active
 from .coords import Coords, XY
 from .scene import Scene
@@ -36,8 +36,8 @@ class Sprite:
 
     def __init__(self):
         self._coords = Coords.ORIGIN
-        self._oldcoords = self._coords
-        self._dirty = 0
+        self._oldcoords = self._coords # for erasing object from screen
+        self._dirty = 0 # object requires rerender?
         self._ansi = "\033[m"
         self._groups: list[Group] = []
         self._scene: Scene
@@ -85,7 +85,7 @@ class Sprite:
         """
 
     def update(self):
-        """called MANUALLY, likely from group.update()"""
+        """called MANUALLY, often from group.update() or game.update()"""
 
     @ensure_placed
     def set_dirty(self):
@@ -136,6 +136,7 @@ class Sprite:
     
     def color_all(self, ansi: str):
         self._ansi = ansi
+        return self
 
     def render(self, flush=True, erase=False, _surf=None):
         self._dirty = 0
@@ -173,6 +174,16 @@ class Sprite:
     def goto(self, x, y):
         self._coords = Coords(x, y)
         self.set_dirty()
+
+    def bound(self, x_min: int | None = None, x_max: int | None = None, y_min: int | None = None, y_max: int | None = None):
+        if x_min is not None and self.x < x_min:
+            self.set_x(x_min)
+        if x_max is not None and self.x > x_max:
+            self.set_x(x_max)
+        if y_min is not None and self.y < y_min:
+            self.set_y(y_min)
+        if y_max is not None and self.y > y_max:
+            self.set_y(y_max)
 
     def move(self, dx, dy):
         self._coords = self._coords.dx(dx).dy(dy)
@@ -243,12 +254,13 @@ class Sprite:
             return False
         return True
 
-def Object(surf: Surface):
-    """Fast singular sprite creator
+def Object(surf: SurfaceLike):
+    """Short singular sprite creator
     
     usage:
     >>> myarrow = ptg.Object(ptg.Surface("--->"))
+    >>> myarrow = ptg.Object("--->")
     """
     sprite = Sprite()
-    sprite.surf = surf
+    sprite.surf = Surface(surf)
     return sprite

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from typing import TypeAlias
+
 class Surface:
     """Represents a 2D string surface"""
 
-    def __init__(self, string: str):
+    def __init__(self, string: str | Surface):
         self.data = string.splitlines()
 
     @classmethod
@@ -42,3 +46,5 @@ class Surface:
         for line in self.lines():
             string += " " * len(line) + "\n"
         return type(self).strip(string)
+
+SurfaceLike: TypeAlias = Surface | str
