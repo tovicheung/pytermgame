@@ -36,6 +36,7 @@ class Game:
                 show_cursor: bool = False,
                 silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
                 text_wrapping: bool = False,
+                clear_first: bool = False,
                 ):
         """Initialize a game
         Arguments:
@@ -51,6 +52,7 @@ class Game:
         self.show_cursor = show_cursor
         self.silent_errors = silent_errors
         self.text_wrapping = text_wrapping
+        self.clear_first = clear_first
 
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
@@ -121,6 +123,9 @@ class Game:
             terminal.enable_autowrap()
         else:
             terminal.disable_autowrap()
+        
+        if self.clear_first:
+            terminal.clear()
 
         for timer in self.timers:
             timer.start()
@@ -180,9 +185,13 @@ class Game:
             if flags & _transition.F_SWITCH:
                 self.scene = scene
                 switched = True
+            if flags & _transition.F_CLEAR:
+                terminal.clear()
             if flags & _transition.F_RENDER:
-                self.scene.render(flush=False)
+                self.scene.render(flush=True)
             self.tick()
+            if flags & _transition.F_RENDER_AFTER_TICK:
+                self.scene.render(flush=True)
         
         if not switched:
             self.scene = scene

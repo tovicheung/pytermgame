@@ -16,25 +16,25 @@ Transition: TypeAlias = Callable[Concatenate[int, P], Generator[int, None, None]
 F_NONE = 0
 F_SWITCH = 1
 F_RENDER = 2
+F_RENDER_AFTER_TICK = 4
+F_CLEAR = 8
 
 def fill(ticks: int, char: str = " ", ansi: str = "\033[7m"):
     for _ in range(ticks):
         term.home()
-        term.write(ansi)
-        term.write(((term.width() * char + "\n") * term.height()).rstrip("\n"))
+        term.write(ansi + ((term.width() * char + "\n") * term.height()).rstrip("\n"))
         term.flush()
         yield F_NONE
 
 def wipe(ticks: int, char: str = " ", ansi: str = "\033[7m"):
     mid = ticks // 2
-    for tick in range(ticks):
+    for tick in range(mid):
         width = term.width()
         
-        realx = round(width - width * 2 / ticks * tick)
-        x = max(realx, 0)
-        w = width - abs(realx)
+        x = round(width - width / mid * tick)
+        w = width - x
 
-        if realx < 0:
+        if x < 0:
             term.reset()
                 
         for y in range(term.height()):
@@ -43,9 +43,18 @@ def wipe(ticks: int, char: str = " ", ansi: str = "\033[7m"):
         
         term.flush()
 
-        if tick == mid:
-            yield F_SWITCH
-        elif tick > mid:
-            yield F_RENDER
-        else:
-            yield F_NONE
+        yield F_NONE
+    
+    yield F_SWITCH
+
+    for tick in range(ticks - mid):
+        w = round(width - width / (ticks - mid) * tick)
+
+        for y in range(term.height()):
+            term.goto(1, y + 1)
+            term.write(ansi + char * w + "\033[m" + " " * w)
+        
+        term.flush()
+
+        yield F_NONE
+

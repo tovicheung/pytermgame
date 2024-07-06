@@ -43,9 +43,8 @@ class Line(ptg.Sprite):
             self.set_y(myjet.y)
 
 with ptg.Game() as game:
-    main = game.scene
 
-    # Custom event
+    # Custom events
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
 

@@ -1,6 +1,6 @@
 import pytermgame as ptg
 
-with ptg.Game(alternate_screen=False, fps=30) as game:
+with ptg.Game(alternate_screen=False, fps=30, clear_first=True) as game:
     ptg.Text("hello world").place((5, 5))
     game.render()
     with ptg.Scene() as scene2:
