@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 DEBUG = True
 
+LEFT = 0
+RIGHT = 1
+
 def ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
     
@@ -36,16 +39,22 @@ class Sprite:
 
     def __init__(self):
         self._coords = Coords.ORIGIN
-        self._oldcoords = self._coords # for erasing object from screen
         self._dirty = 0 # object requires rerender?
         self._ansi = "\033[m"
         self._groups: list[Group] = []
         self._scene: Scene
 
+        # old = last rendered
+        self._oldcoords = self._coords
+        self._oldsurf: Surface # set at .place()
+
         # user-accessible attributes
         self.placed = False
         self.hidden = False
         self.zombie = False
+
+        # modifiers
+        self.align_horizontal = LEFT
 
         self.init()
 
@@ -70,6 +79,7 @@ class Sprite:
 
         # set later so that coords can be customized at on_placed()
         self._oldcoords = self._coords
+        self._oldsurf = self.surf
         self._dirty = 1 # initial render
 
         return self # for convenient assignment: name = Sprite(...).place(...)
@@ -137,9 +147,14 @@ class Sprite:
     def color_all(self, ansi: str):
         self._ansi = ansi
         return self
-
-    def render(self, flush=True, erase=False, _surf=None):
-        self._dirty = 0
+    
+    def apply_modifiers(self):
+        """Modifies coords and surfs, returns whether an erase of the old surf is needed"""
+        if self.align_horizontal == RIGHT and self.surf.width != self._oldsurf.width:
+            self._coords = self._coords.dx(-(self.surf.width - self._oldsurf.width))
+            self._render(flush=False, erase=True, _surf=self._oldsurf)
+    
+    def _render(self, flush=True, erase=False, _surf=None):
 
         if self.hidden:
             erase = True
@@ -168,8 +183,17 @@ class Sprite:
 
         if flush:
             terminal.flush() # flush at once, not every line
+
+
+    def render(self, flush=True, erase=False, _surf=None):
+        self._dirty = 0
+
+        self.apply_modifiers()
+        
+        self._render(flush, erase, _surf)
         
         self._oldcoords = self._coords
+        self._oldsurf = self.surf
 
     def goto(self, x, y):
         self._coords = Coords(x, y)
@@ -253,6 +277,10 @@ class Sprite:
         if self.y + self.height <= other.y: # self at up
             return False
         return True
+    
+    def align_right(self):
+        self.align_horizontal = RIGHT
+        return self
 
 def Object(surf: SurfaceLike):
     """Short singular sprite creator

@@ -64,9 +64,9 @@ class Game:
         self.intervals: list[Interval] = []
 
         self.has_debugger = False
-        self.debugger: Debugger = None
+        self.debugger: Debugger | None = None
         self._block_next_tick = False
-        self._block_key: str = None
+        self._block_key: str | None = None
 
         # A game must have a scene at all times
         self.scene = Scene()
@@ -183,12 +183,12 @@ class Game:
 
         if self._block_next_tick:
             self._block_next_tick = False
-            self.debugger.block()
+            self.debugger.block() # type: ignore
         
         if self.has_debugger and self._block_key is not None:
             for key in event.get_keys():
                 if key == self._block_key:
-                    self.debugger.block()
+                    self.debugger.block() # type: ignore
                 else:
                     event.queue.append((event.KEYEVENT, key))
 
@@ -196,7 +196,8 @@ class Game:
             if self.ntick % interval[1] == 0:
                 add_event(interval[0])
 
-        if self.fps is None:
+        if self.fps is None or self.spf is None:
+            # self.spf is None  is here only for type checkers
             return
 
         if not timeless:

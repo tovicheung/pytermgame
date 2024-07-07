@@ -7,7 +7,7 @@ from ._get_key import get_keys
 class Event:
     __slots__ = ("type", "value")
 
-    def __init__(self, type: int | tuple[int, int], value: Any = None):
+    def __init__(self, type: int | tuple[int, int] | Event, value: Any = None):
         """
         Method 1:
         >>> myevent = Event(typ, val)
@@ -15,7 +15,10 @@ class Event:
         Method 2:
         >>> myevent = Event((typ, val))
         """
-        if isinstance(type, tuple):
+        if isinstance(type, Event):
+            self.type = type.type
+            self.value = type.value
+        elif isinstance(type, tuple):
             self.type, self.value = type
         else:
             self.type = type
@@ -63,7 +66,7 @@ MOUSESCROLLUP = 5 # unused for now
 MOUSESCROLLDOWN = 6 # unused for now
 USEREVENT = 31
 
-queue: list[Event] = [] # should not be exposed
+queue: list[EventLike] = [] # should not be exposed
 
 def get():
     for key in get_keys():
@@ -73,7 +76,9 @@ def get():
     queued = queue.copy()
     queue.clear()
     for event in queued:
-        yield event
+        yield Event(event)
+
+_get = get
 
 def add_event(event: EventLike):
     if not isinstance(event, Event):

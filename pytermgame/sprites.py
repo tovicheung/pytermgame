@@ -17,13 +17,10 @@ class FText(Sprite):
     """Fstring display
     
     Example
-    ```python
-    counter = FText("You have {} points").place(5, 5)
-    ...
-    counter.format(6) # -> You have 6 points
-    counter.format(7) # -> You have 7 points
-    counter.format(8) # -> You have 8 points
-    ```
+    >>> counter = FText("You have {} points").place(5, 5)
+    >>> counter.format(6) # -> You have 6 points
+    >>> counter.format(7) # -> You have 7 points
+    >>> counter.format(8) # -> You have 8 points
 
     """
 
@@ -39,8 +36,8 @@ class FText(Sprite):
         self._dirty = 1
 
     def render(self, flush=True, erase=False):
-        super().render(flush, True, _surf=self._oldsurf)
-        super().render(flush, erase)
+        super().render(flush=flush, erase=True, _surf=self._oldsurf)
+        super().render(flush=flush, erase=erase)
 
 # currently unused, this descriptor may replace Value.value in the future
 class _Value(Generic[_T]):

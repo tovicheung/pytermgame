@@ -34,16 +34,17 @@ class Debugger(Sprite):
         term.clear()
         _active.get_scene().render()
     
-    def _unused_block_on_key(self, key: str):
+    def block_on_key(self, key: str):
         from . import event
         event._get = event.get
         def get():
             for ev in event._get():
                 if ev == (event.KEYEVENT, key):
-                    self.block()
+                    _active.get_active()._block_next_tick = True
+                yield ev
         event.get = get
         return self
     
-    def block_on_key(self, key: str):
+    def _unused_block_on_key(self, key: str):
         _active.get_active()._block_key = key
         return self
