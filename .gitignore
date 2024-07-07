@@ -2,3 +2,4 @@ __pycache__/
 pytermgame.egg-info/
 dist
 .ignore/
+.vscode/
