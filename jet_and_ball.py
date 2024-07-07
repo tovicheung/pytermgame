@@ -1,8 +1,12 @@
 """
 pytermgame example: jet and ball
-Use up and down arrow keys to control your jet
-Dodge the balls
-The grey line is for alignment
+
+Controls:
+    up/down arrow keys -> jet movement
+    h -> hide for 3 seconds
+
+Goal:
+    Dodge the balls and gain points
 """
 
 import pytermgame as ptg

@@ -1,7 +1,12 @@
 """
 pytermgame example: cookie clicker
-Press space, number keys to buy factories
-(Instructions in game)
+
+Controls:
+    space -> get 1 cookie
+    number keys -> buy factories
+
+Goal:
+    Get cookies
 """
 
 import pytermgame as ptg
@@ -37,7 +42,7 @@ with ptg.Game() as game:
 
     ptg.Text("Use number keys").place((20, 1))
     for i, factory in enumerate(factories, start=1):
-        ptg.Text(f"Press [{i}] to buy a {factory[0]} using {factory[2]} cookies: {factory[1]} cps ").place((20, i + 1))
+        ptg.Text(f"[{i}] Buy a {factory[0]} ({factory[1]} cks/s)  Cost: {factory[2]} cks").place((20, i + 1))
     
 
     space_last_pressed = 0

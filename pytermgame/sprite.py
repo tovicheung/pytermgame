@@ -262,5 +262,5 @@ def Object(surf: SurfaceLike):
     >>> myarrow = ptg.Object("--->")
     """
     sprite = Sprite()
-    sprite.surf = Surface(surf)
+    sprite.surf = Surface.coerce(surf)
     return sprite

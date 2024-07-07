@@ -5,8 +5,17 @@ from typing import TypeAlias
 class Surface:
     """Represents a 2D string surface"""
 
-    def __init__(self, string: str | Surface):
+    def __init__(self, string: str):
         self.data = string.splitlines()
+    
+    @classmethod
+    def coerce(self, obj: SurfaceLike) -> Surface:
+        """Convert SurfaceLike to Surface"""
+        if isinstance(obj, Surface):
+            return obj
+        if isinstance(obj, str):
+            return type(self)(obj)
+        raise TypeError(f"Cannot convert {type(obj).__name__!r} object to Surface")
 
     @classmethod
     def blank(cls, width: int, height: int):

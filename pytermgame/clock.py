@@ -12,6 +12,8 @@ def set_timer(event: EventLike, secs: float, as_interval = False):
     """Triggers an event every n seconds.
     Timers run on separate seconds."""
     if as_interval:
+        if Game.get_active().fps is None:
+            raise Exception("Cannot set timers using intervals when fps=None (ie as fast as possible)")
         set_interval(event, round(secs * Game.get_active().fps))
     else:
         def _func():

@@ -22,8 +22,9 @@ Unfortunately i am too broke to afford a mac
 Examples are included in the repo root:
 - `jet_and_ball.py`
 - `cookie_clicker.py`
+- `pong.py`
 
-Instructions are in the file of the example (docstrings)
+Playing instructions are included in the examples
 
 ## Future plans
 - cross-platform support for more keys

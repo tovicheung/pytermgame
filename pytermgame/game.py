@@ -8,7 +8,9 @@ from typing import TYPE_CHECKING
 import time
 import sys
 
-from . import terminal
+from .debugger import Debugger
+
+from . import terminal, event
 from .event import add_event, EventLike
 from .scene import Scene
 from . import transition as _transition
@@ -56,10 +58,15 @@ class Game:
         self.clear_first = clear_first
 
         # Don't compute every tick
-        self.spf = 1 / self.fps
+        self.spf = None if self.fps is None else 1 / self.fps
 
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
+
+        self.has_debugger = False
+        self.debugger: Debugger = None
+        self._block_next_tick = False
+        self._block_key: str = None
 
         # A game must have a scene at all times
         self.scene = Scene()
@@ -163,11 +170,31 @@ class Game:
             pass
         finally:
             self.cleanup()
+    
+    def get_debugger(self):
+        self.debugger = Debugger().place((0, 0))
+        self.has_debugger = True
+        return self.debugger
 
     # Methods to be called each game loop
 
     def tick(self, timeless=False):
         # blocking unless force is set
+
+        if self._block_next_tick:
+            self._block_next_tick = False
+            self.debugger.block()
+        
+        if self.has_debugger and self._block_key is not None:
+            for key in event.get_keys():
+                if key == self._block_key:
+                    self.debugger.block()
+                else:
+                    event.queue.append((event.KEYEVENT, key))
+
+        for interval in self.intervals:
+            if self.ntick % interval[1] == 0:
+                add_event(interval[0])
 
         if self.fps is None:
             return
@@ -178,10 +205,6 @@ class Game:
                 pass
         self.last_tick = time.time()
         self.ntick += 1
-
-        for interval in self.intervals:
-            if self.ntick % interval[1] == 0:
-                add_event(interval[0])
 
     def update(self):
         self.scene.update()

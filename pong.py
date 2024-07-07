@@ -1,3 +1,9 @@
+"""
+pytermgame example: pong
+
+currently it's just a ball bouncing around
+"""
+
 import pytermgame as ptg
 import random
 
@@ -18,9 +24,15 @@ class Ball(ptg.Sprite):
         if self.y > ptg.terminal.height() - 1:
             self.vy = -abs(self.vy)
         
+        # Live data for debugging
+        debugger.field("vx", self.vx).field("vy", self.vy)
+        
         self.move(self.vx, self.vy)
 
-with ptg.Game(fps=60) as game:
+with ptg.Game(fps=None) as game:
+    # Debugger setup - press d to activate
+    debugger = game.get_debugger().block_on_key("d")
+
     # pad = ptg.Object("*\n*\n*\n*").place((ptg.terminal.width() - 2, ptg.terminal.height() // 2))
 
     ball = Ball().place((5, 6))
