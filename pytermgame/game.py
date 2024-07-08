@@ -27,7 +27,18 @@ if not terminal.WINDOWS:
 Interval = tuple[EventLike, int]
 
 class Game:
-    """Represents a game"""
+    """The class that ties everything together.
+    
+    What a Game does:
+    - set up terminal for a game
+    - attached by an active scene
+    - attached by intervals and timers
+    - blocks (ticks) to maintain fps via Game.tick()
+    
+    What a Game can do for you:
+    - calls .update() on the active scene via Game.update()
+    - renders the terminal via Game.render() which just calls Scene.rerender()
+    """
 
     # reference to currently active game
     _active: Game | None = None
@@ -63,7 +74,6 @@ class Game:
         self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
 
-        self.has_debugger = False
         self.debugger: Debugger | None = None
         self._block_next_tick = False
         self._block_key: str | None = None
@@ -166,26 +176,32 @@ class Game:
         self.start()
         try:
             f()
-        except self.silent_errors as e:
+        except self.silent_errors:
             pass
         finally:
             self.cleanup()
     
     def get_debugger(self):
         self.debugger = Debugger().place((0, 0))
-        self.has_debugger = True
         return self.debugger
 
     # Methods to be called each game loop
 
     def tick(self, timeless=False):
-        # blocking unless force is set
+        """Blocks the game until one tick has passed.
+        Does not wait if timeless is true
+        
+        Things that happen regardless of timeless:
+        - checks if debugger needs to interrupt
+        - process intervals (tick-based recurring events)
+        - increase tick count
+        """
 
         if self._block_next_tick:
             self._block_next_tick = False
             self.debugger.block() # type: ignore
         
-        if self.has_debugger and self._block_key is not None:
+        if self.debugger is not None and self._block_key is not None:
             for key in event.get_keys():
                 if key == self._block_key:
                     self.debugger.block() # type: ignore
@@ -208,6 +224,11 @@ class Game:
         self.ntick += 1
 
     def update(self):
+        """Not strictly required to call each game loop.
+        This method is only a shorthand for calling .update() on all sprites in the active scene.
+        If your sprites do not use .update(), there is no need to call this method.
+        See Sprite.update() for more details.
+        """
         self.scene.update()
 
     def render(self):

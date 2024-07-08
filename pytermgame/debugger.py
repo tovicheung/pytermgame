@@ -4,6 +4,8 @@ from . import terminal as term
 from . import _active
 
 class Debugger(Sprite):
+    # Debuggers are meant to be ugly
+
     surf = Surface("No debug info yet")
 
     def init(self):

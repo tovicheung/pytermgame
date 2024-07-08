@@ -34,6 +34,15 @@ def ensure_placed(f):
     return _new
 
 class Sprite:
+    """
+    States a sprite can be in
+    - abstract: sprite is not attached to a scene
+    - placed: sprite is attached to a scene
+    - zombie: sprite is no longer on screen, but object still exists in memory
+
+    The respective methods are .__init__(), .place(), and .kill().
+    """
+
     surf: Surface # needs to be specified by subclasses
     group: Group | None = None
 
@@ -59,6 +68,14 @@ class Sprite:
         self.init()
 
     def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
+        """After placing a sprite, it:
+        - is attached to a scene
+        - has XYZ coordinates on the scene
+        - calls .on_placed(), which can be overriden by subclasses freely
+        - unlocks methods such as .move()
+        - can be killed via .kill()
+        """
+
         if scene is None:
             if Scene._active_context is not None:
                 scene = Scene._active_context
@@ -95,7 +112,9 @@ class Sprite:
         """
 
     def update(self):
-        """called MANUALLY, often from group.update() or game.update()"""
+        """called MANUALLY, often from group.update() or game.update()
+        Users are free to customize the behaviour of .update() in their sprites.
+        """
 
     @ensure_placed
     def set_dirty(self):
@@ -231,22 +250,23 @@ class Sprite:
 
     @ensure_placed
     def kill(self):
-        """For sprite to be truly killed, it should not be bound to any names.
-        Sprite.kill() is recommended to be called in Sprite.update(), so that it can be cleaned by Group.update()
+        """Set the sprite as a zombie and erases it from the scene.
+    
+        Zombies are truly killed in Group.update() via Sprite._kill() (see below)
+        Therefore, it is recommended to use Sprite.kill() in Sprite.update()
         """
         self.zombie = True
         self.render(flush=False, erase=True)
 
     def _kill(self):
-        """The only method that should be called as a zombie
-        Called when it is safe to be removed from groups (not iterating)
-        """
+        """Truly kills a sprite, should only call as zombie."""
+
         # frees all references and destroyed by garbage collector
         for group in self._groups:
             group.remove(self)
         
-        # prevent sprites from not being destroyed
-        if DEBUG: # important for performance
+        # prevent sprites from not being destroyed (important for performance)
+        if DEBUG:
             import gc
             assert gc.get_referrers() == []
 

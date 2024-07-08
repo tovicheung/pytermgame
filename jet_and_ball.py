@@ -49,23 +49,31 @@ class Line(ptg.Sprite):
 with ptg.Game() as game:
 
     # Custom events
+
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
 
     ptg.clock.set_interval(NEWBALL, 5)
 
+    # Sprites
+
     myline = Line().place((0, 0))
 
-    # Text
     ptg.Text("Score:").place((0, 1))
     score = ptg.Counter(0).place((7, 1))
     ptg.Text("Dodge the balls!").place((0, 0))
 
-    # Jet
     myjet = ptg.Object(ptg.Surface("--->")).place((4, 4))
 
+    # Pre-load another scene using context managers
+
+    with ptg.Scene() as end:
+        ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place()
+
     # Main game loop
+
     running = True
+
     while running:
         for event in ptg.event.get():
             if event.is_key(ptg.key.UP):
@@ -93,9 +101,6 @@ with ptg.Game() as game:
         game.update() # calls update() on every sprite
         game.render() # calls render() on appropriate sprites
         game.tick() # wait for next tick
-
-    with ptg.Scene() as end:
-        ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place()
     
     game.set_scene(end)
 

@@ -42,6 +42,12 @@ class Group:
     # Sprite operations
     
     def update(self):
+        """Calls .update() on sprites and kills zombies
+
+        Therefore, there are two situations to call Group.update() in every game loop:
+        1. your implement Sprite.update() in your sprites
+        2. you kill your sprites
+        """
         kills: list[Sprite] = []
         for sprite in self:
             sprite.update()
@@ -63,10 +69,9 @@ class SpriteList(Group):
     """List of sprites
     
     Differences from Group:
-    * sprites are not aware of being in a SpriteList
-        * therefore, spritelists MUST be destructed as soon as possible
-    * order is preserved
-        * eg. sprites are sorted by sprite.z    
+    - sprites are not aware of being in a SpriteList
+        - therefore, spritelists must be destructed as soon as possible
+    - order is preserved
     """
 
     def __init__(self, sprites: Iterable[Sprite]):

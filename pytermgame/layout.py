@@ -25,6 +25,12 @@ def left():
 def right():
     return terminal.width() - 1
 
+def top():
+    return 0
+
+def bottom():
+    return terminal.height() - 1
+
 class origin(Enum):
     left = "left"
     right = "right"
@@ -38,4 +44,3 @@ BOTTOMLEFT: Origin = (origin.bottom, origin.left)
 TOPRIGHT: Origin = (origin.top, origin.right)
 BOTTOMRIGHT: Origin = (origin.bottom, origin.right)
 CENTER: Origin = (origin.center, origin.center)
-
