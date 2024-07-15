@@ -1,7 +1,14 @@
-from .sprite import Sprite
-from .surface import Surface
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from . import terminal as term
 from . import _active
+from .sprite import Sprite
+from .surface import Surface
+
+if TYPE_CHECKING:
+    from .game import Game
 
 class _dummy:
     def __getattribute__(self, name):
@@ -19,6 +26,10 @@ class Debugger(Sprite):
     def init(self):
         self.data = {}
         self.active = True
+    
+    def hook(self, game: Game):
+        game.debugger = self
+        return self
 
     def field(self, key, value):
         self.data[key] = value

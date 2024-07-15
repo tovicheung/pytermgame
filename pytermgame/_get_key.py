@@ -1,8 +1,8 @@
 # Apdated from the readchar module
 
-from .terminal import WINDOWS
+import sys
 
-if WINDOWS:
+if sys.platform == "win32":
     import msvcrt
     def _getchar():
         if msvcrt.kbhit():
@@ -27,7 +27,6 @@ if WINDOWS:
             keys.append(_getkey())
         return keys
 else:
-    import sys
     import os
     import select
     

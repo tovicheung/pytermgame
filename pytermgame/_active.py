@@ -11,8 +11,8 @@ However, functions in this submodule should not be called directly upon importin
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from functools import wraps
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .game import Game as _GameType

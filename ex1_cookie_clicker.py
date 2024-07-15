@@ -69,7 +69,7 @@ with ptg.Game() as game:
                         
                         # Here, we can use as_interval to prevent spawning many threads
                         # no difference because 1 sec = 30 ticks (not decimal ticks)
-                        ptg.clock.set_timer(ptg.event.USEREVENT + num, 1, as_interval = True)
+                        ptg.clock.set_interval(ptg.event.USEREVENT + num, secs=1)
             # using ints as event types lets it encode additional information
             elif event.is_user():
                 score += factories[event.type - ptg.event.USEREVENT - 1][1]

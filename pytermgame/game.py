@@ -4,27 +4,26 @@ This module contains the Game class, which controls the entire game.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+from typing import TYPE_CHECKING, TypeAlias
 import time
 import sys
 
+from . import terminal, event, transition as _transition
 from .debugger import Debugger
-
-from . import terminal, event
 from .event import add_event, EventLike
 from .scene import Scene
-from . import transition as _transition
 
 if TYPE_CHECKING:
     from threading import Timer
     from .transition import Transition
 
-if not terminal.WINDOWS:
+if sys.platform != "win32":
     import termios
     import fcntl
     import os
 
-Interval = tuple[EventLike, int]
+Interval: TypeAlias = tuple[EventLike, int]
 
 class Game:
     """The class that ties everything together.

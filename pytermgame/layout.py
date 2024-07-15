@@ -1,8 +1,3 @@
-"""ptg.layout
-
-This module provides helpful functions for placing sprites on screen.
-"""
-
 # CURRENTLY UNUSED, FOR FUTURE + TESTING
 
 from typing import TypeAlias

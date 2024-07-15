@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from . import terminal
 from .coords import Coords, XY
 from .group import Group, SpriteList
-from . import terminal
 
 class Scene(Group):
     """A scene is essentially a group of sprites with some additional functionality."""

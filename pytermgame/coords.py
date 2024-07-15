@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TypeAlias, Sequence
 from fractions import Fraction
+from typing import TypeAlias, Sequence
 
 class Coords:
     # should be immutable

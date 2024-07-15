@@ -46,17 +46,24 @@ class Tile(ptg.Sprite):
 
 with ptg.Game(fps=30) as game:
 
-    debugger = ptg.Debugger().place((0, ptg.terminal.height() - 1)).block_on_key("d")
+    # Setup debugger
+
+    debugger = ptg.Debugger() \
+                .place((0, ptg.terminal.height() - 1)) \
+                .hook(game) \
+                .block_on_key("d")
 
     ball = Ball().place((ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2))
     
     pad = ptg.Object("#" * 20).place((ptg.terminal.width() // 2, ptg.terminal.height() - 3))
 
+    # Generate tiles
+
     for y in range(3):
         for x in range(y * 2 % Tile.surf.width, ptg.terminal.width(), Tile.surf.width):
             Tile().place((x, y))
     
-    # Pre-render game over scene
+    # Setup win/lose scenes
 
     with ptg.Scene() as game_over:
         ptg.Text("Game Over - Press space to exit").place((0, ptg.terminal.height() // 2))
@@ -67,12 +74,12 @@ with ptg.Game(fps=30) as game:
     while game.loop():
         for event in ptg.event.get():
             if event.is_key(ptg.key.LEFT):
-                pad.move(-4, 0)
+                pad.move(-6, 0)
             if event.is_key(ptg.key.RIGHT):
-                pad.move(4, 0)
+                pad.move(6, 0)
 
         # If you want to cheat:
-        # pad.set_x(ball.x - pad.width // 2)
+        pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()
@@ -83,4 +90,5 @@ with ptg.Game(fps=30) as game:
         game.set_scene(game_over)
     else:
         game.set_scene(you_won)
+
     ptg.event.wait_until((ptg.event.KEYEVENT, ptg.key.SPACE))

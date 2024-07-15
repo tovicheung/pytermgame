@@ -1,6 +1,9 @@
-from .terminal import WINDOWS
+import sys
 
 from . import _key_win, _key_posix
+from .terminal import WINDOWS
+
+# Check if _key_win and _key_posix entries match
 
 if _key_win.__dict__.keys() != _key_posix.__dict__.keys():
     win = set(filter(lambda s: s[0] != "_", _key_win.__dict__.keys()))
@@ -9,12 +12,12 @@ if _key_win.__dict__.keys() != _key_posix.__dict__.keys():
     diffposix = posix.difference(win)
     raise AssertionError(f"_key_win and _key_posix have different entries\nwin - posix: {diffwin}\nposix - win: {diffposix}")
 
-if WINDOWS:
+if sys.platform == "win32":
     from ._key_win import *
 else:
     from ._key_posix import *
 
-# Common
+# Common entires across windows and posix
 
 CR = "\r"
 LF = "\n"

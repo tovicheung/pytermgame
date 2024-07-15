@@ -1,8 +1,8 @@
 # One-trick ponies that may come in handy
 # Needs to be loaded separately via  from pytermgame import additional
 
-from .game import Game
 from . import terminal as term
+from .game import Game
 from .sprites import FText
 
 def require_termsize(min_width, min_height):
