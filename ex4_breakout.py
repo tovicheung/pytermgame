@@ -65,7 +65,7 @@ with ptg.Game(fps=30) as game:
     # Setup win/lose scenes
 
     with ptg.Scene() as game_over:
-        ptg.Text("Game Over - Press space to exit").place((0, ptg.terminal.height() // 2))
+        ptg.Text("Game over - Press space to exit").place((0, ptg.terminal.height() // 2))
 
     with ptg.Scene() as you_won:
         ptg.Text("You won - Press space to exit").place((0, ptg.terminal.height() // 2))
