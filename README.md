@@ -25,7 +25,7 @@ pip install .
 - cross-platform key event reading
 
 > [!NOTE]
-> This is not a full-fledged game engine, but more of a proof of concept of terminal-based game engines.
+> This is not a full-fledged game engine, but more of an experiment to create terminal game engines
 
 ## Tested on
 - Windows 10 & 11
@@ -35,9 +35,10 @@ Unfortunately i am too broke to afford a mac
 
 ## Examples
 Examples are included in the repo root:
-- `jet_and_ball.py`
-- `cookie_clicker.py`
-- `pong.py`
+- `ex1_jet_and_ball.py`
+- `ex2_cookie_clicker.py`
+- `ex3_pong.py`
+- `ex4_breakout.py`
 
 Playing instructions are included in the examples.
 
