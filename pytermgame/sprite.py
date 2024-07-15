@@ -1,22 +1,25 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator
+from fractions import Fraction
+from math import floor
+from typing import Generator
 from functools import wraps
-
+from typing import Iterable
 from .surface import Surface, SurfaceLike
 from . import terminal, _active
 from .coords import Coords, XY
 from .scene import Scene
-
-if TYPE_CHECKING:
-    from .group import Group
+from .group import Group
+from .collidable import Collidable
 
 DEBUG = True
 
-LEFT = 0
-RIGHT = 1
+UP = TOP = 1
+DOWN = BOTTOM = 2
+LEFT = 4
+RIGHT = 8
 
-def ensure_placed(f):
+def _ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
     
     Attributes only available after placing:
@@ -29,11 +32,19 @@ def ensure_placed(f):
         if not self.placed:
             raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it (by calling Sprite.place())")
         if self.zombie:
-            raise RuntimeError(f"this sprite is dead (zombie, waiting to be garbage collected)")
+            raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is dead (zombie, waiting to be garbage collected)")
         return f(self, *args, **kwargs)
     return _new
 
-class Sprite:
+def _iter_sprites(sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
+    # technically Group is a subclass of Iterable[Sprite]
+    if isinstance(sprite_or_sprites, Collidable):
+        yield sprite_or_sprites
+        return
+    for x in sprite_or_sprites:
+        yield from _iter_sprites(x)
+
+class Sprite(Collidable):
     """
     States a sprite can be in
     - abstract: sprite is not attached to a scene
@@ -43,12 +54,15 @@ class Sprite:
     The respective methods are .__init__(), .place(), and .kill().
     """
 
-    surf: Surface # needs to be specified by subclasses
+    # subclasses must specify the surface
+    surf: Surface
+
+    # if set to a Group(), automatically add instances to the group
     group: Group | None = None
 
     def __init__(self):
         self._coords = Coords.ORIGIN
-        self._dirty = 0 # object requires rerender?
+        self._dirty = False # object requires rerender?
         self._ansi = "\033[m"
         self._groups: list[Group] = []
         self._scene: Scene
@@ -56,6 +70,8 @@ class Sprite:
         # old = last rendered
         self._oldcoords = self._coords
         self._oldsurf: Surface # set at .place()
+
+        self._virtual = False
 
         # user-accessible attributes
         self.placed = False
@@ -82,14 +98,15 @@ class Sprite:
             else:
                 scene = _active.get_scene()
         self._scene = scene
-        self._coords = Coords.make(coords)
-
-        self._z = scene._next_z()
         scene.add(self)
+    
+        self._coords = Coords.coerce(coords)
+        self._z = scene._next_z()
 
         # add to groups
-        if self.group is not None:
+        if isinstance(self.group, Group):
             self.group.add(self)
+
         self.placed = True
 
         self.on_placed()
@@ -97,7 +114,7 @@ class Sprite:
         # set later so that coords can be customized at on_placed()
         self._oldcoords = self._coords
         self._oldsurf = self.surf
-        self._dirty = 1 # initial render
+        self._dirty = True # initial render
 
         return self # for convenient assignment: name = Sprite(...).place(...)
 
@@ -116,40 +133,43 @@ class Sprite:
         Users are free to customize the behaviour of .update() in their sprites.
         """
 
-    @ensure_placed
+    @_ensure_placed
     def set_dirty(self):
-        if self._dirty == 1:
+        if self._virtual:
             return
-        self._dirty = 1
+        if self._dirty:
+            return
+        self._dirty = True
         for sprite in self.get_movement_collisions():
-            sprite.set_dirty()
+            if not sprite.zombie:
+                sprite.set_dirty()
 
-    @ensure_placed
+    @_ensure_placed
     def get_collisions(self) -> Generator[Sprite, None, None]:
         for sprite in self._scene.sprites:
-            if self.touching(sprite) and sprite is not self:
+            if self.is_colliding(sprite) and sprite is not self:
                 yield sprite
 
-    @ensure_placed
+    @_ensure_placed
     def get_old_collisions(self) -> Generator[Sprite, None, None]:
         for sprite in self._scene.sprites:
-            if self.was_touching(sprite) and sprite is not self:
+            if self.was_colliding(sprite) and sprite is not self:
                 yield sprite
     
-    @ensure_placed
+    @_ensure_placed
     def get_movement_collisions(self) -> Generator[Sprite, None, None]:
         """Get collisions of BOTH old and new coords"""
         for sprite in self._scene.sprites:
-            if self.touching(sprite) or self.was_touching(sprite) and sprite is not self:
+            if self.is_colliding(sprite) or self.was_colliding(sprite) and sprite is not self:
                 yield sprite
 
     @property
     def x(self):
-        return self._coords.x
+        return floor(self._coords.x)
     
     @property
     def y(self):
-        return self._coords.y
+        return floor(self._coords.y)
     
     @property
     def z(self):
@@ -203,9 +223,10 @@ class Sprite:
         if flush:
             terminal.flush() # flush at once, not every line
 
-
     def render(self, flush=True, erase=False, _surf=None):
-        self._dirty = 0
+        if self.zombie:
+            return
+        self._dirty = False
 
         self.apply_modifiers()
         
@@ -228,6 +249,16 @@ class Sprite:
         if y_max is not None and self.y > y_max:
             self.set_y(y_max)
 
+    def bound_on_screen(self):
+        if self.x < 0:
+            self.set_x(0)
+        if self.y < 0:
+            self.set_y(0)
+        if self.x + self.width > terminal.width():
+            self.set_x(terminal.width() - self.width)
+        if self.y + self.height > terminal.height():
+            self.set_y(terminal.height() - self.height)
+
     def move(self, dx, dy):
         self._coords = self._coords.dx(dx).dy(dy)
         self.set_dirty()
@@ -247,16 +278,19 @@ class Sprite:
     def show(self):
         self.hidden = False
         self.set_dirty()
+    
+    def virtual(self):
+        return _Virtual(self)
 
-    @ensure_placed
+    # @_ensure_placed
     def kill(self):
         """Set the sprite as a zombie and erases it from the scene.
     
         Zombies are truly killed in Group.update() via Sprite._kill() (see below)
         Therefore, it is recommended to use Sprite.kill() in Sprite.update()
         """
-        self.zombie = True
         self.render(flush=False, erase=True)
+        self.zombie = True
 
     def _kill(self):
         """Truly kills a sprite, should only call as zombie."""
@@ -269,38 +303,66 @@ class Sprite:
         if DEBUG:
             import gc
             assert gc.get_referrers() == []
-
-    @ensure_placed
-    def was_touching(self, other: Sprite):
-        if other.hidden:
-            return False
-        if self._oldcoords.x >= other.x + other.width: # self at right
-            return False
-        if self._oldcoords.y >= other.y + other.height: # self at down
-            return False
-        if self._oldcoords.x + self.width <= other.x: # self at left
-            return False
-        if self._oldcoords.y + self.height <= other.y: # self at up
-            return False
-        return True
-
-    @ensure_placed
-    def touching(self, other: Sprite):
-        if other.hidden:
-            return False
-        if self.x >= other.x + other.width: # self at right
-            return False
-        if self.y >= other.y + other.height: # self at down
-            return False
-        if self.x + self.width <= other.x: # self at left
-            return False
-        if self.y + self.height <= other.y: # self at up
-            return False
-        return True
     
+    def _is_colliding_base(self, other_coords: Coords):
+        """Usage: stationary._is_colliding_base(moving)"""
+        return (not self.hidden) \
+            and (self.x <= other_coords.x < self.x + self.width) \
+            and (self.y <= other_coords.y < self.y + self.height)
+
+    @_ensure_placed
+    def was_colliding(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
+        if self.hidden:
+            return False
+        for sp in _iter_sprites(sprite_or_sprites):
+            if sp._is_colliding_base(self):
+                return True
+        return False
+
+    @_ensure_placed
+    def is_colliding(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
+        if self.hidden:
+            return False
+        for sp in _iter_sprites(sprite_or_sprites):
+            if sp._is_colliding_base(self):
+                return True
+        return False
+    
+    @_ensure_placed
+    def get_colliding(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
+        if self.hidden:
+            return False
+        for sp in _iter_sprites(sprite_or_sprites):
+            if sp._is_colliding_base(self):
+                yield sp
+    
+    @_ensure_placed
+    def out_of_bounds(self):
+        result = 0
+        if self.y < 0:
+            result |= UP
+        if self.y >= terminal.height():
+            result |= DOWN
+        if self.x < 0:
+            result |= LEFT
+        if self.x >= terminal.width():
+            result |= RIGHT
+        return result
+
     def align_right(self):
         self.align_horizontal = RIGHT
         return self
+
+class _Virtual:
+    def __init__(self, owner: Sprite):
+        self.owner = owner
+    
+    def __enter__(self):
+        self.owner._virtual = True
+        return self
+    
+    def __exit__(self, typ, val, tb):
+        self.owner._virtual = False
 
 def Object(surf: SurfaceLike):
     """Short singular sprite creator
@@ -312,3 +374,79 @@ def Object(surf: SurfaceLike):
     sprite = Sprite()
     sprite.surf = Surface.coerce(surf)
     return sprite
+
+class KinematicSprite(Sprite):
+    """KinematicSprites handle also velocity, unlocking more complex interactions
+    
+    When to use KinematicSprite:
+    - collisions
+    - bouncing
+    - acceleration of sprites
+    """
+    def __init__(self):
+        super().__init__()
+
+        # TODO: use vectors
+        self.vx = 0
+        self.vy = 0
+        
+    def move(self, dx=None, dy=None):
+        super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)
+    
+    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> list[Sprite]:
+        """Bouncing is complex and the sprite needs to simulate sub-tick movement
+        """
+        # how many intervals to divide the motion to?
+        # such that for each interval the maximum delta in each axis is 1
+        intervals = max(abs(self.vx), abs(self.vy))
+        ix = Fraction(self.vx) / intervals
+        iy = Fraction(self.vy) / intervals
+
+        collided = set()
+
+        self._virtual = True
+        for _ in range(intervals):
+
+            # upward collision
+            self.move(0, -1)
+            collisions = set(self.get_colliding(sprite_or_sprites))
+            collided.update(collisions)
+            if collisions:
+                self.vy = -self.vy
+                iy = -iy
+            self.move(0, 1)
+
+            # downward collision
+            self.move(0, 1)
+            collisions = set(self.get_colliding(sprite_or_sprites))
+            collided.update(collisions)
+            if collisions:
+                self.vy = -self.vy
+                iy = -iy
+            self.move(0, -1)
+
+            # leftward collision
+            self.move(-1, 0)
+            collisions = set(self.get_colliding(sprite_or_sprites))
+            collided.update(collisions)
+            if collisions:
+                self.vx = -self.vx
+                ix = -ix
+            self.move(1, 0)
+
+            # rightward collision
+            self.move(1, 0)
+            collisions = set(self.get_colliding(sprite_or_sprites))
+            collided.update(collisions)
+            if collisions:
+                self.vx = -self.vx
+                ix = -ix
+            self.move(-1, 0)
+            
+            self.move(ix, iy)
+
+        self._virtual = False
+        
+        self.set_dirty()
+
+        return collided

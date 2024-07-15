@@ -28,10 +28,10 @@ class Ball(ptg.Sprite):
             score.increment()
             self.kill()
             return
-        if self.touching(myjet):
+        if self.is_colliding(myjet):
             global running
             running = False
-        if self.touching(myline):
+        if self.is_colliding(myline):
             self.color_all("\033[31m")
         else:
             self.color_all("\033[m")

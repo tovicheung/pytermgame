@@ -1,11 +1,13 @@
 # commonly used names
 
 # class-based
+from .collidable import ScreenEdges, screen
 from .coords import Coords
+from .debugger import Debugger
 from .game import Game
 from .group import Group
 from .scene import Scene
-from .sprite import Sprite, Object
+from .sprite import Sprite, KinematicSprite, Object, UP, DOWN, LEFT, RIGHT, TOP, BOTTOM
 from .sprites import Text, FText, Value, Counter
 from .surface import Surface
 

@@ -1,10 +1,4 @@
-"""ptg.transition
-
-Simple transitions between scenes
-
-Future plans:
-generalize into "effects" that sprites can also activate
-"""
+# Very unstable
 
 from typing import TypeAlias, Generator, Callable, ParamSpec, Concatenate
 

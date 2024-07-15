@@ -39,7 +39,7 @@ class Ball(ptg.Sprite):
         if self.y > ptg.terminal.height() - 1:
             self.vy = -abs(self.vy)
         
-        if self.touching(pad1) or self.touching(pad2):
+        if self.is_colliding(pad1) or self.is_colliding(pad2):
             self.vx = -self.vx
         
         # Live data for debugging

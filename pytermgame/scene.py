@@ -50,4 +50,4 @@ class Scene(Group):
         self.offset = self.offset.d((dx, dy))
 
     def set_scroll(self, offset: XY):
-        self.offset = Coords.make(offset)
+        self.offset = Coords.coerce(offset)

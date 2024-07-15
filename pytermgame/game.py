@@ -78,6 +78,9 @@ class Game:
         self._block_next_tick = False
         self._block_key: str | None = None
 
+        # Game loop controls
+        self._break_loop = False
+
         # A game must have a scene at all times
         self.scene = Scene()
 
@@ -201,7 +204,7 @@ class Game:
             self._block_next_tick = False
             self.debugger.block() # type: ignore
         
-        if self.debugger is not None and self._block_key is not None:
+        if self.debugger is not None and self._block_key is not None and not event.got:
             for key in event.get_keys():
                 if key == self._block_key:
                     self.debugger.block() # type: ignore
@@ -222,6 +225,8 @@ class Game:
                 pass
         self.last_tick = time.time()
         self.ntick += 1
+        
+        event.got = False # new tick, reset
 
     def update(self):
         """Not strictly required to call each game loop.
@@ -254,6 +259,17 @@ class Game:
         terminal.clear()
         terminal.reset()
         scene.render()
+    
+    # Game loop controls
+
+    def loop(self):
+        if self._break_loop:
+            self._break_loop = False
+            return False
+        return True
+
+    def break_loop(self):
+        self._break_loop = True
 
 # Initialize ptg._active
 

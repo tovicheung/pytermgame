@@ -1,4 +1,5 @@
 from __future__ import annotations
+from functools import wraps
 from typing import TYPE_CHECKING, Iterable
 
 from . import terminal
@@ -6,24 +7,39 @@ from . import terminal
 if TYPE_CHECKING:
     from .sprite import Sprite
 
+def _ensure_not_frozen(method):
+    @wraps(method)
+    def replacement(self, *args, **kwargs):
+        if self.frozen:
+            raise Exception(f"Cannot call {method.__qualname__}() on frozen group")
+        return method(self, *args, **kwargs)
+    return replacement
+
 class Group:
+    frozen = False
     # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
 
-    def __init__(self, sprites: Iterable[Sprite] = ()):
+    def __init__(self, sprites: Iterable[Sprite] = (), frozen=False):
+        # frozen: for internal use, marks frozen groups
         self.sprites = set(sprites)
-        for sprite in sprites:
-            sprite._groups.append(self)
+        self.frozen = frozen
+        if not frozen:
+            for sprite in sprites:
+                sprite._groups.append(self)
 
     # Group operations
 
+    @_ensure_not_frozen
     def add(self, *sprites: Sprite):
         self.sprites.update(sprites)
         for sprite in sprites:
             sprite._groups.append(self)
 
+    @_ensure_not_frozen
     def extend(self, sprites: Iterable[Sprite]):
         self.sprites.update(sprites)
 
+    @_ensure_not_frozen
     def remove(self, *sprites: Sprite):
         for sprite in sprites:
             self.sprites.remove(sprite)
@@ -41,6 +57,7 @@ class Group:
     
     # Sprite operations
     
+    @_ensure_not_frozen
     def update(self):
         """Calls .update() on sprites and kills zombies
 
@@ -57,6 +74,7 @@ class Group:
             # avoid making unnecessary references
             kills.pop()._kill()
 
+    @_ensure_not_frozen
     def render(self, flush=True, erase=False):
         for sprite in self:
             sprite.render(flush=False, erase=erase)

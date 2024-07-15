@@ -66,7 +66,9 @@ MOUSESCROLLUP = 5 # unused for now
 MOUSESCROLLDOWN = 6 # unused for now
 USEREVENT = 31
 
-queue: list[EventLike] = [] # should not be exposed
+# should not be exposed
+queue: list[EventLike] = []
+got = False # is get() called this tick?
 
 def get():
     for key in get_keys():
@@ -77,6 +79,9 @@ def get():
     queue.clear()
     for event in queued:
         yield Event(event)
+    
+    global got
+    got = True
 
 _get = get
 
