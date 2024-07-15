@@ -239,7 +239,8 @@ class Game:
     def render(self):
         self.scene.rerender()
 
-    def switch_scene(self, scene: Scene, transition: Transition, ticks: int):
+    def _switch_scene(self, scene: Scene, transition: Transition, ticks: int):
+        # Unused
         switched = False
         for flags in transition(ticks):
             if flags & _transition.F_SWITCH:

@@ -1,4 +1,4 @@
-# Very unstable
+# Under development
 
 from typing import TypeAlias, Generator, Callable, ParamSpec, Concatenate
 

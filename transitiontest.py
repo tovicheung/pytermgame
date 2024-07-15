@@ -1,3 +1,5 @@
+# Unused
+
 import pytermgame as ptg
 
 with ptg.Game(alternate_screen=False, fps=30, clear_first=True) as game:

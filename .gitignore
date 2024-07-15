@@ -3,3 +3,4 @@ pytermgame.egg-info/
 dist
 .ignore/
 .vscode/
+**.ignore**
