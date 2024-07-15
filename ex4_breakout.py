@@ -23,11 +23,11 @@ class Ball(ptg.KinematicSprite):
         self.vy = -1
 
     def update(self):
-
-        for sprite in self.bounce((Tile.group, pad, ptg.screen)):
-            if isinstance(sprite, Tile):
-                sprite.kill()
-            elif sprite is ptg.ScreenEdges.bottom:
+        # Bouncing mechanism
+        for collidee in self.bounce((Tile.group, pad, ptg.screen)):
+            if isinstance(collidee, Tile):
+                collidee.kill()
+            elif collidee is ptg.ScreenEdge.bottom:
                 game.break_loop()
         
         if len(Tile.group) == 0:
@@ -38,7 +38,6 @@ class Ball(ptg.KinematicSprite):
             .field("vy", self.vy) \
             .field("x", self.x) \
             .field("y", self.y)
-        
 
 class Tile(ptg.Sprite):
     surf = ptg.Surface("[-----]")
@@ -71,6 +70,8 @@ with ptg.Game(fps=30) as game:
     with ptg.Scene() as you_won:
         ptg.Text("You won - Press space to exit").place((0, ptg.terminal.height() // 2))
 
+    # Game loop
+
     while game.loop():
         for event in ptg.event.get():
             if event.is_key(ptg.key.LEFT):
@@ -79,7 +80,7 @@ with ptg.Game(fps=30) as game:
                 pad.move(6, 0)
 
         # If you want to cheat:
-        pad.set_x(ball.x - pad.width // 2)
+        # pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()

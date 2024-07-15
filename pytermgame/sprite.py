@@ -381,13 +381,14 @@ def Object(surf: SurfaceLike):
     return sprite
 
 class KinematicSprite(Sprite):
-    """KinematicSprites handle also velocity, unlocking more complex interactions
+    """A KinematicSprite has velocity, unlocking more complex interactions
     
     When to use KinematicSprite:
     - collisions
     - bouncing
     - acceleration of sprites
     """
+
     def __init__(self):
         super().__init__()
 
@@ -401,11 +402,12 @@ class KinematicSprite(Sprite):
     def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> list[Sprite]:
         """Bouncing is complex and the sprite needs to simulate sub-tick movement
         """
-        # how many intervals to divide the motion to?
+        # minimum intervals to divide the motion into
         # such that for each interval the maximum delta in each axis is 1
         intervals = max(abs(self.vx), abs(self.vy))
         ix = Fraction(self.vx) / intervals
         iy = Fraction(self.vy) / intervals
+        # fractions are used to prevent float errors
 
         collided = set()
 

@@ -35,10 +35,10 @@ class _ScreenRight(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
         return other_coords.x + other_surf.width > terminal.width()
 
-class ScreenEdges:
+class ScreenEdge:
     top = _ScreenTop()
     bottom = _ScreenBottom()
     left = _ScreenLeft()
     right = _ScreenRight()
 
-screen = Group((ScreenEdges.top, ScreenEdges.bottom, ScreenEdges.left, ScreenEdges.right), frozen=True)
+screen = Group((ScreenEdge.top, ScreenEdge.bottom, ScreenEdge.left, ScreenEdge.right), frozen=True)
