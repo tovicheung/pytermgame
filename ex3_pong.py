@@ -4,6 +4,7 @@ pytermgame example: pong
 Controls:
     w/s -> left player pad
     up/down arrow -> right player pad
+
 Note: you can only control your pad when the ball is moving towards you
 """
 

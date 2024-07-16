@@ -115,6 +115,10 @@ class Game:
         """Get the sprites of the scene of the currently active game"""
         return cls.get_scene().sprites
     
+    def new_scene(self):
+        self.scene = Scene()
+        self.scene.render()
+    
     def set_scene(self, scene: Scene):
         self.scene.render(flush=False, erase=True)
         self.scene = scene

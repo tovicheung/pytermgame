@@ -190,7 +190,11 @@ class Sprite(Collidable):
         return self.surf.height
     
     def color_all(self, ansi: str):
+        # no change, no need re-render
+        if ansi == self._ansi:
+            return self
         self._ansi = ansi
+        self.set_dirty()
         return self
     
     # Rendering

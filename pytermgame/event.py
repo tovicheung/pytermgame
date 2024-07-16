@@ -45,7 +45,8 @@ class Event:
             return other.type == self.type and other.value == self.value
         return self.as_pair() == other
     
-    def passes(self, func):
+    def value_passes(self, func):
+        """equivalent to func(event.value) but silences errors"""
         try:
             return func(self.value)
         except Exception:

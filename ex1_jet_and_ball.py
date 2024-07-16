@@ -11,9 +11,6 @@ Goal:
 
 import pytermgame as ptg
 
-class Jet(ptg.Sprite):
-    surf = ptg.Surface("--->")
-
 class Ball(ptg.Sprite):
     surf = ptg.Surface("O")
     # any new instances will be added to this group automatically
@@ -24,13 +21,14 @@ class Ball(ptg.Sprite):
 
     def update(self):
         self.move(-1, 0)
+    
         if self.x == 0:
             score.increment()
             self.kill()
             return
+        
         if self.is_colliding(myjet):
-            global running
-            running = False
+            game.break_loop()
         if self.is_colliding(myline):
             self.color_all("\033[31m")
         else:
@@ -39,7 +37,7 @@ class Ball(ptg.Sprite):
 class Line(ptg.Sprite):
     surf = ptg.Surface("-" * (ptg.terminal.width()))
 
-    def init(self):
+    def on_placed(self):
         self.color_all("\033[38;5;245m")
 
     def update(self):
@@ -65,16 +63,9 @@ with ptg.Game() as game:
 
     myjet = ptg.Object(ptg.Surface("--->")).place((4, 4))
 
-    # Pre-load another scene using context managers
-
-    with ptg.Scene() as end:
-        ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place()
-
     # Main game loop
-
-    running = True
-
-    while running:
+    
+    while game.loop():
         for event in ptg.event.get():
             if event.is_key(ptg.key.UP):
                 if myjet.y > 0:
@@ -102,6 +93,9 @@ with ptg.Game() as game:
         game.render() # calls render() on appropriate sprites
         game.tick() # wait for next tick
     
-    game.set_scene(end)
+    game.set_scene(ptg.Scene())
+
+    ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place()
+    game.render()
 
     ptg.event.wait_until((ptg.event.KEYEVENT, ptg.key.SPACE))
