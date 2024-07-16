@@ -34,8 +34,10 @@ class Ball(ptg.KinematicSprite):
                 self.new_round()
 
 with ptg.Game(fps=30) as game:
-    pad1 = ptg.Object("*\n*\n*\n*").place((2, ptg.terminal.height() // 2))
-    pad2 = ptg.Object("*\n*\n*\n*").place((ptg.terminal.width() - 2, ptg.terminal.height() // 2))
+    pad_string = ("*\n" * (ptg.terminal.height() // 2)).rstrip("\n") # remove last redundant \n
+
+    pad1 = ptg.Object(pad_string).place((2, ptg.terminal.height() // 2))
+    pad2 = ptg.Object(pad_string).place((ptg.terminal.width() - 2, ptg.terminal.height() // 2))
 
     mid = ptg.terminal.width() // 2
 
