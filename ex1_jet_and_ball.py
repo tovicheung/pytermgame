@@ -51,7 +51,7 @@ with ptg.Game() as game:
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
 
-    ptg.clock.set_interval(NEWBALL, 5)
+    ptg.clock.add_interval(NEWBALL, 5)
 
     # Sprites
 
@@ -78,7 +78,7 @@ with ptg.Game() as game:
             elif event.is_key("h"):
                 if not myjet.hidden:
                     myjet.hide()
-                    ptg.clock.delay(SHOWJET, 3)
+                    ptg.clock.add_timer(SHOWJET, secs=3)
 
             elif event == NEWBALL:
                 Ball().place()

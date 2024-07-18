@@ -89,7 +89,7 @@ with ptg.Game() as game:
                         score -= factory.cost
                         scoreboard.format(score)
                         
-                        ptg.clock.set_interval(
+                        ptg.clock.add_interval(
                             # (event type, event value)
                             (COOKIES_PRODUCED, factory.cookies_per_second),
                             secs = 1

@@ -1,5 +1,5 @@
 import time
-import threading
+# import threading
 
 from .event import EventLike, add_event
 from .game import Game
@@ -24,7 +24,7 @@ from .game import Game
 #             add_event(event)
 #         Game.get_active().add_timer(Repeat(interval=secs, function=_func))
 
-def set_interval(event: EventLike, ticks: int | None = None, secs: float | None = None):
+def add_interval(event: EventLike, ticks: int | None = None, secs: float | None = None):
     """Triggers an event every n ticks.
     Intervals are managed and triggered by the game."""
     if ticks is None:
@@ -35,10 +35,14 @@ def set_interval(event: EventLike, ticks: int | None = None, secs: float | None 
         ticks = Game.get_active().fps * secs
     Game.get_active().add_interval(event, ticks)
 
-def delay(event: EventLike, secs: float):
-    def _func():
-        add_event(event)
-    Game.get_active().add_timer(threading.Timer(secs, _func))
+def add_timer(event: EventLike, ticks: int | None = None, secs: float | None = None):
+    if ticks is None:
+        if secs is None:
+            raise ValueError("Either ticks or secs must be a value")
+        if Game.get_active().fps is None:
+            raise ValueError("Cannot set secs-based timer on game with fps=None")
+        ticks = Game.get_active().fps * secs
+    Game.get_active().add_timer(event, ticks)
 
 # Convenient aliases
 wait = sleep = time.sleep

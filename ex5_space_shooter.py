@@ -58,8 +58,8 @@ with ptg.Game(fps=30) as game:
     SPAWN = ptg.event.USEREVENT + 1
     GAIN_POWER = ptg.event.USEREVENT + 2
     
-    ptg.clock.set_interval(SPAWN, secs=1)
-    ptg.clock.set_interval(GAIN_POWER, secs=0.5)
+    ptg.clock.add_interval(SPAWN, secs=1)
+    ptg.clock.add_interval(GAIN_POWER, secs=0.5)
 
     rocket = ptg.Object(rocket_art).place((0, 0))
     power = ptg.Gauge(20, 10, 20).place((0, ptg.terminal.height() - 1))

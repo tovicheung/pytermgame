@@ -31,7 +31,7 @@ class State:
         return cls([], 0, 0, 0, None)
     
     def __str__(self):
-        return f"live_fps={self.live_fps:.2f}\t\taverage_fps={_ifnone(self.average_fps, 0):.2f}\t\tsprites={self.sprites}\t\tintervals={self.intervals}"
+        return f"live_fps={self.live_fps:.2f}\naverage_fps={_ifnone(self.average_fps, 0):.2f}\nsprites={self.sprites}\nintervals={self.intervals}"
 
 class Profiler:
     """To monitor and analyze a game
@@ -42,8 +42,9 @@ class Profiler:
     - monitors externally: game does not know about profiler
     """
 
-    def __init__(self, game: Game):
+    def __init__(self, game: Game, sample_ticks=10):
         self.game = game
+        self.sample_ticks = sample_ticks
         self.state = State.new()
 
     def err(self, msg):
@@ -52,7 +53,7 @@ class Profiler:
     def tick(self):
         self.state.live_fps = 0 if self.game._last_tick_dur is None or self.game._last_tick_dur <= 0 else 1 / self.game._last_tick_dur
         self.state.tick_durations.append(self.game._last_tick_dur)
-        if len(self.state.tick_durations) > 10:
+        if len(self.state.tick_durations) > self.sample_ticks:
             self.state.tick_durations.pop(0)
         
         sum_ = sum(self.state.tick_durations)

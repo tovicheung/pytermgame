@@ -15,7 +15,6 @@ from .event import add_event, EventLike
 from .scene import Scene
 
 if TYPE_CHECKING:
-    from threading import Timer
     from .transition import Transition
 
 if sys.platform != "win32":
@@ -24,6 +23,7 @@ if sys.platform != "win32":
     import os
 
 Interval: TypeAlias = tuple[EventLike, int]
+Timer: TypeAlias = tuple[EventLike, int]
 
 class Game:
     """The class that ties everything together.
@@ -135,8 +135,6 @@ class Game:
         self.tick(timeless=True)
 
     def cleanup(self):
-        for timer in self.timers: # must be done first (error may occur below and stop the cleanup process, leaving unkilled threads)
-            timer.cancel()
         terminal.disable_alternate_buffer()
         terminal.show_cursor()
         # if not terminal.WINDOWS:
@@ -192,10 +190,8 @@ class Game:
     
     # Clock
 
-    # def add_timer(self, timer: Timer):
-    #     self.timers.append(timer)
-    #     if self.is_active():
-    #         timer.start()
+    def add_timer(self, event: EventLike, ticks: int):
+        self.timers.append((event, self.ntick + ticks))
 
     def add_interval(self, event: EventLike, ticks: int):
         self.intervals.append((event, ticks))
@@ -230,6 +226,10 @@ class Game:
         for interval in self.intervals:
             if self.ntick % interval[1] == 0:
                 add_event(interval[0])
+
+        for timer in self.timers:
+            if self.ntick == timer[1]:
+                add_event(timer[0])
 
         if self.fps is None or self.spf is None:
             # self.spf is None  is here only for type checkers
