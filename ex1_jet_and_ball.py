@@ -61,7 +61,7 @@ with ptg.Game() as game:
     score = ptg.Counter(0).place((7, 1))
     ptg.Text("Dodge the balls!").place((0, 0))
 
-    myjet = ptg.Object(ptg.Surface("--->")).place((4, 4))
+    myjet = ptg.Object("--->").place((4, 4))
 
     # Main game loop
     
