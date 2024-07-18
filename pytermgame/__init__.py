@@ -3,12 +3,12 @@
 # class-based
 from .collidable import ScreenEdge, screen
 from .coords import Coords
-from .debugger import Debugger
+from .debugger import Debugger, Stats
 from .game import Game
 from .group import Group
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object, UP, DOWN, LEFT, RIGHT, TOP, BOTTOM
-from .sprites import Text, FText, Value, Counter
+from .sprites import Text, FText, Value, Counter, Gauge
 from .surface import Surface
 
 # function-based

@@ -30,9 +30,9 @@ def _ensure_placed(f):
     @wraps(f)
     def _new(self: Sprite, *args, **kwargs):
         if not self.placed:
-            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it (by calling Sprite.place())")
+            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it by calling Sprite.place() ({self._debug()})")
         if self.zombie:
-            raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is dead (zombie, waiting to be garbage collected)")
+            raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is zombie and waiting to be garbage collected ({self._debug()})")
         return f(self, *args, **kwargs)
     return _new
 
@@ -46,12 +46,11 @@ def _iter_sprites(sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
 
 class Sprite(Collidable):
     """
-    A sprite must have a surface at all times.
     For special objects without a surface (eg screen edges) see `ptg.collidable`
 
     Functional states of a sprite:
     - abstract: sprite is not attached to a scene
-    - placed: sprite is attached to a scene with coordinates
+    - placed: sprite is attached to a scene with coordinates and a surface
     - zombie: sprite is no longer on screen, but object still exists in memory
 
     The respective methods are `.__init__()`, `.place()`, and `.kill()`.
@@ -70,6 +69,15 @@ class Sprite(Collidable):
 
     # If set to a Group(), automatically add instances to the group
     group: Group | None = None
+
+    def _debug(self) -> str:
+        # return a debug info string
+        debug = f"{type(self).__name__} sprite"
+        if self.placed:
+            debug += f" placed at {self._coords}"
+        if self.zombie:
+            debug += " which is a zombie"
+        return debug
 
     def __init__(self):
         self._coords = Coords.ORIGIN
@@ -137,6 +145,8 @@ class Sprite(Collidable):
         Zombies are truly killed in Group.update() via Sprite._kill() (see below)
         Therefore, it is recommended to use Sprite.kill() in Sprite.update()
         """
+        if self.zombie:
+            return
         self.render(flush=False, erase=True)
         self.zombie = True
 
@@ -155,7 +165,9 @@ class Sprite(Collidable):
     # Methods subclasses can override
 
     def init(self):
-        """called AUTOMATICALLY after __init__"""
+        """called AUTOMATICALLY after __init__
+        Uses: customize surface
+        """
 
     def on_placed(self):
         """called AUTOMATICALLY after place()
@@ -203,22 +215,18 @@ class Sprite(Collidable):
         """Modifies coords and surfs, returns whether an erase of the old surf is needed"""
         if self.align_horizontal == RIGHT and self.surf.width != self._oldsurf.width:
             self._coords = self._coords.dx(-(self.surf.width - self._oldsurf.width))
-            self._render(flush=False, erase=True, _surf=self._oldsurf)
+            self._render(flush=False, erase=True)
     
-    def _render(self, flush=True, erase=False, _surf=None):
-
+    def _render(self, flush=True, erase=False):
         if self.hidden:
             erase = True
 
-        surf = self.surf
-        if _surf is not None:
-            surf = _surf
-
         if erase:
-            surf = surf.to_blank()
             coords = self._oldcoords
+            surf = self._oldsurf.to_blank()
         else:
             coords = self._coords
+            surf = self.surf
 
         if coords.x + surf.width < 0 or \
             coords.y + surf.height < 0 or \
@@ -251,14 +259,20 @@ class Sprite(Collidable):
         if flush:
             terminal.flush() # flush at once, not every line
 
-    def render(self, flush=True, erase=False, _surf=None):
+    def render(self, flush=True, erase=False):
+        """Render sprite onto terminal
+        - flush: whether to flush stdout after rendering
+        - erase:
+            - True -> use whitespaces to overwrite the old surface on the terminal
+            - False -> render current surface
+        """
         if self.zombie:
             return
         self._dirty = False
 
         self._apply_modifiers()
         
-        self._render(flush, erase, _surf)
+        self._render(flush, erase)
         
         self._oldcoords = self._coords
         self._oldsurf = self.surf
@@ -347,7 +361,13 @@ class Sprite(Collidable):
             and (self.y - other_surf.height < other_coords.y < self.y + self.height) \
 
     @_ensure_placed
-    def was_colliding(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def was_colliding(self, sprite: Collidable):
+        if self.hidden:
+            return False
+        return sprite._is_colliding_sprite(self, old=True)
+
+    @_ensure_placed
+    def was_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
         if self.hidden:
             return False
         for sp in _iter_sprites(sprite_or_sprites):
@@ -356,7 +376,13 @@ class Sprite(Collidable):
         return False
 
     @_ensure_placed
-    def is_colliding(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def is_colliding(self, sprite: Collidable):
+        if self.hidden:
+            return False
+        return sprite._is_colliding_sprite(self)
+
+    @_ensure_placed
+    def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
         if self.hidden:
             return False
         for sp in _iter_sprites(sprite_or_sprites):
@@ -410,17 +436,39 @@ class KinematicSprite(Sprite):
     """
 
     def __init__(self):
-        super().__init__()
 
         # TODO: use vectors
         self.vx = 0
         self.vy = 0
+        super().__init__()
         
     def move(self, dx=None, dy=None):
         super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)
     
+    def move_until_collision(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Sprite]:
+        """self.move() but stops on collision
+        Returns the list of sprites it collided with.
+        """
+        intervals = max(abs(self.vx), abs(self.vy))
+        ix = Fraction(self.vx) / intervals
+        iy = Fraction(self.vy) / intervals
+        # fractions are used to prevent float errors
+
+        with self.virtual():
+            for _ in range(intervals):
+                self.move(ix, iy)
+                collisions = set(self.get_colliding(sprite_or_sprites))
+                if collisions:
+                    return collisions
+            
+        self.set_dirty()
+
+        return set()
+
+    
     def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> list[Sprite]:
-        """Bouncing is complex and the sprite needs to simulate sub-tick movement
+        """self.move() but takes care of bouncing
+        Sub-tick movements are simulated (via virtual) and the resultant position and velocities are calculated.
         """
         # minimum intervals to divide the motion into
         # such that for each interval the maximum delta in each axis is 1

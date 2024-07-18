@@ -53,6 +53,9 @@ class Coords:
     
     def __iter__(self):
         return (self.x, self.y).__iter__()
+    
+    def __str__(self):
+        return str(tuple(self))
 
 XY: TypeAlias = tuple[int | float | Fraction, int | float | Fraction] | Coords
 

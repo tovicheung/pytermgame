@@ -76,6 +76,8 @@ class Game:
         self.debugger: Debugger | None = None
         self._block_next_tick = False
         self._block_key: str | None = None
+        self._last_tick_time: float = 0.01
+        self._last_tick_dur: float = 0.01
 
         # Game loop controls
         self._break_loop = False
@@ -209,6 +211,9 @@ class Game:
         - process intervals (tick-based recurring events)
         - increase tick count
         """
+        now = time.time()
+        self._last_tick_dur = now - self._last_tick_time
+        self._last_tick_time = now
 
         if self._block_next_tick:
             self._block_next_tick = False

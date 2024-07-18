@@ -33,7 +33,7 @@ class Debugger(Sprite):
 
     def field(self, key, value):
         self.data[key] = value
-        self._dirty = 1
+        self._dirty = True
         return self
 
     def render(self, flush=True, erase=False):
@@ -96,4 +96,14 @@ class Debugger(Sprite):
         _active.get_active()._block_key = None
         _active.get_active().debugger = None
         return _dummy()
-    
+
+class Stats(Debugger):
+    def update(self):
+        game = _active.get_active()
+        self.field("fps", _active.get_active().fps)
+        if game._last_tick_dur == 0:
+            self.field("real fps", "inf")
+        else:
+            self.field("real fps", round(1 / game._last_tick_dur, 1))
+        self.field("sprites", len(game.scene.sprites))
+        self.field("intervals", len(game.intervals))

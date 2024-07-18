@@ -27,7 +27,7 @@ class Scene(Group):
         """
         dirty = self.get_dirty()
         dirty.render(flush=False, erase=True)
-        dirty.render(flush=False)
+        dirty.render(flush=False, erase=False)
         # flush once after all the rendering
         terminal.flush()
 

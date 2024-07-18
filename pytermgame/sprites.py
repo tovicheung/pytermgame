@@ -1,4 +1,5 @@
 from __future__ import annotations
+from math import floor
 from typing import TypeVar, Generic
 
 from .sprite import Sprite
@@ -27,16 +28,14 @@ class FText(Sprite):
     def __init__(self, string: str, *args, **kwargs):
         super().__init__()
         self.string = string
-        self.surf = Surface("")
         self.format(*args, **kwargs)
 
     def format(self, *args, **kwargs):
-        self._oldsurf = self.surf
         self.surf = Surface(self.string.format(*args, **kwargs))
-        self._dirty = 1
+        self._dirty = True
 
     def render(self, flush=True, erase=False):
-        super().render(flush=flush, erase=True, _surf=self._oldsurf)
+        super().render(flush=flush, erase=True)
         super().render(flush=flush, erase=erase)
 
 # currently unused, this descriptor may replace Value.value in the future
@@ -62,7 +61,7 @@ class Value(Sprite, Generic[_T]):
 
     def update_surf(self):
         self.surf = Surface(str(self.value))
-        self._dirty = 1
+        self._dirty = True # cannot use set_dirty before place
 
     def update_value(self, value: _T):
         self.value = value
@@ -78,3 +77,20 @@ class Counter(Value[int]):
 
     def decrement(self, by: int = 1):
         self.increment(-by)
+
+class Gauge(Sprite):
+    def __init__(self, full, length, value=0):
+        super().__init__()
+        self.full = full
+        self.value = value
+        self.length = length
+        self.update_surf()
+
+    def update_surf(self):
+        n = floor(self.value / self.full * self.length)
+        self.surf = Surface("[" + "#" * n + " " * (self.length - n) + "]")
+        self._dirty = True # cannot use set_dirty before place
+    
+    def update_value(self, value):
+        self.value = value
+        self.update_surf()
