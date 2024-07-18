@@ -27,6 +27,12 @@ class Event:
     # Convenient methods
     
     def is_key(self, key: str | None = None):
+        """Checks if event is a key event
+        ```
+        event.is_key() # event.type == KEYEVENT
+        event.is_key("a") # event.type == KEYEVENT and event.value == "a"
+        ```
+        """
         if key is None:
             return self.type == KEYEVENT
         return self.type == KEYEVENT and self.value == key

@@ -41,4 +41,4 @@ def get_scene():
 
 @wrap
 def is_active():
-    return Game._active is None
+    return Game._active is not None

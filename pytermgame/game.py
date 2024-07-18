@@ -85,6 +85,8 @@ class Game:
 
         self.last_tick = 0
         self.ntick = 0
+    
+    # Start and end
 
     def __enter__(self):
         self.start()
@@ -94,43 +96,6 @@ class Game:
         self.cleanup()
         if typ in self.silent_errors:
             return True
-    
-    def is_active(self):
-        return self is type(self)._active 
-        
-    @classmethod
-    def get_active(cls):
-        """Get the currently active game"""
-        if cls._active is None:
-            raise RuntimeError("Invalid call, no active game")
-        return cls._active
-    
-    @classmethod
-    def get_scene(cls):
-        """Get the scene of the currently active game"""
-        return cls.get_active().scene
-    
-    @classmethod
-    def get_sprites(cls):
-        """Get the sprites of the scene of the currently active game"""
-        return cls.get_scene().sprites
-    
-    def new_scene(self):
-        self.scene = Scene()
-        self.scene.render()
-    
-    def set_scene(self, scene: Scene):
-        self.scene.render(flush=False, erase=True)
-        self.scene = scene
-        self.scene.render()
-
-    def add_timer(self, timer: Timer):
-        self.timers.append(timer)
-        if self.is_active():
-            timer.start()
-
-    def add_interval(self, event: EventLike, ticks: int):
-        self.intervals.append((event, ticks))
 
     def start(self):
         # determine the control codes to send
@@ -190,6 +155,48 @@ class Game:
     def get_debugger(self):
         self.debugger = Debugger().place((0, 0))
         return self.debugger
+    
+    # Active
+    
+    def is_active(self):
+        return self is type(self)._active 
+        
+    @classmethod
+    def get_active(cls):
+        """Get the currently active game"""
+        if cls._active is None:
+            raise RuntimeError("Invalid call, no active game")
+        return cls._active
+    
+    @classmethod
+    def get_scene(cls):
+        """Get the scene of the currently active game"""
+        return cls.get_active().scene
+    
+    @classmethod
+    def get_sprites(cls):
+        """Get the sprites of the scene of the currently active game"""
+        return cls.get_scene().sprites
+    
+    # Scene
+
+    def new_scene(self):
+        self.set_scene(Scene())
+    
+    def set_scene(self, scene: Scene):
+        self.scene.render(flush=False, erase=True)
+        self.scene = scene
+        self.scene.render()
+    
+    # Clock
+
+    # def add_timer(self, timer: Timer):
+    #     self.timers.append(timer)
+    #     if self.is_active():
+    #         timer.start()
+
+    def add_interval(self, event: EventLike, ticks: int):
+        self.intervals.append((event, ticks))
 
     # Methods to be called each game loop
 

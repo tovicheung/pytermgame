@@ -80,8 +80,6 @@ with ptg.Game() as game:
                     myjet.hide()
                     ptg.clock.delay(SHOWJET, 3)
 
-            elif event.is_key(): ... # block all key events
-
             elif event == NEWBALL:
                 Ball().place()
                 # do not bind to name so that it can be garbage collected
@@ -93,7 +91,7 @@ with ptg.Game() as game:
         game.render() # calls render() on appropriate sprites
         game.tick() # wait for next tick
     
-    game.set_scene(ptg.Scene())
+    game.new_scene()
 
     ptg.Text(f"Game Over!\nScore: {score}\nPress Space to exit").place()
     game.render()

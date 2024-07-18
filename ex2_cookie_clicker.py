@@ -95,7 +95,7 @@ with ptg.Game() as game:
                             secs = 1
                         )
 
-            elif event.is_user():
+            elif event.is_type(COOKIES_PRODUCED):
                 score += event.value
                 scoreboard.format(score)
 

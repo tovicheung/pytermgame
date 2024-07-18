@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import TypeAlias
 
 class Surface:
-    """Represents a immutable 2D string surface"""
+    """Represents an immutable 2D string surface"""
 
     def __init__(self, string: str):
         self.data = string.splitlines()
+        self._width = len(max(self.lines(), key=len))
+        self._height = len(self.data)
     
     @classmethod
     def coerce(cls, obj: SurfaceLike) -> Surface:
@@ -19,7 +21,7 @@ class Surface:
 
     @classmethod
     def blank(cls, width: int, height: int):
-        """Generate a blank rectangular surface"""
+        """Generatess a blank rectangular surface"""
         return cls((" " * width + "\n") * height)
     
     @classmethod
@@ -29,11 +31,11 @@ class Surface:
     
     @property
     def width(self):
-        return len(max(self.lines(), key=len))
+        return self._width
     
     @property
     def height(self):
-        return len(self.data)
+        return self._height
     
     def __getitem__(self, args):
         if not isinstance(args, tuple):
