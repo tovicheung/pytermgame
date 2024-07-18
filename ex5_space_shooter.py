@@ -1,3 +1,18 @@
+"""
+pytermgame example: space shooter
+
+Controls:
+    arrow keys -> move ship
+    space -> fire bullets
+
+Goal:
+    destroy asteroids with bullets
+
+Mechanics
+    +1 point when asteroid is destroyed
+    -1 point when asteroid hits left side
+"""
+
 import pytermgame as ptg
 import random
 
@@ -24,7 +39,7 @@ class Asteroid(ptg.Sprite):
                 score_counter.decrement()
 
 class Bullet(ptg.KinematicSprite):
-    surf = ptg.Surface("--")
+    surf = ptg.Surface("----")
 
     def init(self):
         self.place((rocket.x + rocket.width + 1, rocket.y + 1))

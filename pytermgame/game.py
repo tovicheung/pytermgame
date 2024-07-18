@@ -76,8 +76,8 @@ class Game:
         self.debugger: Debugger | None = None
         self._block_next_tick = False
         self._block_key: str | None = None
-        self._last_tick_time: float = 0.01
-        self._last_tick_dur: float = 0.01
+        self._last_tick_time: float | None = None
+        self._last_tick_dur: float | None = None
 
         # Game loop controls
         self._break_loop = False
@@ -212,7 +212,8 @@ class Game:
         - increase tick count
         """
         now = time.time()
-        self._last_tick_dur = now - self._last_tick_time
+        if self._last_tick_time is not None:
+            self._last_tick_dur = now - self._last_tick_time
         self._last_tick_time = now
 
         if self._block_next_tick:
