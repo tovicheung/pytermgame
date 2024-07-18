@@ -20,9 +20,9 @@ pip install .
 ## Features
 - pygame-inspired api structure
 - customizable terminal behaviour (alternate screen, cursor visibility)
-- optimized rendering: game calculates the minimum number of objects to re-render **(it takes care of overlapping sprites too!)**
-- includes an integrated debugger
+- optimized rendering: game calculates the minimum number of objects to erase and re-render **(it takes care of overlapping sprites too!)**
 - cross-platform key event reading
+- includes an integrated debugger and an external profiler
 
 > [!NOTE]
 > This is not a full-fledged game engine, but more of an experiment to create terminal game engines
@@ -39,6 +39,7 @@ Examples are included in the repo root:
 - `ex2_cookie_clicker.py`
 - `ex3_pong.py`
 - `ex4_breakout.py`
+- `ex5_space_shooter.py`
 
 Playing instructions are included in the examples.
 
