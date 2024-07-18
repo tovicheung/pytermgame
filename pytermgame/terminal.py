@@ -47,7 +47,7 @@ def disable_autowrap():
 
 def goto(x: int, y: int):
     """Note: 1-based"""
-    write(f"\033[{y};{x}H")
+    write(f"\033[{int(y)};{int(x)}H")
 
 def hide_cursor():
     fwrite("\033[?25l")

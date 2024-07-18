@@ -216,19 +216,35 @@ class Sprite(Collidable):
 
         if erase:
             surf = surf.to_blank()
-            tcoords = self._oldcoords.to_term()
+            coords = self._oldcoords
         else:
-            tcoords = self._coords.to_term()
+            coords = self._coords
 
-        if tcoords.x + self.width < 1 or \
-            tcoords.y + self.height < 1 or \
-            tcoords.x > terminal.width() or \
-            tcoords.y > terminal.height():
+        if coords.x + surf.width < 0 or \
+            coords.y + surf.height < 0 or \
+            coords.x >= terminal.width() or \
+            coords.y >= terminal.height():
             return # out of screen, do nothing!
 
+        if coords.x < 0:
+            # partially out of left bound
+            slice_x = slice(int(abs(coords.x)), None, None)
+        elif coords.x + surf.width > terminal.width():
+            # partially out of right bound
+            # terminal.width() - int(coords.x) = how many chars to show
+            slice_x = slice(None, terminal.width() - int(coords.x), None)
+        else:
+            slice_x = slice(None, None, None)
+
         for i, line in enumerate(surf.lines()):
-            terminal.goto(*tcoords.dy(i))
-            terminal.write(self._ansi + line)
+            segment = line[slice_x]
+            if len(segment) == 0:
+                continue
+            line_coords = coords.dy(i)
+            if line_coords.y < 0 or line_coords.y >= terminal.height():
+                continue # line is vertically out of screen
+            terminal.goto(*line_coords.to_term())
+            terminal.write(self._ansi + segment)
 
         terminal.write("\033[m")
 

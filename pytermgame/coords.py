@@ -32,8 +32,8 @@ class Coords:
         raise ValueError("Invalid coordinate")
 
     def to_term(self):
-        """Converts 0-based coordinates to 1-based terminal coordinates"""
-        return type(self)(self.x + 1, self.y + 1)
+        """Converts 0-based fractional coordinates to 1-based terminal coordinates"""
+        return type(self)(max(0, self.x + 1), max(0, self.y + 1))
     
     def d(self, other: XY):
         other = Coords.coerce(other)
