@@ -37,7 +37,6 @@ def _ensure_placed(f):
     return _new
 
 def _iter_sprites(sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
-    # technically Group is a subclass of Iterable[Sprite]
     if isinstance(sprite_or_sprites, Collidable):
         yield sprite_or_sprites
         return
@@ -281,9 +280,7 @@ class Sprite(Collidable):
 
     @_ensure_placed
     def set_dirty(self):
-        if self._virtual:
-            return
-        if self._dirty:
+        if self._virtual or self.hidden or self._dirty:
             return
         self._dirty = True
         for sprite in self.get_movement_collisions():
@@ -359,6 +356,11 @@ class Sprite(Collidable):
         return (not self.hidden) \
             and (self.x - other_surf.width < other_coords.x < self.x + self.width) \
             and (self.y - other_surf.height < other_coords.y < self.y + self.height) \
+    
+    def _is_colliding_sprite(self, other: Sprite, old=False):
+        if self is other:
+            return False
+        return super()._is_colliding_sprite(other, old)
 
     @_ensure_placed
     def was_colliding(self, sprite: Collidable):

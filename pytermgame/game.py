@@ -192,9 +192,15 @@ class Game:
 
     def add_timer(self, event: EventLike, ticks: int):
         self.timers.append((event, self.ntick + ticks))
+    
+    def clear_timers(self):
+        self.timers.clear()
 
     def add_interval(self, event: EventLike, ticks: int):
         self.intervals.append((event, ticks))
+    
+    def clear_intervals(self):
+        self.intervals.clear()
 
     # Methods to be called each game loop
 
@@ -207,6 +213,8 @@ class Game:
         - process intervals (tick-based recurring events)
         - increase tick count
         """
+
+        # TODO: integrate with last_tick below
         now = time.time()
         if self._last_tick_time is not None:
             self._last_tick_dur = now - self._last_tick_time
@@ -237,8 +245,9 @@ class Game:
 
         if not timeless:
             next_tick = self.last_tick + self.spf
-            while time.time() < next_tick:
-                pass
+            now = time.time()
+            if now < next_tick:
+                time.sleep(next_tick - now)
         self.last_tick = time.time()
         self.ntick += 1
         
