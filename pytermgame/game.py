@@ -223,11 +223,14 @@ class Game:
         if self._block_next_tick:
             self._block_next_tick = False
             self.debugger.block() # type: ignore
+            self._last_tick_time = time.time()
+
         
         if self.debugger is not None and self._block_key is not None and not event.got:
             for key in event.get_keys():
                 if key == self._block_key:
                     self.debugger.block() # type: ignore
+                    self._last_tick_time = time.time()
                 else:
                     event.queue.append((event.KEYEVENT, key))
 
