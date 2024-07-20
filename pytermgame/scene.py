@@ -10,21 +10,23 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .surface import Surface
     from .sprite import Sprite
+else:
+    class Sprite: ...
 
 def _iter_coords(coords: Coords, surf: Surface):
     for y in range(int(coords.y), int(coords.y)+surf.height):
         for x in range(int(coords.x), int(coords.x)+surf.width):
             yield (x, y)
 
-# for a future update
+# [future: collision]
 if False:
-    class OccupancyMatrix(defaultdict[tuple[int, int], set]):
+    class OccupancyMatrix(defaultdict[tuple[int, int], set[Sprite]]):
         def __init__(self):
             super().__init__(lambda: set())
 
         def get_collisions(self, coords: Coords, surf: Surface):
             for (x, y) in _iter_coords(coords, surf):
-                yield from self[(x, y)]
+                yield from filter(lambda x: not x.hidden, self[(x, y)])
         
         def add(self, sprite: Sprite):
             # add sprite and return collisions as byproduct
@@ -49,10 +51,11 @@ class Scene(SpriteList):
     def __init__(self):
         super().__init__((), name = "Scene")
 
+        # [future: collision]
         # self.mat = OccupancyMatrix()
 
-        # unused for now
-        self.offset = Coords.ORIGIN
+        # [future: scrolling]
+        # self.offset = Coords.ORIGIN
     
     def get_dirty(self):
         """Get the SpriteList sorted by z-coordinate (bottom to top)"""
@@ -101,14 +104,14 @@ class Scene(SpriteList):
     def __exit__(self, typ, val, tb):
         Scene._active_context = None
 
-    # Testing: scrolling
-
-    def absolute(self, coords: Coords):
-        # unused for now
-        return coords.d(self.offset)
-
-    def scroll(self, dx: int = 0, dy: int = 0):
-        self.offset = self.offset.d((dx, dy))
-
-    def set_scroll(self, offset: XY):
-        self.offset = Coords.coerce(offset)
+    # [future: scrolling]
+    if False:
+        def absolute(self, coords: Coords):
+            # unused for now
+            return coords.d(self.offset)
+        
+        def scroll(self, dx: int = 0, dy: int = 0):
+            self.offset = self.offset.d((dx, dy))
+        
+        def set_scroll(self, offset: XY):
+            self.offset = Coords.coerce(offset)

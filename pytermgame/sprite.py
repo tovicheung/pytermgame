@@ -103,7 +103,8 @@ class Sprite(Collidable):
         # modifiers
         self.align_horizontal = LEFT
         
-        self._collisions = set()
+        # [future: collision]
+        # self._collisions: set[Sprite] = set()
 
         self.init()
     
@@ -230,12 +231,14 @@ class Sprite(Collidable):
         if erase:
             coords = self._oldcoords
             surf = self._oldsurf.to_blank()
+
+            # # [future: collision]
             # self._scene.mat.remove(self)
         else:
             coords = self._coords
             surf = self.surf
 
-            # update collisions
+            # [future: collision]
             # self._collisions = self._scene.mat.add(self)
 
         if coords.x + surf.width < 0 or \
@@ -279,9 +282,9 @@ class Sprite(Collidable):
         if self.zombie:
             return
         
-        # if erase and not self._was_on_screen:
-        #     self._was_on_screen = True
-        #     return
+        if erase and not self._was_on_screen:
+            self._was_on_screen = True
+            return
 
         self._dirty = False
 
@@ -301,6 +304,7 @@ class Sprite(Collidable):
         self._dirty = True
         for sprite in self.get_movement_collisions():
             if not sprite.zombie:
+                # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
                 sprite.set_dirty()
 
     def goto(self, x, y):
@@ -355,6 +359,7 @@ class Sprite(Collidable):
         
         When a sprite is virtual:
         - it does not trigger re-rendering of other sprites
+        - ie, set_dirty is temporarily disabled
         """
         return _Virtual(self)
     
@@ -409,14 +414,14 @@ class Sprite(Collidable):
         return False
     
     @_ensure_placed
-    def get_colliding(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def get_collisions_with(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
         if self.hidden:
             return
         for sp in _iter_sprites(sprite_or_sprites):
             if sp._is_colliding_sprite(self):
                 yield sp
     
-    # for a future update: more efficient collision system
+    # # [future: collision]
     if False:
 
         @_ensure_placed
@@ -426,8 +431,10 @@ class Sprite(Collidable):
             for sp in _iter_sprites(sprite_or_sprites):
                 if sp in self._collisions:
                     yield sp
+                elif isinstance(sp, Collidable) and sp._is_colliding_sprite(self):
+                    yield sp
         
-        get_colliding = get_collisions
+        get_collisions_with = get_collisions
 
         @_ensure_placed
         def get_old_collisions(self):
@@ -438,11 +445,12 @@ class Sprite(Collidable):
             yield from self._collisions
         
         @_ensure_placed
-        def gest_movement_collisions(self):
+        def get_movement_collisions(self):
             yield from self._collisions
-            for sp in self.get_old_collisions():
-                if sp not in self._collisions:
-                    yield sp
+            if self._was_on_screen:
+                for sp in self.get_old_collisions():
+                    if sp not in self._collisions:
+                        yield sp
         
         @_ensure_placed
         def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
@@ -510,7 +518,7 @@ class KinematicSprite(Sprite):
         with self.virtual():
             for _ in range(intervals):
                 self.move(ix, iy)
-                collisions = set(self.get_colliding(sprite_or_sprites))
+                collisions = set(self.get_collisions_with(sprite_or_sprites))
                 if collisions:
                     return collisions
             
@@ -518,7 +526,6 @@ class KinematicSprite(Sprite):
 
         return set()
 
-    
     def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> list[Sprite]:
         """self.move() but takes care of bouncing
         Sub-tick movements are simulated (via virtual) and the resultant position and velocities are calculated.
@@ -537,7 +544,7 @@ class KinematicSprite(Sprite):
 
                 # upward collision
                 self.move(0, -1)
-                collisions = set(self.get_colliding(sprite_or_sprites))
+                collisions = set(self.get_collisions_with(sprite_or_sprites))
                 collided.update(collisions)
                 if collisions:
                     self.vy = -self.vy
@@ -546,7 +553,7 @@ class KinematicSprite(Sprite):
 
                 # downward collision
                 self.move(0, 1)
-                collisions = set(self.get_colliding(sprite_or_sprites))
+                collisions = set(self.get_collisions_with(sprite_or_sprites))
                 collided.update(collisions)
                 if collisions:
                     self.vy = -self.vy
@@ -555,7 +562,7 @@ class KinematicSprite(Sprite):
 
                 # leftward collision
                 self.move(-1, 0)
-                collisions = set(self.get_colliding(sprite_or_sprites))
+                collisions = set(self.get_collisions_with(sprite_or_sprites))
                 collided.update(collisions)
                 if collisions:
                     self.vx = -self.vx
@@ -564,12 +571,62 @@ class KinematicSprite(Sprite):
 
                 # rightward collision
                 self.move(1, 0)
-                collisions = set(self.get_colliding(sprite_or_sprites))
+                collisions = set(self.get_collisions_with(sprite_or_sprites))
                 collided.update(collisions)
                 if collisions:
                     self.vx = -self.vx
                     ix = -ix
                 self.move(-1, 0)
+
+                # corners
+
+                # top-left collision
+                if ix < 0 and iy < 0:
+                    self.move(-1, -1)
+                    collisions = set(self.get_collisions_with(sprite_or_sprites))
+                    collided.update(collisions)
+                    if collisions:
+                        self.vx = -self.vx
+                        self.vy = -self.vy
+                        ix = -ix
+                        iy = -iy
+                    self.move(1, 1)
+
+                # top-right collision
+                if ix > 0 and iy < 0:
+                    self.move(1, -1)
+                    collisions = set(self.get_collisions_with(sprite_or_sprites))
+                    collided.update(collisions)
+                    if collisions:
+                        self.vx = -self.vx
+                        self.vy = -self.vy
+                        ix = -ix
+                        iy = -iy
+                    self.move(-1, 1)
+
+                # bottom-left collision
+                if ix < 0 and iy > 0:
+                    self.move(-1, 1)
+                    collisions = set(self.get_collisions_with(sprite_or_sprites))
+                    collided.update(collisions)
+                    if collisions:
+                        self.vx = -self.vx
+                        self.vy = -self.vy
+                        ix = -ix
+                        iy = -iy
+                    self.move(1, -1)
+
+                # bottom-right collision
+                if ix > 0 and iy > 0:
+                    self.move(1, 1)
+                    collisions = set(self.get_collisions_with(sprite_or_sprites))
+                    collided.update(collisions)
+                    if collisions:
+                        self.vx = -self.vx
+                        self.vy = -self.vy
+                        ix = -ix
+                        iy = -iy
+                    self.move(-1, -1)
                 
                 self.move(ix, iy)
         
