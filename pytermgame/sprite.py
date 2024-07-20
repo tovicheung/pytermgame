@@ -12,7 +12,10 @@ from .group import Group
 from .scene import Scene
 from .surface import Surface, SurfaceLike
 
-DEBUG = False
+MONITOR_PERFORMANCE = False
+
+if MONITOR_PERFORMANCE:
+    import gc
 
 UP = TOP = 1
 DOWN = BOTTOM = 2
@@ -81,6 +84,7 @@ class Sprite(Collidable):
     def __init__(self):
         self._coords = Coords.ORIGIN
         self._dirty = False # object requires rerender?
+        self._was_on_screen = False
         self._ansi = "\033[m"
         self._groups: list[Group] = []
         self._scene: Scene
@@ -98,6 +102,8 @@ class Sprite(Collidable):
 
         # modifiers
         self.align_horizontal = LEFT
+        
+        self._collisions = set()
 
         self.init()
     
@@ -131,9 +137,9 @@ class Sprite(Collidable):
 
         self.on_placed()
 
-        # set later so that coords can be customized at on_placed()
         self._oldcoords = self._coords
         self._oldsurf = self.surf
+        
         self._dirty = True # initial render
 
         return self
@@ -153,13 +159,14 @@ class Sprite(Collidable):
         """Truly kills a sprite, should only call as zombie."""
 
         # frees all references and destroyed by garbage collector
-        for group in self._groups:
-            group.remove(self)
+        while len(self._groups):
+            self._groups[0].remove(self)
         
         # prevent sprites from not being destroyed (important for performance)
-        if DEBUG:
-            import gc
-            assert gc.get_referrers() == []
+        if MONITOR_PERFORMANCE:
+            assert len(self._groups) == 0, f"attempted to kill sprite but sprite is still in groups: {self._groups}"
+            refs = gc.get_referrers(self)
+            assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
 
     # Methods subclasses can override
 
@@ -223,9 +230,13 @@ class Sprite(Collidable):
         if erase:
             coords = self._oldcoords
             surf = self._oldsurf.to_blank()
+            # self._scene.mat.remove(self)
         else:
             coords = self._coords
             surf = self.surf
+
+            # update collisions
+            # self._collisions = self._scene.mat.add(self)
 
         if coords.x + surf.width < 0 or \
             coords.y + surf.height < 0 or \
@@ -267,6 +278,11 @@ class Sprite(Collidable):
         """
         if self.zombie:
             return
+        
+        # if erase and not self._was_on_screen:
+        #     self._was_on_screen = True
+        #     return
+
         self._dirty = False
 
         self._apply_modifiers()
@@ -395,10 +411,45 @@ class Sprite(Collidable):
     @_ensure_placed
     def get_colliding(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
         if self.hidden:
-            return False
+            return
         for sp in _iter_sprites(sprite_or_sprites):
             if sp._is_colliding_sprite(self):
                 yield sp
+    
+    # for a future update: more efficient collision system
+    if False:
+
+        @_ensure_placed
+        def get_collisions(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+            if self.hidden:
+                return
+            for sp in _iter_sprites(sprite_or_sprites):
+                if sp in self._collisions:
+                    yield sp
+        
+        get_colliding = get_collisions
+
+        @_ensure_placed
+        def get_old_collisions(self):
+            yield from self._scene.mat.get_collisions(self._oldcoords, self._oldsurf)
+        
+        @_ensure_placed
+        def get_all_collisions(self):
+            yield from self._collisions
+        
+        @_ensure_placed
+        def gest_movement_collisions(self):
+            yield from self._collisions
+            for sp in self.get_old_collisions():
+                if sp not in self._collisions:
+                    yield sp
+        
+        @_ensure_placed
+        def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+            for sp in _iter_sprites(sprite_or_sprites):
+                if sp in self._collisions:
+                    return True
+            return False
 
     # Styling, more methods are to be added
 

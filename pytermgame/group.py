@@ -20,13 +20,19 @@ class Group:
     frozen = False
     # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
 
-    def __init__(self, sprites: Iterable[Sprite] = (), frozen=False):
+    def __init__(self, sprites: Iterable[Sprite] = (), frozen = False, name: str | None = None):
         # frozen: for internal use, marks frozen groups
         self.sprites = set(sprites)
         self.frozen = frozen
+        self.name = name
         if not frozen:
             for sprite in sprites:
                 sprite._groups.append(self)
+    
+    def __repr__(self):
+        if self.name is None:
+            return super().__repr__()
+        return f"{type(self).__qualname__} object named '{self.name}'"
 
     # Group operations
 
@@ -44,6 +50,7 @@ class Group:
     def remove(self, *sprites: Sprite):
         for sprite in sprites:
             self.sprites.remove(sprite)
+            sprite._groups.remove(self)
 
     def has(self, sprite: Sprite):
         return sprite in self.sprites
@@ -60,20 +67,9 @@ class Group:
     
     @_ensure_not_frozen
     def update(self):
-        """Calls .update() on sprites and kills zombies
-
-        Therefore, there are two situations to call Group.update() in every game loop:
-        1. your implement Sprite.update() in your sprites
-        2. you kill your sprites
-        """
-        kills: list[Sprite] = []
+        """Calls .update() on sprites"""
         for sprite in self:
             sprite.update()
-            if sprite.zombie:
-                kills.append(sprite)
-        while len(kills):
-            # avoid making unnecessary references
-            kills.pop()._kill()
 
     @_ensure_not_frozen
     def render(self, flush=True, erase=False):
@@ -93,13 +89,16 @@ class SpriteList(Group):
     - order is preserved
     """
 
-    def __init__(self, sprites: Iterable[Sprite]):
+    def __init__(self, sprites: Iterable[Sprite], name: str | None = None):
         self.sprites = list(sprites)
+        self.name = name
 
     # Group operations
 
     def add(self, *sprites: Sprite):
         self.sprites.extend(sprites)
+        for sprite in sprites:
+            sprite._groups.append(self)
 
     def extend(self, sprites: Iterable[Sprite]):
         self.sprites.extend(sprites)
@@ -107,3 +106,4 @@ class SpriteList(Group):
     def remove(self, *sprites: Sprite):
         for sprite in sprites:
             self.sprites.remove(sprite)
+            sprite._groups.remove(self)

@@ -14,7 +14,7 @@ import pytermgame as ptg
 class Ball(ptg.Sprite):
     surf = ptg.Surface("O")
     # any new instances will be added to this group automatically
-    group = ptg.Group()
+    group = ptg.Group(name="Ball.group")
 
     def on_placed(self):
         self.goto(ptg.terminal.width(), ptg.terminal.randy())
@@ -22,13 +22,14 @@ class Ball(ptg.Sprite):
     def update(self):
         self.move(-1, 0)
     
-        if self.x == 0:
+        if self.is_colliding(ptg.ScreenEdge.left):
             score.increment()
             self.kill()
             return
         
         if self.is_colliding(myjet):
             game.break_loop()
+        
         if self.is_colliding(myline):
             self.color_all("\033[31m")
         else:
