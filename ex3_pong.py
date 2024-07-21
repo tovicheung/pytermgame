@@ -42,7 +42,9 @@ with ptg.Game(fps=30) as game:
     mid = ptg.terminal.width() // 2
 
     score_middle = ptg.FText(":").place((mid, 0))
-    score1 = ptg.Counter(0).align_right().place((mid - 2, 0))
+    score1 = ptg.Counter(0) \
+        .modify(ptg.Modifier(align_horizontal = ptg.Dir.right)) \
+        .place((mid - 2, 0))
     score2 = ptg.Counter(0).place((mid + 2, 0))
 
     ball = Ball().place((0, 0))

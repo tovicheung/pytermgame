@@ -6,6 +6,7 @@ from .coords import Coords
 from .debugger import Debugger
 from .game import Game
 from .group import Group
+from .modifier import Modifier, Dir, Color
 from .profiler import Profiler
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object, UP, DOWN, LEFT, RIGHT, TOP, BOTTOM

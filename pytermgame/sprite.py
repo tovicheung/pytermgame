@@ -4,12 +4,13 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Iterable, Generator, Self
+from typing import Iterable, Generator
 
 from . import terminal, _active
 from .collidable import Collidable
 from .coords import Coords, XY
 from .group import Group
+from .modifier import Modifier, Dir, Color
 from .scene import Scene
 from .surface import Surface, SurfaceLike
 
@@ -17,11 +18,6 @@ MONITOR_PERFORMANCE = False
 
 if MONITOR_PERFORMANCE:
     import gc
-
-UP = TOP = 1
-DOWN = BOTTOM = 2
-LEFT = 4
-RIGHT = 8
 
 def _ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
@@ -122,9 +118,8 @@ class Sprite(Collidable):
         self.hidden = False
         self.zombie = False
 
-        # modifiers
-        self._ansi = "\033[m"
-        self.align_horizontal = LEFT
+        # styling
+        self.modifier = Modifier.default()
         
         # [future: collision]
         # self._collisions: set[Sprite] = set()
@@ -224,21 +219,18 @@ class Sprite(Collidable):
     def height(self):
         return self.surf.height
     
-    def color_all(self, ansi: str):
-        # no change, no need re-render
-        if ansi == self._ansi:
-            return self
-        self._ansi = ansi
-        self.set_dirty()
+    def modify(self, modifier: Modifier):
+        changed = self.modifier.update(modifier)
+        if changed:
+            self.set_dirty()
         return self
     
     # Rendering
 
     def _apply_modifiers(self):
-        """Modifies coords and surfs, returns whether an erase of the old surf is needed"""
-        if self.align_horizontal == RIGHT and self.surf.width != self._rendered.surf.width:
+        """Modifies coords and surfs right before rendering"""
+        if self.modifier.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:
             self._coords = self._coords.dx(-(self.surf.width - self._rendered.surf.width))
-            self._render(flush=False, erase=True)
     
     def _render(self, flush=True, erase=False):
         if self.hidden:
@@ -272,6 +264,8 @@ class Sprite(Collidable):
             slice_x = slice(None, terminal.width() - int(coords.x), None)
         else:
             slice_x = slice(None, None, None)
+        
+        ansi = "\033[m" + Color.to_fg_ansi(self.modifier.foreground_color) + Color.to_bg_ansi(self.modifier.background_color)
 
         for i, line in enumerate(surf.lines()):
             segment = line[slice_x]
@@ -281,7 +275,7 @@ class Sprite(Collidable):
             if line_coords.y < 0 or line_coords.y >= terminal.height():
                 continue # line is vertically out of screen
             terminal.goto(*line_coords.to_term())
-            terminal.write(self._ansi + segment)
+            terminal.write(ansi + segment)
 
         terminal.write("\033[m")
 
@@ -504,12 +498,6 @@ class Sprite(Collidable):
                 if sp in self._collisions:
                     return True
             return False
-
-    # Styling, more methods are to be added
-
-    def align_right(self):
-        self.align_horizontal = RIGHT
-        return self
 
 class _Virtual:
     def __init__(self, owner: Sprite):

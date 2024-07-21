@@ -31,15 +31,16 @@ class Ball(ptg.Sprite):
             game.break_loop()
         
         if self.is_colliding(myline):
-            self.color_all("\033[31m")
+            self.modify(ptg.Modifier(foreground_color=ptg.Color.red))
         else:
-            self.color_all("\033[m")
+            self.modify(ptg.Modifier(foreground_color=ptg.Color.default))
 
 class Line(ptg.Sprite):
     surf = ptg.Surface("-" * (ptg.terminal.width()))
 
     def on_placed(self):
-        self.color_all("\033[38;5;245m")
+        # self.color_all("\033[38;5;245m")
+        self.modify(ptg.Modifier(foreground_color=ptg.Color.blue))
 
     def update(self):
         if myjet.y != self.y:

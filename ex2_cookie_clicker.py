@@ -33,9 +33,9 @@ class Factory(ptg.Text):
     
     def update(self):
         if score >= self.cost:
-            self.color_all("\033[32m")
+            self.modify(ptg.Modifier(foreground_color=ptg.Color.green))
         else:
-            self.color_all("\033[31m")
+            self.modify(ptg.Modifier(foreground_color=ptg.Color.red))
 
 factories: list[Factory] = []
 
