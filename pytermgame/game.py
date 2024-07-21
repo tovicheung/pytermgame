@@ -102,8 +102,7 @@ class Game:
     def start(self):
         # determine the control codes to send
 
-        # if not terminal.WINDOWS:
-        if sys.platform != "win32": # align with stubs and reduce errors
+        if sys.platform != "win32":
             # set terminal attributes to raw mode
             self._nix_fd = fd = sys.stdin.fileno()
             self._nix_old_term = termios.tcgetattr(fd)
@@ -137,10 +136,11 @@ class Game:
     def cleanup(self):
         terminal.disable_alternate_buffer()
         terminal.show_cursor()
-        # if not terminal.WINDOWS:
-        if sys.platform != "win32": # align with stubs and reduce errors
+
+        if sys.platform != "win32":
             termios.tcsetattr(self._nix_fd, termios.TCSAFLUSH, self._nix_old_term)
             fcntl.fcntl(self._nix_fd, fcntl.F_SETFL, self._nix_old_flags)
+        
         type(self)._active = None
 
     def wrapper(self, f):

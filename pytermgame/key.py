@@ -1,7 +1,6 @@
 import sys
 
 from . import _key_win, _key_posix
-from .terminal import WINDOWS
 
 # Check if _key_win and _key_posix entries match
 
