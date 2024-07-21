@@ -42,7 +42,7 @@ def add_timer(event: EventLike, ticks: int | None = None, secs: float | None = N
         if Game.get_active().fps is None:
             raise ValueError("Cannot set secs-based timer on game with fps=None")
         ticks = Game.get_active().fps * secs
-    Game.get_active().add_timer(event, ticks)
+    Game.get_active().add_timer(event, round(ticks))
 
 # Convenient aliases
 wait = sleep = time.sleep
