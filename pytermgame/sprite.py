@@ -73,7 +73,7 @@ class Sprite(Collidable):
     group: Group | None = None
 
     def _debug(self) -> str:
-        # return a debug info string
+        # returns a debug info string
         debug = f"{type(self).__name__} sprite"
         if self.placed:
             debug += f" placed at {self._coords}"

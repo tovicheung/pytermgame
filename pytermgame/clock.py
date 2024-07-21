@@ -33,7 +33,7 @@ def add_interval(event: EventLike, ticks: int | None = None, secs: float | None 
         if Game.get_active().fps is None:
             raise ValueError("Cannot set secs-based interval on game with fps=None")
         ticks = Game.get_active().fps * secs
-    Game.get_active().add_interval(event, ticks)
+    Game.get_active().add_interval(event, round(ticks))
 
 def add_timer(event: EventLike, ticks: int | None = None, secs: float | None = None):
     if ticks is None:

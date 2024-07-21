@@ -14,7 +14,7 @@ import pytermgame as ptg
 class Ball(ptg.Sprite):
     surf = ptg.Surface("O")
     # any new instances will be added to this group automatically
-    group = ptg.Group(name="Ball.group")
+    group = ptg.Group()
 
     def on_placed(self):
         self.goto(ptg.terminal.width(), ptg.terminal.randy())

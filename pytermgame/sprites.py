@@ -18,7 +18,8 @@ class FText(Sprite):
     """Fstring display
     
     Example
-    >>> counter = FText("You have {} points").place(5, 5)
+    >>> counter = FText("You have {} points", 0).place(5, 5)
+    >>> # default: You have 0 points
     >>> counter.format(6) # -> You have 6 points
     >>> counter.format(7) # -> You have 7 points
     >>> counter.format(8) # -> You have 8 points
@@ -94,3 +95,14 @@ class Gauge(Sprite):
     def update_value(self, value):
         self.value = value
         self.update_surf()
+
+# class Margin(Sprite):
+#     def __init__(self, inner_width: int, inner_height: int):
+#         self.inner_width = inner_width
+#         self.inner_height = inner_height
+#         self.surf = Surface(
+#             "┌" + "─" * inner_width + "┐" + "\n"
+#             + ("│" + " " * inner_width + "│" + "\n") * inner_height
+#             + "└" + "─" * inner_width + "┘"
+#         )
+#         super().__init__()
