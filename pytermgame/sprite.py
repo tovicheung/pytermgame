@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Iterable, Generator
+from typing import Iterable, Generator, Self
 
 from . import terminal, _active
 from .collidable import Collidable
@@ -46,6 +47,26 @@ def _iter_sprites(sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
     for x in sprite_or_sprites:
         yield from _iter_sprites(x)
 
+@dataclass
+class RenderedState:
+    """Sprite's coords and surface when it was last rendered on screen
+    
+    self.dirty == True:
+    - sprite needs to be re-rendered (erase and paint)
+    
+    self.dirty == False:
+    - sprite does not need to be re-rendered
+    - does NOT guarantee self.coords == sprite.coords and self.surf == sprite.surf
+        (since re-render can also be triggered by collisions)
+
+    self.on_screen == False:
+    - sprite was not on screen, no need to erase
+    """
+    dirty: bool
+    on_screen: bool
+    coords: Coords
+    surf: Surface
+
 class Sprite(Collidable):
     """
     For special objects without a surface (eg screen edges) see `ptg.collidable`
@@ -82,16 +103,17 @@ class Sprite(Collidable):
         return debug
 
     def __init__(self):
-        self._coords = Coords.ORIGIN
-        self._dirty = False # object requires rerender?
-        self._was_on_screen = False
-        self._ansi = "\033[m"
-        self._groups: list[Group] = []
-        self._scene: Scene
+        # sprite is now in abstract state
 
-        # old = last rendered
-        self._oldcoords = self._coords
-        self._oldsurf: Surface # set at .place()
+        # coords and scene should not exist now
+        # to specify them, use .place() with arguments
+        self._scene: Scene
+        self._coords: Coords
+
+        # object requires rerender?
+        self._groups: list[Group] = []
+
+        self._rendered: RenderedState # initialized at .place()
 
         self._virtual = False
 
@@ -101,12 +123,11 @@ class Sprite(Collidable):
         self.zombie = False
 
         # modifiers
+        self._ansi = "\033[m"
         self.align_horizontal = LEFT
         
         # [future: collision]
         # self._collisions: set[Sprite] = set()
-
-        self.init()
     
     # State conversion methods
 
@@ -118,6 +139,9 @@ class Sprite(Collidable):
         - unlocks methods such as .move()
         - can be killed via .kill()
         """
+
+        if self.placed:
+            raise Exception("Invalid call, sprite is already placed.")
 
         if scene is None:
             if Scene._active_context is not None:
@@ -134,14 +158,11 @@ class Sprite(Collidable):
         if isinstance(self.group, Group):
             self.group.add(self)
 
-        self.placed = True
 
         self.on_placed()
 
-        self._oldcoords = self._coords
-        self._oldsurf = self.surf
-        
-        self._dirty = True # initial render
+        self._rendered = RenderedState(True, False, self._coords, self.surf)
+        self.placed = True
 
         return self
 
@@ -170,11 +191,6 @@ class Sprite(Collidable):
             assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
 
     # Methods subclasses can override
-
-    def init(self):
-        """called AUTOMATICALLY after __init__
-        Uses: customize surface
-        """
 
     def on_placed(self):
         """called AUTOMATICALLY after place()
@@ -220,8 +236,8 @@ class Sprite(Collidable):
 
     def _apply_modifiers(self):
         """Modifies coords and surfs, returns whether an erase of the old surf is needed"""
-        if self.align_horizontal == RIGHT and self.surf.width != self._oldsurf.width:
-            self._coords = self._coords.dx(-(self.surf.width - self._oldsurf.width))
+        if self.align_horizontal == RIGHT and self.surf.width != self._rendered.surf.width:
+            self._coords = self._coords.dx(-(self.surf.width - self._rendered.surf.width))
             self._render(flush=False, erase=True)
     
     def _render(self, flush=True, erase=False):
@@ -229,8 +245,8 @@ class Sprite(Collidable):
             erase = True
 
         if erase:
-            coords = self._oldcoords
-            surf = self._oldsurf.to_blank()
+            coords = self._rendered.coords
+            surf = self._rendered.surf.to_blank()
 
             # # [future: collision]
             # self._scene.mat.remove(self)
@@ -282,26 +298,30 @@ class Sprite(Collidable):
         if self.zombie:
             return
         
-        if erase and not self._was_on_screen:
-            self._was_on_screen = True
+        if erase and not self._rendered.on_screen:
             return
+        
+        if erase and self._rendered.on_screen:
+            self._rendered.on_screen = False
+        
+        if (not erase) and not self._rendered.on_screen:
+            self._rendered.on_screen = True
 
-        self._dirty = False
+        self._rendered.dirty = False
 
         self._apply_modifiers()
         
         self._render(flush, erase)
         
-        self._oldcoords = self._coords
-        self._oldsurf = self.surf
+        self._rendered.coords = self._coords
+        self._rendered.surf = self.surf
 
     # Movement
 
-    @_ensure_placed
     def set_dirty(self):
-        if self._virtual or self.hidden or self._dirty:
+        if self._virtual or (not self.placed) or self._rendered.dirty:
             return
-        self._dirty = True
+        self._rendered.dirty = True
         for sprite in self.get_movement_collisions():
             if not sprite.zombie:
                 # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
@@ -342,6 +362,32 @@ class Sprite(Collidable):
     def set_y(self, y):
         self._coords = self._coords.sety(y)
         self.set_dirty()
+    
+    def set_surf(self, surf: Surface):
+        self.surf = surf
+        self.set_dirty()
+    
+    def update_surf(self):
+        self.set_surf(self.new_surf_factory())
+    
+    def new_surf_factory(self) -> Surface:
+        """A factory method to generate a surface using the sprite's attributes.
+        Subclasses who use .update_surf() should implement this.
+
+        Example:
+        ```python
+        class Line(ptg.Sprite):
+            # ... __init__ ...
+            def new_surf_factory(self):
+                return Surface("-" * self.length)
+            
+            def double_my_length(self):
+                self.length *= 2
+                self.update_surf()
+                # .update_surf() will automatically call .new_surf_factory() to get the newest surf
+        ```
+        """
+        raise NotImplementedError("Sprite.update_surf() should only be called if Sprite.new_surf_factory() is defined.")
 
     def hide(self):
         self.hidden = True
@@ -438,7 +484,7 @@ class Sprite(Collidable):
 
         @_ensure_placed
         def get_old_collisions(self):
-            yield from self._scene.mat.get_collisions(self._oldcoords, self._oldsurf)
+            yield from self._scene.mat.get_collisions(self._rendered.coords, self._rendered.surf)
         
         @_ensure_placed
         def get_all_collisions(self):
@@ -497,11 +543,11 @@ class KinematicSprite(Sprite):
     """
 
     def __init__(self):
+        super().__init__()
 
         # TODO: use vectors
         self.vx = 0
         self.vy = 0
-        super().__init__()
         
     def move(self, dx=None, dy=None):
         super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)

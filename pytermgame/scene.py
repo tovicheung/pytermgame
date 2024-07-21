@@ -37,7 +37,7 @@ if False:
             return collisions
         
         def remove(self, sprite: Sprite):
-            for (x, y) in _iter_coords(sprite._oldcoords, sprite._oldsurf):
+            for (x, y) in _iter_coords(sprite._rendered.coords, sprite._rendered.surf):
                 if sprite in self[(x, y)]:
                     self[(x, y)].remove(sprite)
 
@@ -59,7 +59,7 @@ class Scene(SpriteList):
     
     def get_dirty(self):
         """Get the SpriteList sorted by z-coordinate (bottom to top)"""
-        yield from filter(lambda sp: sp._dirty, self.sprites)
+        yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
     
     def rerender(self):
         """Erases and re-renders dirty sprites.

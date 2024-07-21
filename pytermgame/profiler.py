@@ -11,7 +11,13 @@ from .surface import Surface
 if typing.TYPE_CHECKING:
     from .game import Game
 
-class ProfileException(BaseException): ...
+@dataclass
+class ProfileException(BaseException):
+    msg: str
+    profiler: Profiler
+
+    def __str__(self):
+        return "Profiler raised an exception: " + self.msg + "\nGame state:\n" + str(self.profiler.state)
 
 def _ifnone(val, none):
     if val is None:
@@ -48,7 +54,7 @@ class Profiler:
         self.state = State.new()
 
     def err(self, msg):
-        raise ProfileException(str(msg) + "\nGame State: " + str(self.state))
+        raise ProfileException(str(msg), self)
     
     def tick(self):
         self.state.live_fps = 0 if self.game._last_tick_dur is None or self.game._last_tick_dur <= 0 else 1 / self.game._last_tick_dur
@@ -90,4 +96,4 @@ class ProfileDisplay(Sprite):
 
     def update(self):
         self.surf = Surface(str(self.state))
-        self._dirty = 1
+        self._rendered.dirty = True

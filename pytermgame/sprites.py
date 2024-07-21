@@ -32,12 +32,11 @@ class FText(Sprite):
         self.format(*args, **kwargs)
 
     def format(self, *args, **kwargs):
-        self.surf = Surface(self.string.format(*args, **kwargs))
-        self._dirty = True
+        self.set_surf(Surface(self.string.format(*args, **kwargs)))
 
-    def render(self, flush=True, erase=False):
-        super().render(flush=flush, erase=True)
-        super().render(flush=flush, erase=erase)
+    # def render(self, flush=True, erase=False):
+    #     super().render(flush=flush, erase=True)
+    #     super().render(flush=flush, erase=erase)
 
 # currently unused, this descriptor may replace Value.value in the future
 class _Value(Generic[_T]):
@@ -59,10 +58,9 @@ class Value(Sprite, Generic[_T]):
         super().__init__()
         self.value = value
         self.update_surf()
-
-    def update_surf(self):
-        self.surf = Surface(str(self.value))
-        self._dirty = True # cannot use set_dirty before place
+    
+    def new_surf_factory(self) -> Surface:
+        return Surface(str(self.value))
 
     def update_value(self, value: _T):
         self.value = value
@@ -86,12 +84,11 @@ class Gauge(Sprite):
         self.value = value
         self.length = length
         self.update_surf()
-
-    def update_surf(self):
-        n = floor(self.value / self.full * self.length)
-        self.surf = Surface("[" + "#" * n + " " * (self.length - n) + "]")
-        self._dirty = True # cannot use set_dirty before place
     
+    def new_surf_factory(self) -> Surface:
+        n = floor(self.value / self.full * self.length)
+        return Surface("[" + "#" * n + " " * (self.length - n) + "]")
+
     def update_value(self, value):
         self.value = value
         self.update_surf()

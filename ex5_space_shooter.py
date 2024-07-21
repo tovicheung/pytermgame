@@ -27,8 +27,9 @@ class Asteroid(ptg.Sprite):
     surf = ptg.Surface("####\n####\n####")
     group = ptg.Group()
 
-    def on_placed(self):
-        self.goto(ptg.terminal.width(), random.randint(0, ptg.terminal.height() - 1 - self.surf.height))
+    def __init__(self):
+        super().__init__()
+        self.place((ptg.terminal.width(), random.randint(0, ptg.terminal.height() - 1 - self.surf.height)))
 
     def update(self):
         if not self.zombie:
@@ -41,7 +42,8 @@ class Asteroid(ptg.Sprite):
 class Bullet(ptg.KinematicSprite):
     surf = ptg.Surface("----")
 
-    def init(self):
+    def __init__(self):
+        super().__init__()
         self.place((rocket.x + rocket.width + 1, rocket.y + 1))
         self.vx = 6
 
@@ -82,7 +84,7 @@ with ptg.Game(fps=30) as game:
                     Bullet()
                     power.update_value(power.value - 1)
             elif event.is_type(SPAWN):
-                Asteroid().place()
+                Asteroid()
             elif event.is_type(GAIN_POWER):
                 if power.value < power.full:
                     power.update_value(power.value + 1)

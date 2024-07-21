@@ -23,7 +23,7 @@ class Debugger(Sprite):
 
     surf = Surface("No debug info yet")
 
-    def init(self):
+    def on_placed(self):
         self.data = {}
         self.active = True
     
@@ -33,7 +33,7 @@ class Debugger(Sprite):
 
     def field(self, key, value):
         self.data[key] = value
-        self._dirty = True
+        self._rendered.dirty = True
         return self
 
     def render(self, flush=True, erase=False):
