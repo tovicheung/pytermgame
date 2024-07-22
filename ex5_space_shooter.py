@@ -24,12 +24,17 @@ rocket_art = \
 """.strip("\n")
 
 class Asteroid(ptg.Sprite):
-    surf = ptg.Surface("####\n####\n####")
     group = ptg.Group()
 
     def __init__(self):
         super().__init__()
+        self.update_surf()
         self.place((ptg.terminal.width(), random.randint(0, ptg.terminal.height() - 1 - self.surf.height)))
+    
+    def new_surf_factory(self) -> ptg.Surface:
+        height = random.randint(1, 3)
+        asteroid = ["".join(random.choice(" *@#$") for _ in range(random.randint(4, 7))) for _ in range(height)]
+        return ptg.Surface(asteroid)
 
     def update(self):
         if not self.zombie:

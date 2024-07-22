@@ -9,7 +9,7 @@ from .group import Group
 from .modifier import Modifier, Dir, Color
 from .profiler import Profiler
 from .scene import Scene
-from .sprite import Sprite, KinematicSprite, Object, UP, DOWN, LEFT, RIGHT, TOP, BOTTOM
+from .sprite import Sprite, KinematicSprite, Object
 from .sprites import Text, FText, Value, Counter, Gauge
 from .surface import Surface
 

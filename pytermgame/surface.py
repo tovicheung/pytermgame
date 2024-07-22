@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from typing import TypeAlias
+from typing import Iterable, TypeAlias
 
 class Surface:
     """Represents an immutable 2D string surface"""
 
-    def __init__(self, string: str):
-        self.data = string.splitlines()
+    def __init__(self, string: str | Iterable[str]):
+        if isinstance(string, str):
+            self._lines = string.splitlines()
+        else:
+            self._lines = list(string)
         self._width = len(max(self.lines(), key=len))
-        self._height = len(self.data)
+        self._height = len(self._lines)
     
     @classmethod
     def coerce(cls, obj: SurfaceLike) -> Surface:
@@ -17,11 +20,13 @@ class Surface:
             return obj
         if isinstance(obj, str):
             return cls(obj)
-        raise TypeError(f"Cannot convert {type(obj).__name__!r} object to Surface")
+        if isinstance(obj, Iterable):
+            return cls(obj)
+        raise TypeError(f"Cannot convert {type(obj).__qualname__!r} object to Surface")
 
     @classmethod
     def blank(cls, width: int, height: int):
-        """Generatess a blank rectangular surface"""
+        """Generate a blank rectangular surface"""
         return cls((" " * width + "\n") * height)
     
     @classmethod
@@ -38,17 +43,19 @@ class Surface:
         return self._height
     
     def __getitem__(self, args):
+        """Element access
+        
+        surf[(x, y)] = character at (x, y)
+        surf[n] = n-th line
+        """
         if not isinstance(args, tuple):
-            return self.data[args]
+            return self._lines[args]
         if len(args) != 2:
             raise ValueError("Invalid arguments")
-        return self.data[args[1]][args[0]]
-    
-    def is_blank(self, x, y):
-        return self[x, y] == " "
+        return self._lines[args[1]][args[0]]
     
     def lines(self):
-        for line in self.data:
+        for line in self._lines:
             yield line
 
     def to_blank(self):
@@ -58,4 +65,4 @@ class Surface:
             string += " " * len(line) + "\n"
         return type(self).strip(string)
 
-SurfaceLike: TypeAlias = Surface | str
+SurfaceLike: TypeAlias = Surface | str | list[str]

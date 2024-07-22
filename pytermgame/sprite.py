@@ -153,7 +153,6 @@ class Sprite(Collidable):
         if isinstance(self.group, Group):
             self.group.add(self)
 
-
         self.on_placed()
 
         self._rendered = RenderedState(True, False, self._coords, self.surf)
