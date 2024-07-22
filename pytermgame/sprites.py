@@ -8,14 +8,18 @@ from .surface import Surface
 _T = TypeVar("_T")
 
 class Text(Sprite):
-    """Text display"""
+    """Text display
+    
+    Note: ptg.Text(x) is functionally the same as ptg.Object(x)
+    but users can subclass ptg.Text to create text displays with custom behaviour
+    """
 
     def __init__(self, text: str):
         super().__init__()
         self.surf = Surface(text)
 
 class FText(Sprite):
-    """Fstring display
+    """Formatted text display
     
     Example
     >>> counter = FText("You have {} points", 0).place(5, 5)
@@ -33,10 +37,6 @@ class FText(Sprite):
 
     def format(self, *args, **kwargs):
         self.set_surf(Surface(self.string.format(*args, **kwargs)))
-
-    # def render(self, flush=True, erase=False):
-    #     super().render(flush=flush, erase=True)
-    #     super().render(flush=flush, erase=erase)
 
 # currently unused, this descriptor may replace Value.value in the future
 class _Value(Generic[_T]):

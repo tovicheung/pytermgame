@@ -20,12 +20,14 @@ pip install .
 ## Features
 - pygame-inspired api structure
 - customizable terminal behaviour (alternate screen, cursor visibility)
+- scene-switching within a game, each with its own sprites
+- extensible sprite class
 - optimized rendering: game calculates the minimum number of objects to erase and re-render **(it takes care of overlapping sprites too!)**
 - cross-platform key event reading
 - includes an integrated debugger and an external profiler
 
 > [!NOTE]
-> This is not a full-fledged game engine, but more of an experiment to create terminal game engines
+> This is not a full-fledged game engine, but more of an experiment to create terminal games
 
 ## Tested on
 - Windows 10 & 11
@@ -44,7 +46,5 @@ Examples are included in the repo root:
 Playing instructions are included in the examples.
 
 ## Future plans
-- better ANSI api
-- grayscale option
 - cross-platform mouse support
-- more examples
+- both hitbox and shape-based collision systems
