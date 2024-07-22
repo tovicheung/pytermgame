@@ -230,6 +230,8 @@ class Sprite(Collidable):
         """Modifies coords and surfs right before rendering"""
         if self.modifier.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:
             self._coords = self._coords.dx(-(self.surf.width - self._rendered.surf.width))
+        if self.modifier.align_vertical == Dir.bottom and self.surf.height != self._rendered.surf.height:
+            self._coords = self._coords.dy(-(self.surf.height - self._rendered.surf.height))
     
     def _render(self, flush=True, erase=False):
         if self.hidden:
@@ -264,7 +266,7 @@ class Sprite(Collidable):
         else:
             slice_x = slice(None, None, None)
         
-        ansi = "\033[m" + Color.to_fg_ansi(self.modifier.foreground_color) + Color.to_bg_ansi(self.modifier.background_color)
+        ansi = "\033[m" + self.modifier.to_ansi()
 
         for i, line in enumerate(surf.lines()):
             segment = line[slice_x]

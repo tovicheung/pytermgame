@@ -40,8 +40,10 @@ class Modifier:
     """
     align_horizontal: Dir = None
     align_vertical: Dir = None
-    foreground_color: Color = None
-    background_color: Color = None
+    fg: Color = None
+    bg: Color = None
+    bold: bool = False
+    inverted: bool = False
 
     @classmethod
     def default(cls):
@@ -55,3 +57,11 @@ class Modifier:
                 setattr(self, field.name, val)
                 changed = True
         return changed
+    
+    def to_ansi(self):
+        ansi = Color.to_fg_ansi(self.fg) + Color.to_bg_ansi(self.bg)
+        if self.bold:
+            ansi += "\033[1m"
+        if self.inverted:
+            ansi += "\033[7m"
+        return ansi

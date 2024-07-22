@@ -33,9 +33,9 @@ class Factory(ptg.Text):
     
     def update(self):
         if score >= self.cost:
-            self.modify(ptg.Modifier(foreground_color=ptg.Color.green))
+            self.modify(ptg.Modifier(fg=ptg.Color.green))
         else:
-            self.modify(ptg.Modifier(foreground_color=ptg.Color.red))
+            self.modify(ptg.Modifier(fg=ptg.Color.red))
 
 factories: list[Factory] = []
 
@@ -46,7 +46,10 @@ with ptg.Game() as game:
 
     # Cookie
 
-    cookie = ptg.Object(cookie_art).place((2, 2))
+    cookie = ptg.Object(cookie_art) \
+        .modify(ptg.Modifier(bold = True)) \
+        .place((2, 2))
+
     ptg.Text("Press Space").place((0, 8))
 
     # Scoreboard
@@ -80,7 +83,7 @@ with ptg.Game() as game:
                     scoreboard.format(score)
 
                     # mini animation
-                    cookie.modify(ptg.Modifier(foreground_color = ptg.Color.yellow))
+                    cookie.modify(ptg.Modifier(fg = ptg.Color.yellow))
                     ptg.clock.add_timer(COOKIE_DIM, ticks=1)
                 
                 space_last_pressed_time = time
@@ -106,7 +109,7 @@ with ptg.Game() as game:
                 scoreboard.format(score)
             
             elif event.is_type(COOKIE_DIM):
-                cookie.modify(ptg.Modifier(foreground_color = ptg.Color.default))
+                cookie.modify(ptg.Modifier(fg = ptg.Color.default))
 
         game.update()
         game.render()
