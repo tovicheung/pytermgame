@@ -42,10 +42,11 @@ factories: list[Factory] = []
 with ptg.Game() as game:
 
     COOKIES_PRODUCED = ptg.event.USEREVENT + 1
+    COOKIE_DIM = ptg.event.USEREVENT + 2
 
     # Cookie
 
-    mycookie = ptg.Object(cookie_art).place((2, 2))
+    cookie = ptg.Object(cookie_art).place((2, 2))
     ptg.Text("Press Space").place((0, 8))
 
     # Scoreboard
@@ -77,6 +78,11 @@ with ptg.Game() as game:
                 if time - 0.1 > space_last_pressed_time:
                     score += 1
                     scoreboard.format(score)
+
+                    # mini animation
+                    cookie.modify(ptg.Modifier(foreground_color = ptg.Color.yellow))
+                    ptg.clock.add_timer(COOKIE_DIM, ticks=1)
+                
                 space_last_pressed_time = time
 
             elif event.is_key() and event.value_passes(str.isdigit):
@@ -98,6 +104,9 @@ with ptg.Game() as game:
             elif event.is_type(COOKIES_PRODUCED):
                 score += event.value
                 scoreboard.format(score)
+            
+            elif event.is_type(COOKIE_DIM):
+                cookie.modify(ptg.Modifier(foreground_color = ptg.Color.default))
 
         game.update()
         game.render()

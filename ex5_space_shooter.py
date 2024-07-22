@@ -16,13 +16,6 @@ Mechanics
 import pytermgame as ptg
 import random
 
-rocket_art = \
-"""
-\\\\
-===>
-//
-""".strip("\n")
-
 class Asteroid(ptg.Sprite):
     group = ptg.Group()
 
@@ -68,7 +61,12 @@ with ptg.Game(fps=30) as game:
     ptg.clock.add_interval(SPAWN, secs=1)
     ptg.clock.add_interval(GAIN_POWER, secs=0.5)
 
-    rocket = ptg.Object(rocket_art).place((0, 0))
+    rocket = ptg.Object([
+        "\\\\",
+        "===>",
+        "//",
+    ]).place((0, 0))
+    
     power = ptg.Gauge(20, 10, 20).place((0, ptg.terminal.height() - 1))
 
     score_text = ptg.Text("Score:").place((14, ptg.terminal.height() - 1))
