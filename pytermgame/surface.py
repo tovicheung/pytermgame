@@ -5,13 +5,21 @@ from typing import Iterable, TypeAlias
 class Surface:
     """Represents an immutable 2D string surface"""
 
-    def __init__(self, string: str | Iterable[str]):
+    def __init__(self, string: str | Iterable[str], _blank=False):
         if isinstance(string, str):
             self._lines = string.splitlines()
         else:
             self._lines = list(string)
         self._width = len(max(self.lines(), key=len))
         self._height = len(self._lines)
+
+        if not _blank:
+            string = ""
+            for line in self.lines():
+                string += " " * len(line) + "\n"
+            self._blank = type(self)(string.strip("\n"), _blank=True)
+        else:
+            self._blank = self
     
     @classmethod
     def coerce(cls, obj: SurfaceLike) -> Surface:
@@ -59,6 +67,7 @@ class Surface:
             yield line
 
     def to_blank(self):
+        return self._blank
         # Transform to whitespaces for erasing
         string = ""
         for line in self.lines():
