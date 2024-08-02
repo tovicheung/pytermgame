@@ -16,3 +16,6 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/tovicheung/pytermgame"
+
+[tool.setuptools]
+packages = ["pytermgame"]
