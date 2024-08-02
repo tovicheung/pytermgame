@@ -47,7 +47,11 @@ Examples are included in the repo root:
 Playing instructions are included in the respective files.
 
 ## Demo
-![](res/breakout_demo.mp4)
+
+https://github.com/user-attachments/assets/202c4f01-b9ec-4aac-bbbc-0cfa07369a2d
+
+https://github.com/tovicheung/pytermgame/assets/demo_breakout.mp4
+
 Atari breakout gameplay (example 4)
 
 ## Future plans
