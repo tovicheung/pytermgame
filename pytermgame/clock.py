@@ -4,7 +4,7 @@ import time
 from .event import EventLike, add_event
 from .game import Game
 
-# Thread-based intervals do not make sense in a tick-oriented game
+# Thread-based intervals do not make sense in a tick-based game
 # 
 # class Repeat(threading.Timer):
 #     def run(self):

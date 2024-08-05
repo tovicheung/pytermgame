@@ -11,13 +11,14 @@ if TYPE_CHECKING:
     from .surface import Surface
 
 class Collidable:
-    # should not be called by user
+    """Represents anything that can be collided by a sprite
+    (or more precisely, collided by a set of coordinates and a surface)"""
 
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
         raise NotImplementedError("Subclasses of Collidable must implement ._is_colliding_raw()")
 
     def _is_colliding_sprite(self, other: Sprite, old=False):
-        return self._is_colliding_raw(other._rendered.coords if old else other._coords, other.surf)
+        return self._is_colliding_raw(other._rendered.coords if old else other._coords, other._rendered.surf)
 
 class _ScreenTop(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):

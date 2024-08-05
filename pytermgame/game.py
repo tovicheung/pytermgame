@@ -10,14 +10,10 @@ from typing import TYPE_CHECKING, TypeAlias
 import time
 import sys
 
-from . import terminal, event, transition as _transition, cursor
+from . import terminal, event, cursor
 from .debugger import Debugger
 from .event import add_event, EventLike
 from .scene import Scene
-
-if TYPE_CHECKING:
-    from .coords import Coords
-    from .transition import Transition
 
 if sys.platform != "win32":
     import termios
@@ -271,28 +267,6 @@ class Game:
 
     def render(self):
         self.scene.rerender()
-
-    def _switch_scene(self, scene: Scene, transition: Transition, ticks: int):
-        # Unused
-        switched = False
-        for flags in transition(ticks):
-            if flags & _transition.F_SWITCH:
-                self.scene = scene
-                switched = True
-            if flags & _transition.F_CLEAR:
-                terminal.clear()
-            if flags & _transition.F_RENDER:
-                self.scene.render(flush=True)
-            self.tick()
-            if flags & _transition.F_RENDER_AFTER_TICK:
-                self.scene.render(flush=True)
-        
-        if not switched:
-            self.scene = scene
-
-        terminal.clear()
-        terminal.reset()
-        scene.render()
     
     # Game loop controls
 

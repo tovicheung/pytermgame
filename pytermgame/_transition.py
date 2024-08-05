@@ -52,3 +52,28 @@ def wipe(ticks: int, char: str = " ", ansi: str = "\033[7m"):
 
         yield F_NONE
 
+
+"""
+
+    def _switch_scene(self, scene: Scene, transition: Transition, ticks: int):
+        # Unused
+        switched = False
+        for flags in transition(ticks):
+            if flags & _transition.F_SWITCH:
+                self.scene = scene
+                switched = True
+            if flags & _transition.F_CLEAR:
+                terminal.clear()
+            if flags & _transition.F_RENDER:
+                self.scene.render(flush=True)
+            self.tick()
+            if flags & _transition.F_RENDER_AFTER_TICK:
+                self.scene.render(flush=True)
+        
+        if not switched:
+            self.scene = scene
+
+        terminal.clear()
+        terminal.reset()
+        scene.render()
+"""

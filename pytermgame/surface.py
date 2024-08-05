@@ -65,8 +65,7 @@ class Surface:
         return self._lines[args[1]][args[0]]
     
     def lines(self):
-        for line in self._lines:
-            yield line
+        yield from self._lines
 
     def to_blank(self):
         return self._blank
