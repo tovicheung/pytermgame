@@ -23,6 +23,7 @@ LF = "\n"
 SPACE = " "
 TAB = "\t"
 ESC = "\x1b"
+BACKSPACE = "\x08"
 
 CTRL_A = "\x01"
 CTRL_B = "\x02"
@@ -31,7 +32,7 @@ CTRL_D = "\x04"
 CTRL_E = "\x05"
 CTRL_F = "\x06"
 CTRL_G = "\x07"
-CTRL_H = "\x08"
+CTRL_H = BACKSPACE
 CTRL_I = TAB
 CTRL_J = LF
 CTRL_K = "\x0b"

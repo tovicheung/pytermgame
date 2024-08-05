@@ -19,23 +19,21 @@ def height():
 
 # I/O
 
-def write(string: str):
+def write(string: str, flush=False):
     sys.stdout.write(string)
+    if flush:
+        sys.stdout.flush()
 
 def flush():
     sys.stdout.flush()
 
-def fwrite(string: str):
-    write(string)
-    flush()
-
 # Terminal configuration
 
-def enable_alternate_buffer():
-    fwrite("\033[?1049h")
+def enable_alternate_buffer(flush=True):
+    write("\033[?1049h", flush)
 
-def disable_alternate_buffer():
-    fwrite("\033[?1049l")
+def disable_alternate_buffer(flush=True):
+    write("\033[?1049l", flush)
 
 def enable_autowrap():
     write("\033[?7h")
@@ -49,11 +47,11 @@ def goto(x: int, y: int):
     """Note: 1-based"""
     write(f"\033[{int(y)};{int(x)}H")
 
-def hide_cursor():
-    fwrite("\033[?25l")
+def hide_cursor(flush=True):
+    write("\033[?25l", flush)
 
-def show_cursor():
-    fwrite("\033[?25h")
+def show_cursor(flush=True):
+    write("\033[?25h", flush)
 
 def home():
     write("\033[H")

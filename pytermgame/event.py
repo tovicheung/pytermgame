@@ -52,7 +52,13 @@ class Event:
         return self.as_pair() == other
     
     def value_passes(self, func):
-        """equivalent to func(event.value) but silences errors"""
+        """equivalent to func(event.value) but silences errors
+        
+        Example:
+        ```python
+        event.value_passes(str.isdigit)
+        ```
+        """
         try:
             return func(self.value)
         except Exception:
@@ -73,11 +79,19 @@ MOUSESCROLLUP = 5 # unused for now
 MOUSESCROLLDOWN = 6 # unused for now
 USEREVENT = 31
 
-# should not be exposed
 queue: list[EventLike] = []
-got = False # is get() called this tick?
+
+def wait_for_event():
+    """blocks until an event is triggered"""
+    while True:
+        queue.extend(Event(KEYEVENT, x) for x in get_keys())
+        if len(queue):
+            break
+    return Event(queue.pop(0))
+    
 
 def get():
+    """non-blocking, should be used in tick-based games"""
     for key in get_keys():
         yield Event(KEYEVENT, key)
     
@@ -86,9 +100,6 @@ def get():
     queue.clear()
     for event in queued:
         yield Event(event)
-    
-    global got
-    got = True
 
 _get = get
 
@@ -98,19 +109,10 @@ def add_event(event: EventLike):
     queue.append(event)
 
 def wait_until(event: EventLike):
+    """blocks until an event that meets the criteria is triggered
+    Note: any events that are triggered while waiting are discarded
+    For a more safer method to wait for events use wait_for_event()"""
     while True:
         for e in get():
             if event == e:
-                return
-
-def gather_until(event: EventLike, include_this = True):
-    """Gather events until a certain event is triggered.
-    Returns the list of events gathered."""
-    saved = []
-    while True:
-        for e in get():
-            if event == e:
-                if include_this:
-                    saved.append(e)
-                return saved
-            saved.append(e)
+                return e

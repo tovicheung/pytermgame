@@ -19,6 +19,8 @@ Future updates
 - Provide simple interface for positioning (`[future: layout]`)
     * top of screen, horizontally middle, etc
 
+- Cursor / mouse control (`[future: cursor]`)
+
 - Game state?
 
 Design choices made

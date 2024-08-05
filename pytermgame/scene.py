@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from . import terminal
 from .coords import Coords, XY
+from . import cursor, terminal
 from .group import SpriteList
 
 from collections import defaultdict
@@ -65,13 +65,15 @@ class Scene(SpriteList):
         """Erases and re-renders dirty sprites.
         Not to be confused with Scene.render(), it only calls .render() on all sprites.
         """
+        terminal.hide_cursor(flush=False)
         dirty = tuple(self.get_dirty())
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=False)
         # flush once after all the rendering
-        terminal.flush()
+        cursor.write_ansi() # this flushes
+        # terminal.flush()
     
     def update(self):
         """Calls .update() on sprites and kills zombies
@@ -93,7 +95,7 @@ class Scene(SpriteList):
         """called by sprites to get the next available z-coordinate"""
         return len(self.sprites)
     
-    # Context manager for easy sprite creation amd placement
+    # Context manager for easy sprite creation and placement
 
     def __enter__(self):
         if Scene._active_context is not None:

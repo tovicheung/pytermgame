@@ -43,6 +43,7 @@ Examples are included in the repo root:
 - `ex3_pong.py`
 - `ex4_breakout.py`
 - `ex5_space_shooter.py`
+- `ex6_wordle.py`
 
 Playing instructions are included in the respective files.
 

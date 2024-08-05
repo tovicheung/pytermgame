@@ -10,11 +10,11 @@ from .modifier import Modifier, Dir, Color
 from .profiler import Profiler
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object
-from .sprites import Text, FText, Value, Counter, Gauge
+from .sprites import Text, FText, Value, Counter, Gauge, TextInput
 from .surface import Surface
 
 # function-based
-from . import clock, event, key, terminal, transition
+from . import clock, cursor, event, key, terminal, transition
 
 # terminal test
 

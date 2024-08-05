@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, TypeAlias
 import time
 import sys
 
-from . import terminal, event, transition as _transition
+from . import terminal, event, transition as _transition, cursor
 from .debugger import Debugger
 from .event import add_event, EventLike
 from .scene import Scene
@@ -68,6 +68,11 @@ class Game:
         self.silent_errors = silent_errors
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
+
+        if self.show_cursor:
+            cursor.show()
+        else:
+            cursor.hide()
 
         # Don't compute every tick
         self.spf = None if self.fps is None else 1 / self.fps
@@ -255,8 +260,6 @@ class Game:
                 time.sleep(next_tick - now)
         self.last_tick = time.time()
         self.ntick += 1
-        
-        event.got = False # new tick, reset
 
     def update(self):
         """Not strictly required to call each game loop.

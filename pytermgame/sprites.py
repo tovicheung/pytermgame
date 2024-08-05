@@ -1,7 +1,10 @@
 from __future__ import annotations
 from math import floor
+import string
 from typing import TypeVar, Generic
 
+from .event import Event
+from . import cursor, key
 from .sprite import Sprite
 from .surface import Surface
 
@@ -103,3 +106,58 @@ class Gauge(Sprite):
 #             + "└" + "─" * inner_width + "┘"
 #         )
 #         super().__init__()
+
+class TextInput(Sprite):
+    def __init__(self):
+        super().__init__()
+        self.value = ""
+        self.cur = 0
+        self.update_surf()
+    
+    def new_surf_factory(self) -> Surface:
+        return Surface(self.value)
+
+    def update_value(self, value):
+        self.value = value
+        if len(value) < self.cur:
+            self.cur = len(value)
+        self.update_surf()
+    
+    def process(self, event: Event, allow_insert = string.digits + string.ascii_letters + string.punctuation):
+        """Tries to process the event and returns True if processed, else False.
+        
+        This method may be standardized in the future for more keyboard-based sprites.
+
+        Example:
+        ```python
+        if sprite1.process(event):
+            pass
+        elif sprite2.process(event):
+            pass
+        ```
+        """
+        if event.is_key(key.LEFT):
+            self.cur = max(0, self.cur - 1)
+            return True
+        elif event.is_key(key.RIGHT):
+            self.cur = min(len(self.value), self.cur + 1)
+            return True
+        elif event.is_key(key.BACKSPACE):
+            if self.cur > 0:
+                self.cur -= 1
+                self.update_value(self.value[:self.cur] + self.value[self.cur+1:])
+            return True
+        elif event.is_key(key.HOME):
+            self.cur = 0
+            return True
+        elif event.is_key(key.END):
+            self.cur = len(self.value)
+            return True
+        elif event.is_key() and event.value_passes(allow_insert.__contains__):
+            # `event.value in allow_insert` is not used because value may not be str
+            self.update_value(self.value[:self.cur] + event.value + self.value[self.cur:])
+            self.cur += 1
+            return True
+    
+    def update(self):
+        cursor.goto(self.x + self.cur, self.y)

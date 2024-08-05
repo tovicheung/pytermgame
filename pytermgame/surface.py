@@ -8,6 +8,8 @@ class Surface:
     def __init__(self, string: str | Iterable[str], _blank=False):
         if isinstance(string, str):
             self._lines = string.splitlines()
+            if len(self._lines) == 0:
+                self._lines = [""]
         else:
             self._lines = list(string)
         self._width = len(max(self.lines(), key=len))
