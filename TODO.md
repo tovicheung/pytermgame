@@ -16,10 +16,10 @@ Future updates
 
 - Support scrolling (`[future: scrolling]`)
 
-- Game state?
-
 - Provide simple interface for positioning (`[future: layout]`)
     * top of screen, horizontally middle, etc
+
+- Game state?
 
 Design choices made
 

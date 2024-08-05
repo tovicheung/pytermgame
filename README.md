@@ -55,5 +55,4 @@ https://github.com/tovicheung/pytermgame/assets/demo_breakout.mp4
 Atari breakout gameplay (example 4)
 
 ## Future plans
-- cross-platform mouse support
-- both hitbox and shape-based collision systems
+check out `TODO.md`
