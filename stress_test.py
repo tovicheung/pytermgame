@@ -32,4 +32,4 @@ try:
 
             prof.tick().min_average_fps(game.fps / 2)
 except ptg.profiler.ProfileException as exc:
-    print(exc)
+    print(exc) # around 50

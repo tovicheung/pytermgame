@@ -24,6 +24,14 @@ def _ifnone(val, none):
         return none
     return val
 
+def _fmt(val, ifnone=0):
+    if val is None:
+        return _fmt(ifnone)
+    if isinstance(val, int):
+        return str(val)
+    elif isinstance(val, float):
+        return val.__format__(".4f")
+
 @dataclass
 class State:
     tick_durations: list
@@ -37,7 +45,7 @@ class State:
         return cls([], 0, 0, 0, None)
     
     def __str__(self):
-        return f"live_fps={self.live_fps:.2f}\naverage_fps={_ifnone(self.average_fps, 0):.2f}\nsprites={self.sprites}\nintervals={self.intervals}"
+        return f"live_fps={_fmt(self.live_fps)}\naverage_fps={_fmt(self.average_fps, ifnone=0)}\nsprites={self.sprites}\nintervals={self.intervals}"
 
 class Profiler:
     """To monitor and analyze a game
@@ -76,13 +84,13 @@ class Profiler:
     def min_fps(self, min_fps):
         fps = self.state.live_fps
         if fps is not None and fps < min_fps:
-            self.err(f"Game fps ({fps}) is lower than minimum ({min_fps})")
+            self.err(f"Game fps ({_fmt(fps)}) is lower than minimum ({_fmt(min_fps)})")
         return self
 
     def min_average_fps(self, min_fps):
         a = self.state.average_fps
         if a is not None and a < min_fps:
-            self.err(f"Game fps ({a}) is lower than minimum ({min_fps})")
+            self.err(f"Game fps ({_fmt(a)}) is lower than minimum ({_fmt(min_fps)})")
         return self
     
     def with_display(self):
