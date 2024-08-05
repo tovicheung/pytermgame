@@ -1,4 +1,4 @@
-# CURRENTLY UNUSED, FOR FUTURE + TESTING
+# [future: layout]
 
 from typing import TypeAlias
 from enum import Enum

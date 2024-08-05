@@ -5,6 +5,7 @@ This module contains the Game class, which controls the entire game.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeAlias
 import time
 import sys
@@ -15,6 +16,7 @@ from .event import add_event, EventLike
 from .scene import Scene
 
 if TYPE_CHECKING:
+    from .coords import Coords
     from .transition import Transition
 
 if sys.platform != "win32":
@@ -53,7 +55,7 @@ class Game:
         """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
         - alternate_screen - whether to use an alternate terminal screen
-        - show_cursor - whether to show the cursor
+        - show_cursor - whether to show the cursor (shorthand to game.cursor.show())
         - silent_errors - what errors should not be displayed
         - text_wrapping - whether to wrap overflow in terminal
         - clear_first - whether to clear the terminal before starting

@@ -49,11 +49,11 @@ class RenderedState:
     
     self.dirty == True:
     - sprite needs to be re-rendered (erase and paint)
+    - does NOT guarantee self.coords != sprite.coords or self.surf != sprite.surf
+        (since re-render can also be triggered by collisions)
     
     self.dirty == False:
     - sprite does not need to be re-rendered
-    - does NOT guarantee self.coords == sprite.coords and self.surf == sprite.surf
-        (since re-render can also be triggered by collisions)
 
     self.on_screen == False:
     - sprite was not on screen, no need to erase

@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 def _ensure_not_frozen(method):
     @wraps(method)
-    def replacement(self, *args, **kwargs):
+    def replacement(self: Group, *args, **kwargs):
         if self.frozen:
             raise Exception(f"Cannot call {method.__qualname__}() on frozen group")
         return method(self, *args, **kwargs)
@@ -20,8 +20,9 @@ class Group:
     frozen = False
     # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
 
-    def __init__(self, sprites: Iterable[Sprite] = (), frozen = False, name: str | None = None):
-        # frozen: for internal use, marks frozen groups
+    def __init__(self, sprites: Iterable[Sprite] = (), name: str | None = None, frozen = False):
+        # name: used in __repr__ in errors
+        # frozen: group contains Collidables that are not Sprites
         self.sprites = set(sprites)
         self.frozen = frozen
         self.name = name
@@ -75,19 +76,12 @@ class Group:
     def render(self, flush=True, erase=False):
         for sprite in self:
             sprite.render(flush=False, erase=erase)
-        
-        # slight optimization
+
         if flush:
             terminal.flush()
 
 class SpriteList(Group):
-    """List of sprites
-    
-    Differences from Group:
-    - sprites are not aware of being in a SpriteList
-        - therefore, spritelists must be destructed as soon as possible
-    - order is preserved
-    """
+    """Ordered group of sprites"""
 
     def __init__(self, sprites: Iterable[Sprite], name: str | None = None):
         self.sprites = list(sprites)
@@ -102,6 +96,8 @@ class SpriteList(Group):
 
     def extend(self, sprites: Iterable[Sprite]):
         self.sprites.extend(sprites)
+        for sprite in sprites:
+            sprite._groups.append(self)
 
     def remove(self, *sprites: Sprite):
         for sprite in sprites:

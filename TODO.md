@@ -1,32 +1,31 @@
-Planned in future
+Future updates
 
-- Use a 2d array to keep track of which coordinates are occupied by which sprites
+> [!NOTE]
+> Some planned updates have a tag next to them, for example `[future: scrolling]`
+> This means there is already some progress on it. The relevant code are marked by the tag using comments.
+> You can search for that tag to view the relevant code.
+
+- Use a 2D matrix to track sprite occupancy of each coordinate (`[future: collision]`)
+    * **Tested:** no significant improvement
+    * maybe make this an optional feature?
     * Benefits:
         * efficient collision detection
         * shape-wise collision detection instead of hitbox-wise
     * Drawbacks:
         * huge changes in api
-    * Potential idea:
-        * make this an optional feature
 
-Improvements / Ideas
+- Support scrolling (`[future: scrolling]`)
 
-- Stricter control over sprite placement; 3 methods:
-    1. Check if placed in methods (**current method**)
+- Game state?
+
+- Provide simple interface for positioning (`[future: layout]`)
+    * top of screen, horizontally middle, etc
+
+Design choices made
+
+- Stricter control over sprite placement; 3 ways:
+    1. (**current**) Check if placed in methods
     2. Split into two classes: `ArbitrarySprite` and `PlacedSprite`
         * seems to be confusing
     3. Add `coords` and `scene` arguments to `Sprite.__init__`
         * subclasses must also include them and call super() if they want to customize the constructor
-
-- Create a game-wise entry specifically for `sprites.Value` s and use the currently unused descriptor
-    * Benefits:
-        * No need to call `.set()`, just set the value
-        * No namespace cluttering
-    * Drawbacks:
-        * Does not play well with type-checking
-
-- Create example for scrolling
-
-- Provide simple interface for abstract positioning
-    * top of screen, horizontally middle, etc.
-    * planned: `ptg.layout`

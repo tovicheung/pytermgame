@@ -42,7 +42,7 @@ if False:
                     self[(x, y)].remove(sprite)
 
 class Scene(SpriteList):
-    """A scene is essentially a list of sprites ordered by z-coordinate."""
+    """A scene is essentially a list of sprites ordered by z-coordinate. (and also a cursor)"""
 
     # IMPORTANT: +Z is top, -Z is bottom
 
