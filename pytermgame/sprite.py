@@ -4,7 +4,11 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Iterable, Generator, Self, overload
+from typing import Iterable, Generator, overload
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 from . import terminal, _active
 from .collidable import Collidable

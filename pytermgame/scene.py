@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .surface import Surface
     from .sprite import Sprite
-else:
-    class Sprite: ...
 
 def _iter_coords(coords: Coords, surf: Surface):
     for y in range(int(coords.y), int(coords.y)+surf.height):

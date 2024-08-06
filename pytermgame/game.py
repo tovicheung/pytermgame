@@ -5,10 +5,12 @@ This module contains the Game class, which controls the entire game.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 import time
 import sys
+
+if TYPE_CHECKING:
+    from .clock import Interval, Timer
 
 from . import terminal, event, cursor
 from .debugger import Debugger
@@ -19,9 +21,6 @@ if sys.platform != "win32":
     import termios
     import fcntl
     import os
-
-Interval: TypeAlias = tuple[EventLike, int]
-Timer: TypeAlias = tuple[EventLike, int]
 
 class Game:
     """The class that ties everything together.
@@ -51,7 +50,7 @@ class Game:
         """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
         - alternate_screen - whether to use an alternate terminal screen
-        - show_cursor - whether to show the cursor (shorthand to game.cursor.show())
+        - show_cursor - whether to show the cursor (shorthand to cursor.show())
         - silent_errors - what errors should not be displayed
         - text_wrapping - whether to wrap overflow in terminal
         - clear_first - whether to clear the terminal before starting
@@ -64,11 +63,6 @@ class Game:
         self.silent_errors = silent_errors
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
-
-        if self.show_cursor:
-            cursor.show()
-        else:
-            cursor.hide()
 
         # Don't compute every tick
         self.spf = None if self.fps is None else 1 / self.fps
@@ -117,10 +111,14 @@ class Game:
         
         if self.alternate_screen:
             terminal.enable_alternate_buffer()
+        
+
         if self.show_cursor:
-            terminal.show_cursor()
+            cursor.show()
         else:
-            terminal.hide_cursor()
+            cursor.hide()
+            cursor.write_ansi()
+
         if self.text_wrapping:
             terminal.enable_autowrap()
         else:
@@ -128,9 +126,6 @@ class Game:
         
         if self.clear_first:
             terminal.clear()
-
-        for timer in self.timers:
-            timer.start()
 
         type(self)._active = self
         self.ntick = -1
@@ -229,7 +224,7 @@ class Game:
             self._last_tick_time = time.time()
 
         
-        if self.debugger is not None and self._block_key is not None and not event.got:
+        if self.debugger is not None and self._block_key is not None and not event._got:
             for key in event.get_keys():
                 if key == self._block_key:
                     self.debugger.block() # type: ignore
@@ -254,6 +249,9 @@ class Game:
             now = time.time()
             if now < next_tick:
                 time.sleep(next_tick - now)
+        
+        event._got = False
+
         self.last_tick = time.time()
         self.ntick += 1
 

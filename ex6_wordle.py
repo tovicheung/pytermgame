@@ -41,6 +41,9 @@ with ptg.Game(show_cursor=True) as game:
             if len(word_input.value) != 5:
                 message.update_value("Word must be 5 letters long")
                 continue
+            if not all(x.isalpha() for x in word_input.value):
+                message.update_value("Word must only contain letters")
+                continue
             message.update_value("") # clear last message
 
             # draw results

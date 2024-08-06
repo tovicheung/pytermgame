@@ -1,10 +1,12 @@
 import time
-# import threading
+from typing import TypeAlias
 
-from .event import EventLike, add_event
+from .event import EventLike
 from .game import Game
 
 # Thread-based intervals do not make sense in a tick-based game
+# 
+# import threading
 # 
 # class Repeat(threading.Timer):
 #     def run(self):
@@ -47,3 +49,7 @@ def add_timer(event: EventLike, ticks: int | None = None, secs: float | None = N
 # Convenient aliases
 wait = sleep = time.sleep
 get_time = gettime = time.time
+
+# Type aliases
+Interval: TypeAlias = tuple[EventLike, int]
+Timer: TypeAlias = tuple[EventLike, int]

@@ -2,6 +2,8 @@
 
 You've seen frameworks for making terminal apps (`textual`, `pytermgraphics`, `asciimatics` etc.), but how about a framework for games ... like `pygame` but in the terminal?
 
+Supports Python 3.10 or above
+
 ## Installation
 Install from pip
 

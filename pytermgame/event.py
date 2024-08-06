@@ -92,6 +92,9 @@ def wait_for_event():
 
 def get():
     """non-blocking, should be used in tick-based games"""
+    global _got
+    _got = True
+
     for key in get_keys():
         yield Event(KEYEVENT, key)
     
@@ -101,6 +104,7 @@ def get():
     for event in queued:
         yield Event(event)
 
+_got = False # has get() been called this tick?
 _get = get
 
 def add_event(event: EventLike):
