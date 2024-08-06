@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from . import terminal
+from . import _active, terminal
 from .group import Group
 
 if TYPE_CHECKING:
@@ -26,19 +26,19 @@ class Collidable:
 
 class _ScreenTop(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
-        return other_coords.y < 0
+        return _active.get_scene().apply_scroll(other_coords).y < 0
 
 class _ScreenBottom(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
-        return other_coords.y + other_surf.height > terminal.height()
+        return _active.get_scene().apply_scroll(other_coords).y + other_surf.height > terminal.height()
 
 class _ScreenLeft(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
-        return other_coords.x < 0
+        return _active.get_scene().apply_scroll(other_coords).x < 0
 
 class _ScreenRight(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
-        return other_coords.x + other_surf.width > terminal.width()
+        return _active.get_scene().apply_scroll(other_coords).x + other_surf.width > terminal.width()
 
 class ScreenEdge:
     top = _ScreenTop()

@@ -1,8 +1,8 @@
 Future updates
 
 > [!NOTE]
-> Some planned updates have a tag next to them, for example `[future: scrolling]`
-> This means there is already some progress on it. The relevant code are marked by the tag using comments.
+> Some planned updates have a tag next to them, for example `[future: collision]`.
+> This means there is already some progress on it and any relevant code are marked by the same tag using comments.
 > You can search for that tag to view the relevant code.
 
 - Use a 2D matrix to track sprite occupancy of each coordinate (`[future: collision]`)
@@ -13,8 +13,6 @@ Future updates
         * shape-wise collision detection instead of hitbox-wise
     * Drawbacks:
         * huge changes in api
-
-- Support scrolling (`[future: scrolling]`)
 
 - Provide simple interface for positioning (`[future: layout]`)
     * top of screen, horizontally middle, etc

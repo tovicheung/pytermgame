@@ -23,6 +23,7 @@ pip install .
 - pygame-inspired api structure
 - customizable terminal behaviour (alternate screen, cursor visibility)
 - scene-switching within a game, each with its own sprites
+- supports scrolling
 - extensible sprite class
 - collision engine with sub-tick motion prediction
 - optimized rendering: game calculates the minimum number of objects to erase and re-render **(it takes care of overlapping sprites too!)**

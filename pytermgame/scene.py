@@ -49,11 +49,10 @@ class Scene(SpriteList):
     def __init__(self):
         super().__init__((), name = "Scene")
 
+        self.offset = Coords.ORIGIN
+
         # [future: collision]
         # self.mat = OccupancyMatrix()
-
-        # [future: scrolling]
-        # self.offset = Coords.ORIGIN
     
     def get_dirty(self):
         """Get the SpriteList sorted by z-coordinate (bottom to top)"""
@@ -104,14 +103,15 @@ class Scene(SpriteList):
     def __exit__(self, typ, val, tb):
         Scene._active_context = None
 
-    # [future: scrolling]
-    if False:
-        def absolute(self, coords: Coords):
-            # unused for now
-            return coords.d(self.offset)
-        
-        def scroll(self, dx: int = 0, dy: int = 0):
-            self.offset = self.offset.d((dx, dy))
-        
-        def set_scroll(self, offset: XY):
-            self.offset = Coords.coerce(offset)
+    def apply_scroll(self, coords: Coords):
+        return coords.d(-self.offset)
+    
+    def scroll(self, dx: int = 0, dy: int = 0):
+        self.offset = self.offset.d((dx, dy))
+        if dx != 0 or dy != 0:
+            for sprite in self:
+                # no need to propagate since we are setting for all sprites
+                sprite.set_dirty(propagate=False)
+    
+    def set_scroll(self, offset: XY):
+        self.offset = Coords.coerce(offset)

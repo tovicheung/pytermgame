@@ -11,6 +11,9 @@ class Coords:
     def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
         self.x = Fraction(x)
         self.y = Fraction(y)
+    
+    def __neg__(self):
+        return type(self)(-self.x, -self.y)
 
     @classmethod
     def coerce(cls, obj: XY) -> Coords:
