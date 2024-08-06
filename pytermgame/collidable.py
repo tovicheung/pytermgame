@@ -18,6 +18,10 @@ class Collidable:
         raise NotImplementedError("Subclasses of Collidable must implement ._is_colliding_raw()")
 
     def _is_colliding_sprite(self, other: Sprite, old=False):
+        if (not old) and other.hidden:
+            return False
+        if old and (not other._rendered.on_screen):
+            return False
         return self._is_colliding_raw(other._rendered.coords if old else other._coords, other._rendered.surf)
 
 class _ScreenTop(Collidable):

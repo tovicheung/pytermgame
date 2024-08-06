@@ -267,9 +267,6 @@ class Sprite(Collidable):
             self._coords = self._coords.dy(-(self.surf.height - self._rendered.surf.height))
     
     def _render(self, flush=True, erase=False):
-        if self.hidden:
-            erase = True
-
         if erase:
             coords = self._rendered.coords
             surf = self._rendered.surf.to_blank()
@@ -326,6 +323,9 @@ class Sprite(Collidable):
         if self.zombie:
             return
         
+        if self.hidden:
+            erase = True
+        
         if erase and not self._rendered.on_screen:
             return
         
@@ -335,7 +335,6 @@ class Sprite(Collidable):
         if (not erase) and not self._rendered.on_screen:
             self._rendered.on_screen = True
 
-        self._rendered.dirty = False
 
         self._apply_style()
         
@@ -343,6 +342,7 @@ class Sprite(Collidable):
         
         self._rendered.coords = self._coords
         self._rendered.surf = self.surf
+        self._rendered.dirty = False
 
     # Movement
 
@@ -405,14 +405,15 @@ class Sprite(Collidable):
         Example:
         ```python
         class Line(ptg.Sprite):
-            # ... __init__ ...
+            def __init__(self, length): ...
+        
             def new_surf_factory(self):
                 return Surface("-" * self.length)
-            
+        
             def double_my_length(self):
                 self.length *= 2
                 self.update_surf()
-                # .update_surf() will automatically call .new_surf_factory() to get the newest surf
+                # .update_surf() will automatically call .new_surf_factory() to get the newest surf and set it
         ```
         """
         raise NotImplementedError("Sprite.update_surf() should only be called if Sprite.new_surf_factory() is defined.")
@@ -443,13 +444,11 @@ class Sprite(Collidable):
     def get_movement_collisions(self) -> Generator[Sprite, None, None]:
         """Get collisions of BOTH old and new coords"""
         for sprite in self._scene.sprites:
-            if sprite is not self and sprite._is_colliding_sprite(self) or sprite._is_colliding_sprite(self, old=True):
+            if sprite is not self and (sprite._is_colliding_sprite(self) or sprite._is_colliding_sprite(self, old=True)):
                 yield sprite
     
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
-        """Usage: Collidable._is_colliding_base(Sprite)"""
-        return (not self.hidden) \
-            and (self.x - other_surf.width < other_coords.x < self.x + self.width) \
+        return (self.x - other_surf.width < other_coords.x < self.x + self.width) \
             and (self.y - other_surf.height < other_coords.y < self.y + self.height) \
     
     def _is_colliding_sprite(self, other: Sprite, old=False):
@@ -459,13 +458,13 @@ class Sprite(Collidable):
 
     @_ensure_placed
     def was_colliding(self, sprite: Collidable):
-        if self.hidden:
+        if not self._rendered.on_screen:
             return False
         return sprite._is_colliding_sprite(self, old=True)
 
     @_ensure_placed
     def was_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
-        if self.hidden:
+        if not self._rendered.on_screen:
             return False
         for sp in _iter_sprites(sprite_or_sprites):
             if sp._is_colliding_sprite(self, old=True):
