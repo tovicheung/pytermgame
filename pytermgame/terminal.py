@@ -3,6 +3,7 @@
 This submodule can be used independently for controlling the terminal.
 """
 
+from fractions import Fraction
 import sys
 import os
 from random import randint
@@ -43,7 +44,7 @@ def disable_autowrap():
 
 # Cursor
 
-def goto(x: int, y: int):
+def goto(x: int | Fraction, y: int | Fraction):
     """Note: 1-based"""
     write(f"\033[{int(y)};{int(x)}H")
 

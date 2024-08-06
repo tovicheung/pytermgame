@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Iterable, Generator
+from typing import Iterable, Generator, Self, overload
 
 from . import terminal, _active
 from .collidable import Collidable
 from .coords import Coords, XY
 from .group import Group
-from .modifier import Modifier, Dir, Color
+from .style import Style, Dir, Color
 from .scene import Scene
 from .surface import Surface, SurfaceLike
 
@@ -36,7 +36,7 @@ def _ensure_placed(f):
         return f(self, *args, **kwargs)
     return _new
 
-def _iter_sprites(sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]):
+def _iter_sprites(sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
     if isinstance(sprite_or_sprites, Collidable):
         yield sprite_or_sprites
         return
@@ -119,7 +119,7 @@ class Sprite(Collidable):
         self.zombie = False
 
         # styling
-        self.modifier = Modifier.default()
+        self.style = Style.default()
         
         # [future: collision]
         # self._collisions: set[Sprite] = set()
@@ -128,12 +128,19 @@ class Sprite(Collidable):
 
     def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
         """After a sprite is being placed, it:
+        - has a surface
         - is attached to a scene
         - has XYZ coordinates on the scene
         - calls .on_placed(), which can be overriden by subclasses freely
         - unlocks methods such as .move()
         - can be killed via .kill()
         """
+        
+        if (not hasattr(type(self), "surf")) and (not hasattr(self, "surf")):
+            try:
+                self.update_surf()
+            except NotImplementedError:
+                raise NotImplementedError("Subclass of Sprite must define either .surf or .new_surf_factory()") from None
 
         if self.placed:
             raise Exception("Invalid call, sprite is already placed.")
@@ -218,19 +225,41 @@ class Sprite(Collidable):
     def height(self):
         return self.surf.height
     
-    def modify(self, modifier: Modifier):
-        changed = self.modifier.update(modifier)
+    @overload
+    def apply_style(self, style: Style) -> Self: ...
+    @overload
+    def apply_style(self, *, 
+        align_horizontal: Dir = None,
+        align_vertical: Dir = None,
+        fg: Color = None,
+        bg: Color = None,
+        bold: bool = None,
+        inverted: bool = None) -> Self: ...
+    
+    def apply_style(self, style: Style | None = None, **style_options) -> Self:
+        """Apply style to sprite. 2 ways to use:
+        
+        Method 1: use a `Style` object
+        (your type checker probably likes this more)
+        >>> sprite.apply_style(Style(fg = Color.red, bg = Color.green))
+
+        Method 2: provide arguments directly
+        >>> sprite.apply_style(fg = Color.red, bg = Color.green)
+        """
+        if style is None:
+            style = Style(**style_options)
+        changed = self.style.update(style)
         if changed:
             self.set_dirty()
         return self
     
     # Rendering
 
-    def _apply_modifiers(self):
+    def _apply_style(self):
         """Modifies coords and surfs right before rendering"""
-        if self.modifier.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:
+        if self.style.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:
             self._coords = self._coords.dx(-(self.surf.width - self._rendered.surf.width))
-        if self.modifier.align_vertical == Dir.bottom and self.surf.height != self._rendered.surf.height:
+        if self.style.align_vertical == Dir.bottom and self.surf.height != self._rendered.surf.height:
             self._coords = self._coords.dy(-(self.surf.height - self._rendered.surf.height))
     
     def _render(self, flush=True, erase=False):
@@ -266,7 +295,7 @@ class Sprite(Collidable):
         else:
             slice_x = slice(None, None, None)
         
-        ansi = "\033[m" + self.modifier.to_ansi()
+        ansi = "\033[m" + self.style.to_ansi()
 
         for i, line in enumerate(surf.lines()):
             segment = line[slice_x]
@@ -304,7 +333,7 @@ class Sprite(Collidable):
 
         self._rendered.dirty = False
 
-        self._apply_modifiers()
+        self._apply_style()
         
         self._render(flush, erase)
         
@@ -541,7 +570,7 @@ class KinematicSprite(Sprite):
     def move(self, dx=None, dy=None):
         super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)
     
-    def move_until_collision(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Sprite]:
+    def move_until_collision(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Collidable]:
         """self.move() but stops on collision
         Returns the list of sprites it collided with.
         """
@@ -561,7 +590,7 @@ class KinematicSprite(Sprite):
 
         return set()
 
-    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> list[Sprite]:
+    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Collidable]:
         """self.move() but takes care of bouncing
         Sub-tick movements are simulated (via virtual) and the resultant position and velocities are calculated.
         """
@@ -572,7 +601,7 @@ class KinematicSprite(Sprite):
         iy = Fraction(self.vy) / intervals
         # fractions are used to prevent float errors
 
-        collided = set()
+        collided: set[Collidable] = set()
 
         with self.virtual():
             for _ in range(intervals):

@@ -28,28 +28,30 @@ class Dir(Enum):
     center = "center"
 
 @dataclass
-class Modifier:
+class Style:
     """Styling options for sprites
     
-    When it is set as Sprite.modifier:
+    When it is set as Sprite.style:
     - styling for that sprite
     - should contain default values instead of None
 
-    When it is passed as an argument to Sprite.modify():
+    When it is passed as an argument to Sprite.set_style():
     - unspecified fields should be None
     """
-    align_horizontal: Dir = None
-    align_vertical: Dir = None
-    fg: Color = None
-    bg: Color = None
-    bold: bool = False
-    inverted: bool = False
+
+    # we cannot set default values here because None means unspecified
+    align_horizontal: Dir | None = None
+    align_vertical: Dir | None = None
+    fg: Color | None = None
+    bg: Color | None = None
+    bold: bool | None = None
+    inverted: bool | None = None
 
     @classmethod
     def default(cls):
-        return cls(Dir.left, Dir.top, Color.default, Color.default)
+        return cls(Dir.left, Dir.top, Color.default, Color.default, False, False)
     
-    def update(self, other: Modifier):
+    def update(self, other: Style):
         changed = False
         for field in fields(other):
             val = getattr(other, field.name)

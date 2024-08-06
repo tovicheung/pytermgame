@@ -22,7 +22,8 @@ with ptg.Game(show_cursor=True) as game:
     winlose = "lose"
 
     message = ptg.Value("Type and press enter ...").place()
-    word_input = ptg.TextInput().place((0, round))
+    border = ptg.sprites.Border(inner_width=7, inner_height=1).place((0, 1))
+    word_input = ptg.TextInput().place((2, 1 + round))
 
     # This example demonstrates an alternative game structure
 
@@ -45,7 +46,7 @@ with ptg.Game(show_cursor=True) as game:
             # draw results
             correct = 0
             for i, char in enumerate(word_input.value):
-                sprite = ptg.Text(char).place((i, round))
+                sprite = ptg.Text(char).place((2 + i, 1 + round))
                 if answer[i] == char:
                     color = ptg.Color.green
                     correct += 1
@@ -53,29 +54,31 @@ with ptg.Game(show_cursor=True) as game:
                     color = ptg.Color.yellow
                 else:
                     color = ptg.Color.red
-                sprite.modify(ptg.Modifier(fg = color))
+                sprite.apply_style(ptg.Style(fg = color))
             
             if correct == 5:
                 winlose = "win"
-                game.break_loop()
+                # game.break_loop()
+                break
+                # here we can break directly as there is only one layer of loop
             
             if round == 5:
                 winlose = "lose"
-                game.break_loop()
+                # game.break_loop()
+                break
             
             # update input
             round += 1
             word_input.move(0, 1)
             word_input.update_value("")
+            border.resize(inner_width=7, inner_height=border.inner_height+1)
         
         elif word_input.process(event):
             # word_input tries to process the event
             pass
-    
-    game.new_scene()
 
-    ptg.Text(f"You {winlose}! The word is {answer}!").place()
-    ptg.Text("Press space to exit").place((0, 1))
+    ptg.Text(f"You {winlose}! The word is {answer}!").place((0, 8))
+    ptg.Text("Press space to exit").place((0, 9))
     ptg.cursor.hide()
 
     game.render()

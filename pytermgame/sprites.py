@@ -60,7 +60,6 @@ class Value(Sprite, Generic[_T]):
     def __init__(self, value: _T):
         super().__init__()
         self.value = value
-        self.update_surf()
     
     def new_surf_factory(self) -> Surface:
         return Surface(str(self.value))
@@ -74,8 +73,7 @@ class Value(Sprite, Generic[_T]):
 
 class Counter(Value[int]):
     def increment(self, by: int = 1):
-        self.value += by
-        self.update_surf()
+        self.update_value(self.value + by)
 
     def decrement(self, by: int = 1):
         self.increment(-by)
@@ -86,7 +84,6 @@ class Gauge(Sprite):
         self.full = full
         self.value = value
         self.length = length
-        self.update_surf()
     
     def new_surf_factory(self) -> Surface:
         n = floor(self.value / self.full * self.length)
@@ -96,28 +93,33 @@ class Gauge(Sprite):
         self.value = value
         self.update_surf()
 
-# class Margin(Sprite):
-#     def __init__(self, inner_width: int, inner_height: int):
-#         self.inner_width = inner_width
-#         self.inner_height = inner_height
-#         self.surf = Surface(
-#             "┌" + "─" * inner_width + "┐" + "\n"
-#             + ("│" + " " * inner_width + "│" + "\n") * inner_height
-#             + "└" + "─" * inner_width + "┘"
-#         )
-#         super().__init__()
+class Border(Sprite):
+    def __init__(self, inner_width: int, inner_height: int):
+        super().__init__()
+        self.resize(inner_width, inner_height)
+    
+    def new_surf_factory(self) -> Surface:
+        return Surface(
+            "┌" + "─" * self.inner_width + "┐" + "\n"
+            + ("│" + " " * self.inner_width + "│" + "\n") * self.inner_height
+            + "└" + "─" * self.inner_width + "┘"
+        )
+    
+    def resize(self, inner_width: int, inner_height: int):
+        self.inner_width = inner_width
+        self.inner_height = inner_height
+        self.update_surf()
 
 class TextInput(Sprite):
     def __init__(self):
         super().__init__()
         self.value = ""
         self.cur = 0
-        self.update_surf()
     
     def new_surf_factory(self) -> Surface:
         return Surface(self.value)
 
-    def update_value(self, value):
+    def update_value(self, value: str):
         self.value = value
         if len(value) < self.cur:
             self.cur = len(value)
@@ -155,7 +157,7 @@ class TextInput(Sprite):
             return True
         elif event.is_key() and event.value_passes(allow_insert.__contains__):
             # `event.value in allow_insert` is not used because value may not be str
-            self.update_value(self.value[:self.cur] + event.value + self.value[self.cur:])
+            self.update_value(self.value[:self.cur] + str(event.value) + self.value[self.cur:])
             self.cur += 1
             return True
     
