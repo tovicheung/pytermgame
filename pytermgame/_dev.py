@@ -1,7 +1,8 @@
 # Development use
+# Add `from pytermgame import _dev` to activate
 
-ENSURE_SPRITE_DESTRUCTION = False
-ENSURE_VALID_TERMCOORDS = False
+ENSURE_SPRITE_DESTRUCTION = True
+ENSURE_VALID_TERMCOORDS = True
 
 # Modify some code to monitor performance
 
@@ -12,18 +13,25 @@ if ENSURE_SPRITE_DESTRUCTION:
     from .sprite import Sprite
 
     Sprite._real_kill = Sprite._kill
+
     @wraps(Sprite._kill)
     def _kill(self: Sprite):
         self._real_kill()
         assert len(self._groups) == 0, f"attempted to kill sprite but sprite is still in groups: {self._groups}"
         refs = gc.get_referrers(self)
         assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
+    
+    Sprite._kill = _kill
 
 if ENSURE_VALID_TERMCOORDS:
     from . import terminal
+
     terminal._real_goto = terminal.goto
 
     @wraps(terminal.goto)
     def goto(x, y):
         assert 1 <= x <= terminal.width(), f"terminal.goto() received invalid x-coordinate: {x}"
         assert 1 <= y <= terminal.height(), f"terminal.goto() received invalid y-coordinate: {y}"
+        terminal._real_goto(x, y)
+    
+    terminal.goto = goto
