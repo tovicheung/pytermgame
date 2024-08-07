@@ -23,7 +23,7 @@ with ptg.Game(show_cursor=True) as game:
 
     message = ptg.Value("Type and press enter ...").place()
     border = ptg.sprites.Border(inner_width=7, inner_height=1).place((0, 1))
-    word_input = ptg.TextInput().place((2, 1 + round))
+    word_input = ptg.TextInput().place((2, 2))
 
     # This example demonstrates an alternative game structure
 
