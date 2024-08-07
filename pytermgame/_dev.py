@@ -1,7 +1,7 @@
 # Development use
 
-ENSURE_SPRITE_DESTRUCTION = True
-ENSURE_VALID_TERMCOORDS = True
+ENSURE_SPRITE_DESTRUCTION = False
+ENSURE_VALID_TERMCOORDS = False
 
 # Modify some code to monitor performance
 
