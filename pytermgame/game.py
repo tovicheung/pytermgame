@@ -240,11 +240,8 @@ class Game:
             if self.ntick == timer[1]:
                 add_event(timer[0])
 
-        if self.fps is None or self.spf is None:
-            # self.spf is None  is here only for type checkers
-            return
-
-        if not timeless:
+        if (not timeless) and self.fps is not None and self.spf is not None:
+            # self.spf is not None  is here only for type checkers
             next_tick = self.last_tick + self.spf
             now = time.time()
             if now < next_tick:

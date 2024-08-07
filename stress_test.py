@@ -14,7 +14,7 @@ class Ball(ptg.KinematicSprite):
 
 try:
     with ptg.Game(fps=30) as game:
-        prof, disp = ptg.Profiler(game, sample_ticks=game.fps).with_display()
+        prof, disp = ptg.Profiler(game, sample_ticks=30).with_display()
 
         ptg.clock.add_interval(ptg.event.USEREVENT, ticks=10)
 
@@ -30,6 +30,6 @@ try:
             game.render()
             game.tick()
 
-            prof.tick().min_average_fps(game.fps / 2)
+            prof.tick().min_average_fps(15)
 except ptg.profiler.ProfileException as exc:
     print(exc) # around 50

@@ -4,8 +4,6 @@ from fractions import Fraction
 from typing import TypeAlias, Sequence
 
 class Coords:
-    # should be immutable
-
     ORIGIN: Coords
 
     def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
@@ -48,10 +46,10 @@ class Coords:
     def dy(self, dy: int | float | Fraction):
         return type(self)(self.x, self.y + dy)
     
-    def setx(self, x):
+    def with_x(self, x):
         return type(self)(x, self.y)
     
-    def sety(self, y):
+    def with_y(self, y):
         return type(self)(self.x, y)
     
     def __iter__(self):

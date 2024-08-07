@@ -410,11 +410,11 @@ class Sprite(Collidable):
         self.set_dirty()
 
     def set_x(self, x):
-        self._coords = self._coords.setx(x)
+        self._coords = self._coords.with_x(x)
         self.set_dirty()
 
     def set_y(self, y):
-        self._coords = self._coords.sety(y)
+        self._coords = self._coords.with_y(y)
         self.set_dirty()
     
     def set_surf(self, surf: Surface):
