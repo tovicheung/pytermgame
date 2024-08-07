@@ -14,18 +14,18 @@ class Coords:
     ORIGIN: ClassVar[Coords]
 
     def __new__(cls, x: int | float | Fraction, y: int | float | Fraction):
-        if cls is not Coords:
-            return
         if COORDS_TYPE == CoordsType.float:
             return FloatCoords(x, y)
         elif COORDS_TYPE == CoordsType.fraction:
-            return # FracCoords(x, y)
+            inst = object.__new__(FracCoords)
+            inst.__init__(x, y)
+            return inst
+            # return FracCoords(x, y)
     
     x: int | float | Fraction
     y: int | float | Fraction
     
     def __neg__(self) -> Self:
-        raise
         return type(self)(-self.x, -self.y)
 
     @classmethod
@@ -92,5 +92,10 @@ class FloatCoords(complex, Coords):
     
     def dy(self, dy: int | float | Fraction):
         return type(self)(self + dy * 1j)
+
+class FracCoords(Coords):
+    def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
+        self.x = x
+        self.y = y
 
 Coords.ORIGIN = Coords(0, 0)

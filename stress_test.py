@@ -19,8 +19,8 @@ try:
         ptg.clock.add_interval(ptg.event.USEREVENT, ticks=10)
 
         # colored balls to verify collisions are happening
-        # Ball().place((5, 5)).color_all("\033[31m")
-        # Ball().place((2, 2)).color_all("\033[32m")
+        # Ball().place((5, 5)).apply_style(fg = ptg.Color.red)
+        # Ball().place((2, 2)).apply_style(fg = ptg.Color.green)
         while True:
             for event in ptg.event.get():
                 if event.is_type(ptg.event.USEREVENT):
