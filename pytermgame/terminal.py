@@ -3,10 +3,10 @@
 This submodule can be used independently for controlling the terminal.
 """
 
-from fractions import Fraction
-import sys
-import os
+from typing import SupportsInt
 from random import randint
+import os
+import sys
 
 WINDOWS = sys.platform == "win32"
 
@@ -44,7 +44,7 @@ def disable_autowrap():
 
 # Cursor
 
-def goto(x: int | Fraction, y: int | Fraction):
+def goto(x: SupportsInt, y: SupportsInt):
     """Note: 1-based"""
     write(f"\033[{int(y)};{int(x)}H")
 

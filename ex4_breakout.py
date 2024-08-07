@@ -52,7 +52,10 @@ with ptg.Game(fps=30) as game:
                 .hook(game) \
                 .block_on_key("d")
 
-    ball = Ball().place((ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2))
+    init = (ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2)
+    debugger.field("termsize", (ptg.terminal.width(), ptg.terminal.height()))
+    debugger.field("ball_start_coords", init)
+    ball = Ball().place(init)
     
     pad = ptg.Object("#" * 20).place((ptg.terminal.width() // 2, ptg.terminal.height() - 3))
 
@@ -80,7 +83,7 @@ with ptg.Game(fps=30) as game:
                 pad.move(6, 0)
 
         # If you want to cheat:
-        # pad.set_x(ball.x - pad.width // 2)
+        pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()

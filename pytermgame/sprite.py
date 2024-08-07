@@ -18,11 +18,6 @@ from .style import Style, Dir, Color
 from .scene import Scene
 from .surface import Surface, SurfaceLike
 
-MONITOR_PERFORMANCE = False
-
-if MONITOR_PERFORMANCE:
-    import gc
-
 def _ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
     
@@ -214,12 +209,6 @@ class Sprite(Collidable):
         # frees all references and destroyed by garbage collector
         while len(self._groups):
             self._groups[0].remove(self)
-        
-        # prevent sprites from not being destroyed (important for performance)
-        if MONITOR_PERFORMANCE:
-            assert len(self._groups) == 0, f"attempted to kill sprite but sprite is still in groups: {self._groups}"
-            refs = gc.get_referrers(self)
-            assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
 
     # Methods subclasses can override
 
@@ -609,6 +598,8 @@ class KinematicSprite(Sprite):
         # minimum intervals to divide the motion into
         # such that for each interval the maximum delta in each axis is 1
         intervals = max(abs(self.vx), abs(self.vy))
+
+        # interval velocity
         ix = Fraction(self.vx) / intervals
         iy = Fraction(self.vy) / intervals
         # fractions are used to prevent float errors
@@ -618,93 +609,146 @@ class KinematicSprite(Sprite):
         with self.virtual():
             for _ in range(intervals):
 
-                # upward collision
-                self.move(0, -1)
-                collisions = set(self.get_collisions_with(sprite_or_sprites))
-                collided.update(collisions)
-                if collisions:
-                    self.vy = -self.vy
-                    iy = -iy
-                self.move(0, 1)
+                states = set()
 
-                # downward collision
-                self.move(0, 1)
-                collisions = set(self.get_collisions_with(sprite_or_sprites))
-                collided.update(collisions)
-                if collisions:
-                    self.vy = -self.vy
-                    iy = -iy
-                self.move(0, -1)
+                tmp_mask_x = 0
+                tmp_mask_y = 0
 
-                # leftward collision
-                self.move(-1, 0)
-                collisions = set(self.get_collisions_with(sprite_or_sprites))
-                collided.update(collisions)
-                if collisions:
-                    self.vx = -self.vx
-                    ix = -ix
-                self.move(1, 0)
+                # We fiddle with the velocities until nothing blocks us
+                # yes it is fragile code but it works well
+                while True:
 
-                # rightward collision
-                self.move(1, 0)
-                collisions = set(self.get_collisions_with(sprite_or_sprites))
-                collided.update(collisions)
-                if collisions:
-                    self.vx = -self.vx
-                    ix = -ix
-                self.move(-1, 0)
+                    states.add((ix, iy))
 
-                # corners
+                    # upward collision
+                    if iy < 0:
+                        self.move(0, -1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(0, 1)
+                        if collisions:
+                            self.vy = -self.vy
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_y = -iy
+                                break
+                            continue
 
-                # top-left collision
-                if ix < 0 and iy < 0:
-                    self.move(-1, -1)
-                    collisions = set(self.get_collisions_with(sprite_or_sprites))
-                    collided.update(collisions)
-                    if collisions:
-                        self.vx = -self.vx
-                        self.vy = -self.vy
-                        ix = -ix
-                        iy = -iy
-                    self.move(1, 1)
+                    # downward collision
+                    if iy > 0:
+                        self.move(0, 1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(0, -1)
+                        if collisions:
+                            self.vy = -self.vy
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_y = -iy
+                                break
+                            continue
 
-                # top-right collision
-                if ix > 0 and iy < 0:
-                    self.move(1, -1)
-                    collisions = set(self.get_collisions_with(sprite_or_sprites))
-                    collided.update(collisions)
-                    if collisions:
-                        self.vx = -self.vx
-                        self.vy = -self.vy
-                        ix = -ix
-                        iy = -iy
-                    self.move(-1, 1)
+                    # leftward collision
+                    if ix < 0:
+                        self.move(-1, 0)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(1, 0)
+                        if collisions:
+                            self.vx = -self.vx
+                            ix = -ix
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                break
+                            continue
 
-                # bottom-left collision
-                if ix < 0 and iy > 0:
-                    self.move(-1, 1)
-                    collisions = set(self.get_collisions_with(sprite_or_sprites))
-                    collided.update(collisions)
-                    if collisions:
-                        self.vx = -self.vx
-                        self.vy = -self.vy
-                        ix = -ix
-                        iy = -iy
-                    self.move(1, -1)
+                    # rightward collision
+                    if ix > 0:
+                        self.move(1, 0)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(-1, 0)
+                        if collisions:
+                            self.vx = -self.vx
+                            ix = -ix
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                break
+                            continue
 
-                # bottom-right collision
-                if ix > 0 and iy > 0:
-                    self.move(1, 1)
-                    collisions = set(self.get_collisions_with(sprite_or_sprites))
-                    collided.update(collisions)
-                    if collisions:
-                        self.vx = -self.vx
-                        self.vy = -self.vy
-                        ix = -ix
-                        iy = -iy
-                    self.move(-1, -1)
-                
-                self.move(ix, iy)
+                    # corners
+
+                    # top-left collision
+                    if ix < 0 and iy < 0:
+                        self.move(-1, -1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(1, 1)
+                        if collisions:
+                            self.vx = -self.vx
+                            self.vy = -self.vy
+                            ix = -ix
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                tmp_mask_y = -iy
+                                break
+                            continue
+
+                    # top-right collision
+                    if ix > 0 and iy < 0:
+                        self.move(1, -1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(-1, 1)
+                        if collisions:
+                            self.vx = -self.vx
+                            self.vy = -self.vy
+                            ix = -ix
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                tmp_mask_y = -iy
+                                break
+                            continue
+
+                    # bottom-left collision
+                    if ix < 0 and iy > 0:
+                        self.move(-1, 1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(1, -1)
+                        if collisions:
+                            self.vx = -self.vx
+                            self.vy = -self.vy
+                            ix = -ix
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                tmp_mask_y = -iy
+                                break
+                            continue
+
+                    # bottom-right collision
+                    if ix > 0 and iy > 0:
+                        self.move(1, 1)
+                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collided.update(collisions)
+                        self.move(-1, -1)
+                        if collisions:
+                            self.vx = -self.vx
+                            self.vy = -self.vy
+                            ix = -ix
+                            iy = -iy
+                            if (ix, iy) in states:
+                                tmp_mask_x = -ix
+                                tmp_mask_y = -iy
+                                break
+                            continue
+                    
+                    break
+
+                self.move(ix + tmp_mask_x, iy + tmp_mask_y)
         
         self.set_dirty()
 

@@ -1,40 +1,47 @@
 from __future__ import annotations
 
 from fractions import Fraction
-from typing import TypeAlias, Sequence
+from typing import TypeAlias, Sequence, Self, ClassVar
+from enum import Enum
+
+class CoordsType(Enum):
+    float = "float"
+    fraction = "fraction"
+
+COORDS_TYPE = CoordsType.float
 
 class Coords:
-    ORIGIN: Coords
+    ORIGIN: ClassVar[Coords]
 
-    def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
-        self.x = Fraction(x)
-        self.y = Fraction(y)
+    def __new__(cls, x: int | float | Fraction, y: int | float | Fraction):
+        if cls is not Coords:
+            return
+        if COORDS_TYPE == CoordsType.float:
+            return FloatCoords(x, y)
+        elif COORDS_TYPE == CoordsType.fraction:
+            return # FracCoords(x, y)
     
-    def __neg__(self):
+    x: int | float | Fraction
+    y: int | float | Fraction
+    
+    def __neg__(self) -> Self:
+        raise
         return type(self)(-self.x, -self.y)
 
     @classmethod
-    def coerce(cls, obj: XY) -> Coords:
+    def coerce(cls, obj: XY) -> Self:
         if isinstance(obj, cls):
             return obj
         if isinstance(obj, Sequence):
-            assert len(obj) == 2, "Coordinate should be sequence with 2 numbers"
-            try:
-                x = Fraction(obj[0])
-            except ValueError:
-                raise ValueError("x coordinate cannot be converted into a fraction") from None
-            
-            try:
-                y = Fraction(obj[1])
-            except ValueError:
-                raise ValueError("y coordinate cannot be converted into a fraction") from None
-            
-            return cls(x, y)
+            assert len(obj) == 2, "Coordinate should be sequence with 2 numbers"            
+            return cls(obj[0], obj[1])
         raise ValueError("Invalid coordinate")
+    
+    # Generic methods, subclasses may have more efficient implementation
 
     def to_term(self):
-        """Converts 0-based fractional coordinates to 1-based terminal coordinates"""
-        return type(self)(max(0, self.x + 1), max(0, self.y + 1))
+        """0-based to 1-based"""
+        return type(self)(self.x + 1, self.y + 1)
     
     def d(self, other: XY):
         other = Coords.coerce(other)
@@ -59,5 +66,31 @@ class Coords:
         return str(tuple(self))
 
 XY: TypeAlias = tuple[int | float | Fraction, int | float | Fraction] | Coords
+
+class FloatCoords(complex, Coords):
+    # complex is put first so that its C methods get inherited
+    @property
+    def x(self):
+        return self.real
+    
+    @property
+    def y(self):
+        return self.imag
+    
+    def __neg__(self):
+        return type(self)(super().__neg__())
+    
+    def to_term(self):
+        return type(self)(self + 1 + 1j)
+    
+    def d(self, other: XY):
+        coords = type(self).coerce(other)
+        return type(self)(self + coords)
+    
+    def dx(self, dx: int | float | Fraction):
+        return type(self)(self + dx)
+    
+    def dy(self, dy: int | float | Fraction):
+        return type(self)(self + dy * 1j)
 
 Coords.ORIGIN = Coords(0, 0)
