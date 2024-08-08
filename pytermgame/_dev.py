@@ -1,12 +1,22 @@
 # Development use
 # Add `from pytermgame import _dev` to activate
 
+CHECK_PLATFORM_KEYS_ENTRIES = True
 ENSURE_SPRITE_DESTRUCTION = True
 ENSURE_VALID_TERMCOORDS = True
 
 # Modify some code to monitor performance
 
 from functools import wraps
+
+if CHECK_PLATFORM_KEYS_ENTRIES:
+    from . import _key_win, _key_posix
+    if _key_win.__dict__.keys() != _key_posix.__dict__.keys():
+        win = set(filter(lambda s: s[0] != "_", _key_win.__dict__.keys()))
+        posix = set(filter(lambda s: s[0] != "_", _key_posix.__dict__.keys()))
+        diffwin = win.difference(posix)
+        diffposix = posix.difference(win)
+        raise AssertionError(f"_key_win and _key_posix have different entries\nwin - posix: {diffwin}\nposix - win: {diffposix}")
 
 if ENSURE_SPRITE_DESTRUCTION:
     import gc

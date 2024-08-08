@@ -74,15 +74,15 @@ with ptg.Game(fps=30) as game:
     
     while game.loop():
         for event in ptg.event.get():
-            if event.is_key(ptg.key.UP):
+            if event.is_key("up"):
                 rocket.move(0, -1)
-            elif event.is_key(ptg.key.DOWN):
+            elif event.is_key("down"):
                 rocket.move(0, 1)
-            elif event.is_key(ptg.key.LEFT):
+            elif event.is_key("left"):
                 rocket.move(-1, 0)
-            elif event.is_key(ptg.key.RIGHT):
+            elif event.is_key("right"):
                 rocket.move(1, 0)
-            elif event.is_key(ptg.key.SPACE):
+            elif event.is_key("space"):
                 if power.value > 0:
                     Bullet()
                     power.update_value(power.value - 1)

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ._get_key import get_keys
+from . import key as _key
 
 class Event:
     __slots__ = ("type", "value")
@@ -31,11 +32,14 @@ class Event:
         ```
         event.is_key() # event.type == KEYEVENT
         event.is_key("a") # event.type == KEYEVENT and event.value == "a"
+        event.is_key(ptg.key.UP) # event.type == KEYEVENT and event.value == up arrow
+        event.is_key("up") # event.type == KEYEVENT and event.value == up arrow
+        event.is_key("ctrl-a") # event.type == KEYEVENT and event.value == Ctrl A
         ```
         """
         if key is None:
             return self.type == KEYEVENT
-        return self.type == KEYEVENT and self.value == key
+        return self.type == KEYEVENT and (self.value == key or self.value == _key.__dict__.get(key.upper().replace("-", "_"), None))
     
     def is_type(self, type: int):
         return self.type == type
