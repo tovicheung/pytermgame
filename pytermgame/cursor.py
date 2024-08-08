@@ -29,7 +29,7 @@ def hide():
     state.visible = False
 
 def goto(x: int, y: int):
-    state.coords = Coords(x, y)
+    state.coords = Coords(x, y) # type: ignore
 
 def move(dx: int, dy: int):
     state.coords = state.coords.dx(dx).dy(dy)

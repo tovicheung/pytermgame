@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING, Iterable, Literal, overload
 
 from . import terminal
 
 if TYPE_CHECKING:
+    from .collidable import Collidable
     from .sprite import Sprite
 
 def _ensure_not_frozen(method):
@@ -17,10 +18,13 @@ def _ensure_not_frozen(method):
     return replacement
 
 class Group:
-    frozen = False
     # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
-
-    def __init__(self, sprites: Iterable[Sprite] = (), name: str | None = None, frozen = False):
+    
+    @overload
+    def __init__(self, sprites: Iterable[Collidable] = (), name: str | None = None, frozen: Literal[True] = True): ...
+    @overload
+    def __init__(self, sprites: Iterable[Sprite] = (), name: str | None = None, frozen: Literal[False] = False): ...
+    def __init__(self, sprites = (), name = None, frozen = False):
         # name: used in __repr__ in errors
         # frozen: group contains Collidables that are not Sprites
         self.sprites = set(sprites)

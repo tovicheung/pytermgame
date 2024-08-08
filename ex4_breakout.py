@@ -52,10 +52,12 @@ with ptg.Game(fps=30) as game:
                 .hook(game) \
                 .block_on_key("d")
 
-    init = (ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2)
+    ball_initial_coords = (ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2)
+
     debugger.field("termsize", (ptg.terminal.width(), ptg.terminal.height()))
-    debugger.field("ball_start_coords", init)
-    ball = Ball().place(init)
+    debugger.field("ball_initial_coords", ball_initial_coords)
+
+    ball = Ball().place(ball_initial_coords)
     
     pad = ptg.Object("#" * 20).place((ptg.terminal.width() // 2, ptg.terminal.height() - 3))
 
@@ -67,10 +69,10 @@ with ptg.Game(fps=30) as game:
     
     # Setup win/lose scenes
 
-    with ptg.Scene() as game_over:
+    with ptg.Scene() as game_over_scene:
         ptg.Text("Game over - Press space to exit").place((0, ptg.terminal.height() // 2))
 
-    with ptg.Scene() as you_won:
+    with ptg.Scene() as you_won_scene:
         ptg.Text("You won - Press space to exit").place((0, ptg.terminal.height() // 2))
 
     # Game loop
@@ -83,7 +85,7 @@ with ptg.Game(fps=30) as game:
                 pad.move(6, 0)
 
         # If you want to cheat:
-        pad.set_x(ball.x - pad.width // 2)
+        # pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()
@@ -91,8 +93,8 @@ with ptg.Game(fps=30) as game:
         game.tick()
 
     if len(Tile.group):
-        game.set_scene(game_over)
+        game.set_scene(game_over_scene)
     else:
-        game.set_scene(you_won)
+        game.set_scene(you_won_scene)
 
     ptg.event.wait_until((ptg.event.KEYEVENT, ptg.key.SPACE))

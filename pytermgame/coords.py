@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from fractions import Fraction
-from typing import TypeAlias, Sequence, Self, ClassVar
 from enum import Enum
+from fractions import Fraction
+from typing import TypeAlias, Sequence, ClassVar
+import sys
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 class CoordsType(Enum):
     float = "float"
@@ -11,7 +15,7 @@ class CoordsType(Enum):
 COORDS_TYPE = CoordsType.float
 
 class Coords:
-    ORIGIN: ClassVar[Coords]
+    ORIGIN: ClassVar[Coords] = None # type: ignore
 
     def __new__(cls, x: int | float | Fraction, y: int | float | Fraction):
         if COORDS_TYPE == CoordsType.float:
@@ -98,4 +102,4 @@ class FracCoords(Coords):
         self.x = x
         self.y = y
 
-Coords.ORIGIN = Coords(0, 0)
+Coords.ORIGIN = Coords(0, 0) # type: ignore
