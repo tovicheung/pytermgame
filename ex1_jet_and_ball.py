@@ -12,9 +12,14 @@ Goal:
 import pytermgame as ptg
 
 class Ball(ptg.Sprite):
+    # default surface for all instances
     surf = ptg.Surface("O")
+
     # any new instances will be added to this group automatically
     group = ptg.Group()
+
+    # default style for all instances
+    style = ptg.Style(fg = ptg.Color.red)
 
     def on_placed(self):
         self.goto(ptg.terminal.width(), ptg.terminal.randy())
@@ -37,10 +42,7 @@ class Ball(ptg.Sprite):
 
 class Line(ptg.Sprite):
     surf = ptg.Surface("-" * (ptg.terminal.width()))
-
-    def on_placed(self):
-        # self.color_all("\033[38;5;245m")
-        self.apply_style(fg=ptg.Color.blue)
+    style = ptg.Style(fg = ptg.Color.blue)
 
     def update(self):
         if myjet.y != self.y:

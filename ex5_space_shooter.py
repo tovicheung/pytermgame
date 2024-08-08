@@ -18,6 +18,7 @@ import random
 
 class Asteroid(ptg.Sprite):
     group = ptg.Group()
+    style = ptg.Style(inverted = True)
 
     def __init__(self):
         super().__init__()
@@ -38,11 +39,12 @@ class Asteroid(ptg.Sprite):
                 score_counter.decrement()
 
 class Bullet(ptg.KinematicSprite):
-    surf = ptg.Surface("----")
+    surf = ptg.Surface("------")
+    style = ptg.Style(fg = ptg.Color.yellow)
 
     def __init__(self):
         super().__init__()
-        self.place((rocket.x + rocket.width + 1, rocket.y + 1))
+        self.place((ship.x + ship.width + 1, ship.y + 1))
         self.vx = 6
 
     def update(self):
@@ -57,11 +59,12 @@ class Bullet(ptg.KinematicSprite):
 with ptg.Game(fps=30) as game:
     SPAWN = ptg.event.USEREVENT + 1
     GAIN_POWER = ptg.event.USEREVENT + 2
+    SHIP_END_FLASH = ptg.event.USEREVENT + 3
     
     ptg.clock.add_interval(SPAWN, secs=1)
     ptg.clock.add_interval(GAIN_POWER, secs=0.5)
 
-    rocket = ptg.Object([
+    ship = ptg.Object([
         "\\\\",
         "===>",
         "//",
@@ -75,22 +78,28 @@ with ptg.Game(fps=30) as game:
     while game.loop():
         for event in ptg.event.get():
             if event.is_key("up"):
-                rocket.move(0, -1)
+                ship.move(0, -1)
             elif event.is_key("down"):
-                rocket.move(0, 1)
+                ship.move(0, 1)
             elif event.is_key("left"):
-                rocket.move(-1, 0)
+                ship.move(-1, 0)
             elif event.is_key("right"):
-                rocket.move(1, 0)
+                ship.move(1, 0)
             elif event.is_key("space"):
                 if power.value > 0:
                     Bullet()
                     power.update_value(power.value - 1)
+
+                    # flash effect
+                    ship.apply_style(bg = ptg.Color.cyan)
+                    ptg.clock.add_timer(SHIP_END_FLASH, secs = 0.1)
             elif event.is_type(SPAWN):
                 Asteroid()
             elif event.is_type(GAIN_POWER):
                 if power.value < power.full:
                     power.update_value(power.value + 1)
+            elif event.is_type(SHIP_END_FLASH):
+                ship.apply_style(bg = ptg.Color.default)
         
         game.update()
         game.render()

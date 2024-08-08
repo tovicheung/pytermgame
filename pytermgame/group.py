@@ -20,6 +20,8 @@ def _ensure_not_frozen(method):
 class Group:
     # note: Group.update() clashes with set.update(), so cannot subclass set[Sprite]
     
+    frozen = False
+
     @overload
     def __init__(self, sprites: Iterable[Collidable] = (), name: str | None = None, frozen: Literal[True] = True): ...
     @overload

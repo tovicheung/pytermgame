@@ -84,9 +84,11 @@ class Sprite(Collidable):
 
     # There are 3 methods for a subclass to define surfaces
     # Method 1: using the .surf class attribute
-    surf: Surface
+    surf: SurfaceLike
     # Method 2: set in .__init__()
     # Method 3: see .new_surf_factory()
+
+    style: Style
 
     # If set to a Group(), automatically add instances to the group
     group: Group | None = None
@@ -103,6 +105,9 @@ class Sprite(Collidable):
         
         # styling
         self.style = Style.default()
+
+        if hasattr(type(self), "style"):
+            self.style.update(type(self).style)
 
         # user-accessible attributes
         self.placed = False
@@ -165,6 +170,8 @@ class Sprite(Collidable):
                 self.update_surf()
             except NotImplementedError:
                 raise NotImplementedError("Subclass of Sprite must define either .surf or .new_surf_factory()") from None
+        else:
+            self.surf = Surface.coerce(self.surf)
 
         # Attach to scene: set self._scene
 
@@ -214,7 +221,8 @@ class Sprite(Collidable):
 
     def on_placed(self):
         """called AUTOMATICALLY after place()
-        Uses: customize initial coordinates / styles
+        Initial coordinates and styles can be customized.
+        Position methods such as .goto() and .move() can be used.
         """
 
     def update(self):
@@ -311,13 +319,18 @@ class Sprite(Collidable):
         else:
             slice_x = slice(None, None, None)
         
-        ansi = "\033[m" + self.style.to_ansi()
+        ansi = "\033[m"
+        
+        if not erase:
+            ansi += self.style.to_ansi()
+        
+        line_coords_base = coords.with_x(0) if coords.x < 0 else coords.with_x(terminal.width() - 1) if coords.x >= terminal.width() else coords
 
         for i, line in enumerate(surf.lines()):
             segment = line[slice_x]
             if len(segment) == 0:
                 continue
-            line_coords = coords.dy(i)
+            line_coords = line_coords_base.dy(i)
             if line_coords.y < 0 or line_coords.y >= terminal.height():
                 continue # line is vertically out of screen
             terminal.goto(*line_coords.to_term())
@@ -365,6 +378,8 @@ class Sprite(Collidable):
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
+        if not propagate:
+            return
         for sprite in self.get_movement_collisions():
             if not sprite.zombie:
                 # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
@@ -590,7 +605,7 @@ class KinematicSprite(Sprite):
 
         return set()
 
-    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Collidable]:
+    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Sprite]:
         """self.move() but sprite bounces
         The final position and velocity are calculated by simulating sub-tick movements via .virtual().
         Returns sprites that have been collided with

@@ -29,7 +29,7 @@ class Dir(Enum):
 
 @dataclass
 class Style:
-    """Styling options for sprites
+    """Styling options for sprites. Intended to be mutable.
     
     When it is set as Sprite.style:
     - styling for that sprite

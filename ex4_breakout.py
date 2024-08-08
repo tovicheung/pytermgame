@@ -59,13 +59,15 @@ with ptg.Game(fps=30) as game:
 
     ball = Ball().place(ball_initial_coords)
     
-    pad = ptg.Object("#" * 20).place((ptg.terminal.width() // 2, ptg.terminal.height() - 3))
+    pad = ptg.Object("#" * 20) \
+        .place((ptg.terminal.width() // 2, ptg.terminal.height() - 3)) \
+        .apply_style(fg = ptg.Color.cyan)
 
     # Generate tiles
 
     for y in range(3):
-        for x in range(y * 2 % Tile.surf.width, ptg.terminal.width(), Tile.surf.width):
-            Tile().place((x, y))
+        for x in range(y * 3 % Tile.surf.width - Tile.surf.width + 1, ptg.terminal.width(), Tile.surf.width):
+            Tile().place((x, y)).apply_style(fg = ptg.Color(y + 1))
     
     # Setup win/lose scenes
 
@@ -85,7 +87,7 @@ with ptg.Game(fps=30) as game:
                 pad.move(6, 0)
 
         # If you want to cheat:
-        # pad.set_x(ball.x - pad.width // 2)
+        pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()
