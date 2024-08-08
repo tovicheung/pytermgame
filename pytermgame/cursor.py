@@ -28,10 +28,16 @@ def show():
 def hide():
     state.visible = False
 
+def set_x(x: int):
+    state.coords = state.coords.with_x(x)
+
+def set_y(y: int):
+    state.coords = state.coords.with_y(y)
+
 def goto(x: int, y: int):
     state.coords = Coords(x, y) # type: ignore
 
-def move(dx: int, dy: int):
+def move(dx: int = 0, dy: int = 0):
     state.coords = state.coords.dx(dx).dy(dy)
 
 def write_ansi():

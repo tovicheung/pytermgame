@@ -429,10 +429,14 @@ class Sprite(Collidable):
         self.set_surf(self.new_surf_factory())
 
     def hide(self):
+        if self.hidden:
+            return
         self.hidden = True
         self.set_dirty()
 
     def show(self):
+        if not self.hidden:
+            return
         self.hidden = False
         self.set_dirty()
     

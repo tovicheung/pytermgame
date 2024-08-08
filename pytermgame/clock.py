@@ -53,5 +53,5 @@ wait = sleep = time.sleep
 get_time = gettime = time.time
 
 # Type aliases
-Interval: TypeAlias = tuple[EventLike, int]
+Interval: TypeAlias = tuple[EventLike, int, int]
 Timer: TypeAlias = tuple[EventLike, int]

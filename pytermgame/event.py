@@ -30,11 +30,11 @@ class Event:
     def is_key(self, key: str | None = None):
         """Checks if event is a key event
         ```
-        event.is_key() # event.type == KEYEVENT
-        event.is_key("a") # event.type == KEYEVENT and event.value == "a"
-        event.is_key(ptg.key.UP) # event.type == KEYEVENT and event.value == up arrow
-        event.is_key("up") # event.type == KEYEVENT and event.value == up arrow
-        event.is_key("ctrl-a") # event.type == KEYEVENT and event.value == Ctrl A
+        event.is_key() # event is key event
+        event.is_key("a") # "a" is pressed
+        event.is_key(ptg.key.UP) # up arrow is pressed
+        event.is_key("up") # up arrow is pressed
+        event.is_key("ctrl-a") # Ctrl + a is pressed
         ```
         """
         if key is None:

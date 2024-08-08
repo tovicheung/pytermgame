@@ -111,7 +111,8 @@ class Game:
         
         if self.alternate_screen:
             terminal.enable_alternate_buffer()
-        
+        else:
+            terminal.clear()
 
         if self.show_cursor:
             cursor.show()
@@ -195,7 +196,7 @@ class Game:
         self.timers.clear()
 
     def add_interval(self, event: EventLike, ticks: int):
-        self.intervals.append((event, ticks))
+        self.intervals.append((event, ticks, self.ntick % ticks))
     
     def clear_intervals(self):
         self.intervals.clear()
@@ -233,7 +234,7 @@ class Game:
                     event.queue.append((event.KEYEVENT, key))
 
         for interval in self.intervals:
-            if self.ntick % interval[1] == 0:
+            if (self.ntick - interval[2]) % interval[1] == 0:
                 add_event(interval[0])
 
         for timer in self.timers:
