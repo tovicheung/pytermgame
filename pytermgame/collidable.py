@@ -46,4 +46,4 @@ class ScreenEdge:
     left = _ScreenLeft()
     right = _ScreenRight()
 
-screen = Group((ScreenEdge.top, ScreenEdge.bottom, ScreenEdge.left, ScreenEdge.right), frozen=True)
+screen = (ScreenEdge.top, ScreenEdge.bottom, ScreenEdge.left, ScreenEdge.right)

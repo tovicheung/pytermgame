@@ -94,11 +94,23 @@ class Gauge(Sprite):
         self.update_surf()
 
 class Border(Sprite):
-    def __init__(self, inner_width: int, inner_height: int):
+    def __init__(self, inner_width: int | None = None, inner_height: int | None = None):
         super().__init__()
-        self.resize(inner_width, inner_height)
+        self.inner_width: int | None = inner_width
+        self.inner_height: int | None = inner_height
+        self.child: Sprite | None = None
+    
+    @classmethod
+    def wrap(cls, child: Sprite):
+        inst = cls(child.width, child.height)
+        inst.child = child
+        return inst
     
     def new_surf_factory(self) -> Surface:
+        if self.inner_width is None:
+            raise ValueError("Border.inner_width is not supplied (either through Border(inner_width=...) or Border.wrap(child))")
+        if self.inner_height is None:
+            raise ValueError("Border.inner_height is not supplied (either through Border(inner_height=...) or Border.wrap(child))")
         return Surface(
             "┌" + "─" * self.inner_width + "┐" + "\n"
             + ("│" + " " * self.inner_width + "│" + "\n") * self.inner_height

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Iterable, Generator, overload
+from typing import Iterable, Generator, TypeAlias, overload
 import sys
 
 if sys.version_info >= (3, 11):
@@ -35,12 +36,17 @@ def _ensure_placed(f):
         return f(self, *args, **kwargs)
     return _new
 
-def _iter_sprites(sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
-    if isinstance(sprite_or_sprites, Collidable):
-        yield sprite_or_sprites
+NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
+
+def _iter_collidables(nested_collidables: NestedCollidables):
+    if isinstance(nested_collidables, Collidable):
+        yield nested_collidables
         return
-    for x in sprite_or_sprites:
-        yield from _iter_sprites(x)
+    if isinstance(nested_collidables, Iterable):
+        for x in nested_collidables:
+            yield from _iter_collidables(x)
+        return
+    raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
 
 @dataclass
 class RenderedState:
@@ -84,7 +90,7 @@ class Sprite(Collidable):
 
     # There are 3 methods for a subclass to define surfaces
     # Method 1: using the .surf class attribute
-    surf: SurfaceLike
+    surf: Surface
     # Method 2: set in .__init__()
     # Method 3: see .new_surf_factory()
 
@@ -473,16 +479,27 @@ class Sprite(Collidable):
         return super()._is_colliding_sprite(other, old)
 
     @_ensure_placed
-    def was_colliding(self, sprite: Collidable):
+    def was_colliding(self, collidable: Collidable):
         if not self._rendered.on_screen:
             return False
-        return sprite._is_colliding_sprite(self, old=True)
+        return collidable._is_colliding_sprite(self, old=True)
 
     @_ensure_placed
-    def was_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def was_colliding_any(self, sprite_or_sprites: NestedCollidables):
+        """Check if sprite's rendered state is colliding with any of the collidables.
+
+        Takes in collidables nested in any way.
+        
+        Examples:
+        ```python
+        sprite.was_colliding_any(myball)
+        sprite.was_colliding_any((myball, myball2))
+        sprite.was_colliding_any((myball3, (myball, myball2)))
+        ```
+        """
         if not self._rendered.on_screen:
             return False
-        for sp in _iter_sprites(sprite_or_sprites):
+        for sp in _iter_collidables(sprite_or_sprites):
             if sp._is_colliding_sprite(self, old=True):
                 return True
         return False
@@ -494,19 +511,41 @@ class Sprite(Collidable):
         return sprite._is_colliding_sprite(self)
 
     @_ensure_placed
-    def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def is_colliding_any(self, nested_collidables: NestedCollidables):
+        """Check if sprite is colliding with any of the collidables.
+        
+        Takes in collidables nested in any way.
+        
+        Examples:
+        ```python
+        sprite.is_colliding_any(myball)
+        sprite.is_colliding_any((myball, myball2))
+        sprite.is_colliding_any((myball3, (myball, myball2)))
+        ```
+        """
         if self.hidden:
             return False
-        for sp in _iter_sprites(sprite_or_sprites):
+        for sp in _iter_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 return True
         return False
     
     @_ensure_placed
-    def get_collisions_with(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
+    def get_collisions_with(self, nested_collidables: NestedCollidables):
+        """Returns the subset of collidables that sprite is colliding with
+        
+        Takes in collidables nested in any way.
+        
+        Examples:
+        ```python
+        sprite.get_collisions_with(myball)
+        sprite.get_collisions_with((myball, myball2))
+        sprite.get_collisions_with((myball3, (myball, myball2)))
+        ```
+        """
         if self.hidden:
             return
-        for sp in _iter_sprites(sprite_or_sprites):
+        for sp in _iter_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 yield sp
     
@@ -517,7 +556,7 @@ class Sprite(Collidable):
         def get_collisions(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
             if self.hidden:
                 return
-            for sp in _iter_sprites(sprite_or_sprites):
+            for sp in _iter_collidables(sprite_or_sprites):
                 if sp in self._collisions:
                     yield sp
                 elif isinstance(sp, Collidable) and sp._is_colliding_sprite(self):
@@ -543,7 +582,7 @@ class Sprite(Collidable):
         
         @_ensure_placed
         def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
-            for sp in _iter_sprites(sprite_or_sprites):
+            for sp in _iter_collidables(sprite_or_sprites):
                 if sp in self._collisions:
                     return True
             return False
@@ -609,7 +648,7 @@ class KinematicSprite(Sprite):
 
         return set()
 
-    def bounce(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Sprite]:
+    def bounce(self, nested_collidables: NestedCollidables) -> set[Collidable]:
         """self.move() but sprite bounces
         The final position and velocity are calculated by simulating sub-tick movements via .virtual().
         Returns sprites that have been collided with
@@ -642,7 +681,7 @@ class KinematicSprite(Sprite):
                     # upward collision
                     if iy < 0:
                         self.move(0, -1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(0, 1)
                         if collisions:
@@ -656,7 +695,7 @@ class KinematicSprite(Sprite):
                     # downward collision
                     if iy > 0:
                         self.move(0, 1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(0, -1)
                         if collisions:
@@ -670,7 +709,7 @@ class KinematicSprite(Sprite):
                     # leftward collision
                     if ix < 0:
                         self.move(-1, 0)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(1, 0)
                         if collisions:
@@ -684,7 +723,7 @@ class KinematicSprite(Sprite):
                     # rightward collision
                     if ix > 0:
                         self.move(1, 0)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(-1, 0)
                         if collisions:
@@ -700,7 +739,7 @@ class KinematicSprite(Sprite):
                     # top-left collision
                     if ix < 0 and iy < 0:
                         self.move(-1, -1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(1, 1)
                         if collisions:
@@ -717,7 +756,7 @@ class KinematicSprite(Sprite):
                     # top-right collision
                     if ix > 0 and iy < 0:
                         self.move(1, -1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(-1, 1)
                         if collisions:
@@ -734,7 +773,7 @@ class KinematicSprite(Sprite):
                     # bottom-left collision
                     if ix < 0 and iy > 0:
                         self.move(-1, 1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(1, -1)
                         if collisions:
@@ -751,7 +790,7 @@ class KinematicSprite(Sprite):
                     # bottom-right collision
                     if ix > 0 and iy > 0:
                         self.move(1, 1)
-                        collisions = set(self.get_collisions_with(sprite_or_sprites))
+                        collisions = set(self.get_collisions_with(nested_collidables))
                         collided.update(collisions)
                         self.move(-1, -1)
                         if collisions:

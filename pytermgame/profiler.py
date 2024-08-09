@@ -50,10 +50,7 @@ class State:
 class Profiler:
     """To monitor and analyze a game
     
-    Difference from debugger:
-    - collects more general data
-    - does not have live display
-    - monitors externally: game does not know about profiler
+    The game (or any other part of ptg) does not know about the profiler (unlike the debugger)
     """
 
     def __init__(self, game: Game, sample_ticks=10):
