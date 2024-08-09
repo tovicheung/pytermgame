@@ -262,12 +262,12 @@ class Sprite(Collidable):
     def apply_style(self, style: Style) -> Self: ...
     @overload
     def apply_style(self, *, 
-        align_horizontal: Dir = None,
-        align_vertical: Dir = None,
-        fg: Color = None,
-        bg: Color = None,
-        bold: bool = None,
-        inverted: bool = None) -> Self: ...
+        align_horizontal: Dir | None = None,
+        align_vertical: Dir | None = None,
+        fg: Color | None = None,
+        bg: Color | None = None,
+        bold: bool | None = None,
+        inverted: bool | None = None) -> Self: ...
     
     def apply_style(self, style: Style | None = None, **style_options) -> Self:
         """Apply style to sprite. 2 ways to use:

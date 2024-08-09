@@ -22,11 +22,11 @@ if ENSURE_SPRITE_DESTRUCTION:
     import gc
     from .sprite import Sprite
 
-    Sprite._real_kill = Sprite._kill
+    _Sprite_kill = Sprite._kill
 
     @wraps(Sprite._kill)
     def _kill(self: Sprite):
-        self._real_kill()
+        _Sprite_kill(self)
         assert len(self._groups) == 0, f"attempted to kill sprite but sprite is still in groups: {self._groups}"
         refs = gc.get_referrers(self)
         assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
@@ -36,12 +36,12 @@ if ENSURE_SPRITE_DESTRUCTION:
 if ENSURE_VALID_TERMCOORDS:
     from . import terminal
 
-    terminal._real_goto = terminal.goto
+    _terminal_goto = terminal.goto
 
     @wraps(terminal.goto)
     def goto(x, y):
         assert 1 <= x <= terminal.width(), f"terminal.goto() received invalid x-coordinate: {x}"
         assert 1 <= y <= terminal.height(), f"terminal.goto() received invalid y-coordinate: {y}"
-        terminal._real_goto(x, y)
+        _terminal_goto(x, y)
     
     terminal.goto = goto

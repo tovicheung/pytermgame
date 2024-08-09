@@ -24,7 +24,7 @@ class Coords:
             inst = object.__new__(FracCoords)
             inst.__init__(x, y)
             return inst
-            # return FracCoords(x, y)
+        raise ValueError(f"Unknown COORDS_TYPE {COORDS_TYPE}")
     
     x: int | float | Fraction
     y: int | float | Fraction
