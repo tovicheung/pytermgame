@@ -6,11 +6,11 @@ from .coords import Coords
 from .debugger import Debugger
 from .game import Game
 from .group import Group
-from .style import Style, Dir, Color
 from .profiler import Profiler
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object
-from .sprites import Text, FText, Value, Counter, Gauge, TextInput
+from .sprites import Text, FText, Value, Counter, Gauge, TextInput, Border
+from .style import Style, Dir, Color
 from .surface import Surface
 
 # function-based

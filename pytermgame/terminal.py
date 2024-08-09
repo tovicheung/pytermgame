@@ -74,5 +74,10 @@ def system_clear():
 
 def randy():
     return randint(0, height() - 1)
+
 def randx():
     return randint(0, width() - 1)
+
+def is_valid_term_coords(x: SupportsInt, y: SupportsInt):
+    # Note: 1-based coords
+    return 1 <= int(x) <= width() and 1 <= int(y) <= height()

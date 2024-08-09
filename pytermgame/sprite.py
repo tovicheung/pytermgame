@@ -121,6 +121,9 @@ class Sprite(Collidable):
         self.zombie = False
 
         self._virtual = False
+
+        # a sprite's parent updates its surface if the sprite's surface changes
+        self._parent: Sprite | None = None
         
         # [future: collision]
         # self._collisions: set[Sprite] = set()
@@ -158,9 +161,9 @@ class Sprite(Collidable):
 
     def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
         """After a sprite is being placed, it:
-        - has a surface
         - is attached to a scene
         - has XYZ coordinates on the scene
+        - has a surface
         - calls .on_placed(), which can be overriden by subclasses freely
         - unlocks methods such as .move()
         - can be killed via .kill()
@@ -168,16 +171,6 @@ class Sprite(Collidable):
 
         if self.placed:
             raise Exception("Invalid call, sprite is already placed.")
-        
-        # Resolve surface: set self.surf
-        
-        if (not hasattr(type(self), "surf")) and (not hasattr(self, "surf")):
-            try:
-                self.update_surf()
-            except NotImplementedError:
-                raise NotImplementedError("Subclass of Sprite must define either .surf or .new_surf_factory()") from None
-        else:
-            self.surf = Surface.coerce(self.surf)
 
         # Attach to scene: set self._scene
 
@@ -193,6 +186,16 @@ class Sprite(Collidable):
     
         self._coords = Coords.coerce(coords)
         self._z = scene._next_z()
+        
+        # Resolve surface: set self.surf
+        
+        if (not hasattr(type(self), "surf")) and (not hasattr(self, "surf")):
+            try:
+                self.update_surf()
+            except NotImplementedError:
+                raise NotImplementedError("Subclass of Sprite must define either .surf or .new_surf_factory()") from None
+        else:
+            self.surf = Surface.coerce(self.surf)
 
         # add to class group if one exists
         if isinstance(self.group, Group):
@@ -430,6 +433,8 @@ class Sprite(Collidable):
     def set_surf(self, surf: Surface):
         self.surf = surf
         self.set_dirty()
+        if self._parent is not None and self._parent.placed:
+            self._parent.update_surf()
     
     def update_surf(self):
         self.set_surf(self.new_surf_factory())

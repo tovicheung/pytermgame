@@ -42,7 +42,8 @@ def move(dx: int = 0, dy: int = 0):
 
 def write_ansi():
     """Note: flushes"""
-    if state.visible:
+    if state.visible \
+        and terminal.is_valid_term_coords(*state.coords.to_term()):
         terminal.show_cursor()
         terminal.goto(*state.coords.to_term())
     else:
