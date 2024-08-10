@@ -108,6 +108,9 @@ class Container(Sprite, Generic[_S]):
     def wrap(self, child: _S):
         self.child = child
         child._parent = self
+        if child.placed:
+            self.place(self.get_self_coords())
+            self._scene.move_sprite_to_below(self, child)
         return self
     
     def get_child(self) -> _S:
@@ -164,7 +167,14 @@ class Container(Sprite, Generic[_S]):
     # Subclasses of Container must implement these:
 
     def get_child_coords(self) -> Coords:
+        # self coords -> child coords
+        return self._coords
         raise NotImplementedError("Subclasses of Container must implement .get_child_coords()")
+    
+    def get_self_coords(self) -> Coords:
+        # child coords -> self coords
+        return self.child._coords
+        raise NotImplementedError("Subclasses of Container must implement .get_self_coords()")
     
     def new_surf_factory(self) -> Surface:
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
@@ -190,6 +200,27 @@ class MinSize(Container[_S]):
         min_height = max(self.min_height or self.child.height, self.child.height)
         return Surface.blank(min_width, min_height)
 
+class MaxSize(Container[_S]):
+    def __init__(self, max_width: int | None = None, max_height: int | None = None, child: _S | None = None):
+        super().__init__(child)
+        self.max_width = max_width
+        self.max_height = max_height
+    
+    if TYPE_CHECKING:
+        def wrap(self, child: _S2) -> MaxSize[_S2]: ...
+    
+    def get_child_coords(self) -> Coords:
+        return self._coords
+    
+    def new_surf_factory(self) -> Surface:
+        if self.child is None:
+            raise ValueError("MinSize() must have a child")
+        if not self.child.placed:
+            self.child.place(self.get_child_coords())
+        max_width = min(self.max_width or self.child.width, self.child.width)
+        max_height = min(self.max_height or self.child.height, self.child.height)
+        return Surface.blank(max_width, max_height)
+
 class Border(Container[_S]):
     def __init__(self, inner_width: int | None = None, inner_height: int | None = None, child: _S | None = None):
         super().__init__(child)
@@ -201,6 +232,9 @@ class Border(Container[_S]):
     
     def get_child_coords(self) -> Coords:
         return self._coords.d((1, 1))
+    
+    def get_self_coords(self) -> Coords:
+        return self.child._coords.d((-1, -1))
     
     def new_surf_factory(self) -> Surface:
         # self depends on child

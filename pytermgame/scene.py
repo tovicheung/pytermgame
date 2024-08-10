@@ -62,7 +62,7 @@ class Scene(SpriteList):
         """Erases and re-renders dirty sprites.
         Not to be confused with Scene.render(), it only calls .render() on all sprites.
         """
-        terminal.hide_cursor(flush=False)
+        terminal.hide_cursor(flush=True)
         dirty = tuple(self.get_dirty())
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=True)
@@ -115,3 +115,22 @@ class Scene(SpriteList):
     
     def set_scroll(self, offset: XY):
         self.offset = Coords.coerce(offset)
+    
+    # Sprite ordering
+
+    def move_sprite_to_below(self, sprite_to_move: Sprite, reference_sprite: Sprite):
+        if sprite_to_move not in self.sprites:
+            raise ValueError("sprite to move is not in sprites")
+        if reference_sprite not in self.sprites:
+            raise ValueError("reference sprite is not in sprites")
+        
+        old_index = self.sprites.index(sprite_to_move)
+        new_index = self.sprites.index(reference_sprite)
+        
+        # self.sprites.insert(self.sprites.index(reference_sprite), self.sprites.pop(self.sprites.index(sprite_to_move)))
+        self.sprites.insert(new_index, self.sprites.pop(old_index))
+
+        for i in range(old_index, new_index+1):
+            self.sprites[i]._z = i
+
+

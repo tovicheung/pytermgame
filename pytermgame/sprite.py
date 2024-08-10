@@ -291,6 +291,17 @@ class Sprite(Collidable):
     
     # Rendering
 
+    # def _crop_surf(self, max_width: int, max_height: int):
+    #     if self.style.align_horizontal == Dir.left:
+    #         surf = self.surf.crop_to_left(max_width)
+    #     else:
+    #         surf = self.surf.crop_to_right(max_width)
+    #     if self.style.align_vertical == Dir.top:
+    #         surf = surf.crop_to_top(max_height)
+    #     else:
+    #         surf = surf.crop_to_bottom(max_height)
+    #     self.set_surf(surf)
+
     def _apply_style(self):
         """Modifies coords and surfs right before rendering"""
         if self.style.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:

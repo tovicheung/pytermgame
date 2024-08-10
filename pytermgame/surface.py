@@ -74,5 +74,17 @@ class Surface:
         for line in self.lines():
             string += " " * len(line) + "\n"
         return type(self).strip(string)
+    
+    def crop_to_left(self, max_width: int):
+        return Surface(x[:max_width] for x in self.lines())
+    
+    def crop_to_right(self, max_width: int):
+        return Surface(x[-max_width:] for x in self.lines())
+    
+    def crop_to_top(self, max_height: int):
+        return Surface(self._lines[:max_height])
+    
+    def crop_to_bottom(self, max_height: int):
+        return Surface(self._lines[-max_height:])
 
 SurfaceLike: TypeAlias = Surface | str | list[str]
