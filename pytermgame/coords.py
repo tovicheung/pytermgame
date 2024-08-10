@@ -31,6 +31,9 @@ class Coords:
     
     def __neg__(self) -> Self:
         return type(self)(-self.x, -self.y)
+    
+    def __sub__(self, other: Self) -> Self:
+        return type(self)(self.x - other.x, self.y - other.y)
 
     @classmethod
     def coerce(cls, obj: XY) -> Self:
@@ -83,6 +86,9 @@ class FloatCoords(complex, Coords):
     
     def __neg__(self):
         return type(self)(super().__neg__())
+    
+    def __sub__(self, other):
+        return type(self)(super().__sub__(other))
     
     def to_term(self):
         return type(self)(self + 1 + 1j)

@@ -371,9 +371,6 @@ class Sprite(Collidable):
         
         if (not erase) and not self._rendered.on_screen:
             self._rendered.on_screen = True
-
-
-        self._apply_style()
         
         self._render(flush, erase)
         
@@ -432,6 +429,8 @@ class Sprite(Collidable):
     
     def set_surf(self, surf: Surface):
         self.surf = surf
+        if self.placed:
+            self._apply_style()
         self.set_dirty()
         if self._parent is not None and self._parent.placed:
             self._parent.update_surf()

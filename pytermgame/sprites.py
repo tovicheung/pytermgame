@@ -95,7 +95,7 @@ class Gauge(Sprite):
         self.value = value
         self.update_surf()
 
-_S = TypeVar("_S", bound=Sprite, covariant=True)
+_S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
 
 class Container(Sprite, Generic[_S]):
@@ -105,25 +105,24 @@ class Container(Sprite, Generic[_S]):
     
     # issue: https://github.com/python/mypy/issues/9201
     # cls is typed as type[Self[_S]] instead of type[Self]
-    @classmethod
-    def wrap(cls, child):
-        inst = cls(child=child)
-        child._parent = inst
-        return inst
+    def wrap(self, child: _S):
+        self.child = child
+        child._parent = self
+        return self
     
     def get_child(self) -> _S:
         if self.child is None:
             raise ValueError("Invalid call, child is not supplied")
         return self.child
     
-    @overload
-    def get_innermost_child(self: Container[Container[Container[Container[_S2]]]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[Container[Container[_S2]]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[Container[_S2]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[_S2]) -> _S2: ...
+    # @overload
+    # def get_innermost_child(self: Container[Container[Container[Container[_S2]]]]) -> _S2: ...
+    # @overload
+    # def get_innermost_child(self: Container[Container[Container[_S2]]]) -> _S2: ...
+    # @overload
+    # def get_innermost_child(self: Container[Container[_S2]]) -> _S2: ...
+    # @overload
+    # def get_innermost_child(self: Container[_S2]) -> _S2: ...
     
     def get_innermost_child(self):
         if isinstance(self.child, Container):
@@ -137,14 +136,14 @@ class Container(Sprite, Generic[_S]):
         else:
             yield self.child
     
-    @overload
-    def flatten(self: Container[Container[Container[Container[_S2]]]]) -> tuple[Container[Container[Container[Container[_S2]]]], Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[Container[Container[_S2]]]) -> tuple[Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[Container[_S2]]) -> tuple[Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[_S2]) -> tuple[Container[_S2], _S2]: ...
+    # @overload
+    # def flatten(self: Container[Container[Container[Container[_S2]]]]) -> tuple[Container[Container[Container[Container[_S2]]]], Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
+    # @overload
+    # def flatten(self: Container[Container[Container[_S2]]]) -> tuple[Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
+    # @overload
+    # def flatten(self: Container[Container[_S2]]) -> tuple[Container[Container[_S2]], Container[_S2], _S2]: ...
+    # @overload
+    # def flatten(self: Container[_S2]) -> tuple[Container[_S2], _S2]: ...
     def flatten(self):
         """Returns tuple of the nested structure
         Example:
@@ -156,24 +155,49 @@ class Container(Sprite, Generic[_S]):
         # evaluate all at once, instead of creating a lot of temporary tuples
         return tuple(self._flatten())
     
+    def set_dirty(self, propagate=True):
+        if self.child is not None and self.placed and self._rendered.dirty:
+            self.child.goto(*self.get_child_coords())
+            # self.child.move(*(self._coords - self._rendered.coords))
+        super().set_dirty(propagate)
+    
+    # Subclasses of Container must implement these:
+
     def get_child_coords(self) -> Coords:
         raise NotImplementedError("Subclasses of Container must implement .get_child_coords()")
     
-    def set_dirty(self, propagate=False):
-        if self.child is not None and self.placed and self._coords != self._rendered.coords:
-            self.child.goto(*self.get_child_coords())
-        super().set_dirty()
+    def new_surf_factory(self) -> Surface:
+        raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
+
+class MinSize(Container[_S]):
+    def __init__(self, min_width: int | None = None, min_height: int | None = None, child: _S | None = None):
+        super().__init__(child)
+        self.min_width = min_width
+        self.min_height = min_height
+    
+    if TYPE_CHECKING:
+        def wrap(self, child: _S2) -> MinSize[_S2]: ...
+    
+    def get_child_coords(self) -> Coords:
+        return self._coords
+    
+    def new_surf_factory(self) -> Surface:
+        if self.child is None:
+            raise ValueError("MinSize() must have a child")
+        if not self.child.placed:
+            self.child.place(self.get_child_coords())
+        min_width = max(self.min_width or self.child.width, self.child.width)
+        min_height = max(self.min_height or self.child.height, self.child.height)
+        return Surface.blank(min_width, min_height)
 
 class Border(Container[_S]):
     def __init__(self, inner_width: int | None = None, inner_height: int | None = None, child: _S | None = None):
-        super().__init__()
+        super().__init__(child)
         self.inner_width: int | None = inner_width
         self.inner_height: int | None = inner_height
-        self.child: _S | None = child
     
     if TYPE_CHECKING:
-        @classmethod
-        def wrap(cls: type[Border], child: _S2) -> Border[_S2]: ...
+        def wrap(self, child: _S2) -> Border[_S2]: ...
     
     def get_child_coords(self) -> Coords:
         return self._coords.d((1, 1))
@@ -204,6 +228,9 @@ class Border(Container[_S]):
         self.update_surf()
 
 class TextInput(Sprite):
+    """A simple text input interface.
+    Note: requires .update()"""
+
     def __init__(self):
         super().__init__()
         self.value = ""
@@ -241,6 +268,9 @@ class TextInput(Sprite):
             if self.cur > 0:
                 self.cur -= 1
                 self.update_value(self.value[:self.cur] + self.value[self.cur+1:])
+            return True
+        elif event.is_key(key.DELETE):
+            self.update_value(self.value[:self.cur] + self.value[self.cur+1:])
             return True
         elif event.is_key(key.HOME) or event.is_key(key.UP):
             self.cur = 0

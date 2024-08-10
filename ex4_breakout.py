@@ -87,7 +87,7 @@ with ptg.Game(fps=30) as game:
                 pad.move(6, 0)
 
         # If you want to cheat:
-        pad.set_x(ball.x - pad.width // 2)
+        # pad.set_x(ball.x - pad.width // 2)
 
         pad.bound_on_screen()
         game.update()
