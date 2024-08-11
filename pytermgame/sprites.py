@@ -354,7 +354,7 @@ class TextInput(Sprite):
         cursor.goto(self.x + self.cur, self.y)
 
 class BouncingBall(KinematicSprite):
-    surf = "O"
+    surf = Surface("O")
     def __init__(self, vx: int, vy: int, bounce_on: NestedCollidables):
         super().__init__()
         self.vx = vx

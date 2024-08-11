@@ -5,6 +5,21 @@ Future updates
 > This means there is already some progress on it and any relevant code are marked by the same tag using comments.
 > You can search for that tag to view the relevant code.
 
+- Support basic UI used in games (in progress)
+    * basic UI elements such as borders and paddings
+    ```python
+    ptg.sprites.Border()
+        .apply_style(align_horizontal=ptg.Dir.right)
+        .wrap(
+            ptg.sprites.Padding.all(2).wrap(
+                ptg.sprites.Border().wrap(
+                    text_input := ptg.TextInput().place((16, 6))
+                )
+            )
+        )
+    ```
+    * The goal is to interop nicely with the current sprite structure
+
 - Use a 2D matrix to track sprite occupancy of each coordinate (`[future: collision]`)
     * **Tested:** no significant improvement
     * maybe make this an optional feature?

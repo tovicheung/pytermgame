@@ -62,15 +62,22 @@ class Scene(SpriteList):
         """Erases and re-renders dirty sprites.
         Not to be confused with Scene.render(), it only calls .render() on all sprites.
         """
-        terminal.hide_cursor(flush=True)
         dirty = tuple(self.get_dirty())
+
+        if len(dirty) == 0: # prevents rapid cursor blinks
+            if cursor.state.dirty:
+                cursor.write_ansi()
+                terminal.flush()
+            return
+        
+        terminal.hide_cursor(flush=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=False)
         # flush once after all the rendering
-        cursor.write_ansi() # this flushes
-        # terminal.flush()
+        cursor.write_ansi()
+        terminal.flush()
     
     def update(self):
         """Calls .update() on sprites and kills zombies

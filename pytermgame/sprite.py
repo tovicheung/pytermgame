@@ -301,13 +301,6 @@ class Sprite(Collidable):
     #     else:
     #         surf = surf.crop_to_bottom(max_height)
     #     self.set_surf(surf)
-
-    def _apply_style(self):
-        """Modifies coords and surfs right before rendering"""
-        if self.style.align_horizontal == Dir.right and self.surf.width != self._rendered.surf.width:
-            self._coords = self._coords.dx(-(self.surf.width - self._rendered.surf.width))
-        if self.style.align_vertical == Dir.bottom and self.surf.height != self._rendered.surf.height:
-            self._coords = self._coords.dy(-(self.surf.height - self._rendered.surf.height))
     
     def _render(self, flush=True, erase=False):
         if erase:
@@ -439,9 +432,14 @@ class Sprite(Collidable):
         self.set_dirty()
     
     def set_surf(self, surf: Surface):
+        if self.placed:
+            old_surf = self.surf
         self.surf = surf
         if self.placed:
-            self._apply_style()
+            if self.style.align_horizontal == Dir.right and self.surf.width != old_surf.width:
+                self._coords = self._coords.dx(-(self.surf.width - old_surf.width))
+            if self.style.align_vertical == Dir.bottom and self.surf.height != old_surf.height:
+                self._coords = self._coords.dy(-(self.surf.height - old_surf.height))
         self.set_dirty()
         if self._parent is not None and self._parent.placed:
             self._parent.update_surf()
