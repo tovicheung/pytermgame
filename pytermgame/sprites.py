@@ -7,7 +7,7 @@ from pytermgame.coords import Coords
 
 from .event import Event
 from . import cursor, key
-from .sprite import Sprite
+from .sprite import NestedCollidables, Sprite, KinematicSprite
 from .surface import Surface
 
 _T = TypeVar("_T")
@@ -221,6 +221,38 @@ class MaxSize(Container[_S]):
         max_height = min(self.max_height or self.child.height, self.child.height)
         return Surface.blank(max_width, max_height)
 
+class Padding(Container[_S]):
+    def __init__(self, top: int = 0, bottom: int = 0, left: int = 0, right: int = 0, child: _S | None = None):
+        super().__init__(child)
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
+    
+    @classmethod
+    def all(cls, padding: int = 0):
+        return Padding(padding, padding, padding, padding)
+    
+    @classmethod
+    def symmetric(cls, horizontal: int = 0, vertical: int = 0):
+        return Padding(vertical, vertical, horizontal, horizontal)
+    
+    if TYPE_CHECKING:
+        def wrap(self, child: _S2) -> Padding[_S2]: ...
+    
+    def get_child_coords(self) -> Coords:
+        return self._coords.d((self.left, self.top))
+    
+    def get_self_coords(self) -> Coords:
+        return self.child._coords.d((-self.left, -self.top))
+    
+    def new_surf_factory(self) -> Surface:
+        if self.child is None:
+            raise ValueError("Padding() must have a child")
+        width = self.child.width + self.left + self.right
+        height = self.child.height + self.top + self.bottom
+        return Surface.blank(width, height)
+
 class Border(Container[_S]):
     def __init__(self, inner_width: int | None = None, inner_height: int | None = None, child: _S | None = None):
         super().__init__(child)
@@ -320,3 +352,14 @@ class TextInput(Sprite):
     
     def update(self):
         cursor.goto(self.x + self.cur, self.y)
+
+class BouncingBall(KinematicSprite):
+    surf = "O"
+    def __init__(self, vx: int, vy: int, bounce_on: NestedCollidables):
+        super().__init__()
+        self.vx = vx
+        self.vy = vy
+        self.bounce_on = bounce_on
+    
+    def update(self):
+        self.bounce(self.bounce_on)
