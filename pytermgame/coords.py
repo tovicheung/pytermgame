@@ -32,6 +32,9 @@ class Coords:
     def __neg__(self) -> Self:
         return type(self)(-self.x, -self.y)
     
+    def __add__(self, other: Self) -> Self: # functionally same as .d()
+        return type(self)(self.x + other.x, self.y + other.y)
+    
     def __sub__(self, other: Self) -> Self:
         return type(self)(self.x - other.x, self.y - other.y)
 
@@ -86,6 +89,9 @@ class FloatCoords(complex, Coords):
     
     def __neg__(self):
         return type(self)(super().__neg__())
+    
+    def __add__(self, other):
+        return type(self)(super().__add__(other))
     
     def __sub__(self, other):
         return type(self)(super().__sub__(other))

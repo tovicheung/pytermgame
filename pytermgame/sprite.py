@@ -420,7 +420,7 @@ class Sprite(Collidable):
             self.set_y(terminal.height() - self.height)
 
     def move(self, dx, dy):
-        self._coords = self._coords.dx(dx).dy(dy)
+        self._coords = self._coords + Coords(dx, dy)
         self.set_dirty()
 
     def set_x(self, x):

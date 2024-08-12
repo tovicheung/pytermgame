@@ -9,9 +9,10 @@ from .group import Group
 from .profiler import Profiler
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object
-from .sprites import Text, FText, Value, Counter, Gauge, TextInput, Border
+from .sprites import *
 from .style import Style, Dir, Color
 from .surface import Surface
+from .ui import *
 
 # function-based
 from . import clock, cursor, event, key, terminal
