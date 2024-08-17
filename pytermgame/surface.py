@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, TypeAlias
 
 class Surface:
-    """Represents an immutable 2D string surface"""
+    """2D immutable string surface"""
 
     def __init__(self, string: str | Iterable[str], _blank=False):
         if isinstance(string, str):

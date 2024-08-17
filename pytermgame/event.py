@@ -5,16 +5,15 @@ from typing import Any
 from ._get_key import get_keys
 from . import key as _key
 
+# TODO: use NamedTuple
 class Event:
     __slots__ = ("type", "value")
 
     def __init__(self, type: int | tuple[int, int] | Event, value: Any = None):
-        """
-        Method 1:
-        >>> myevent = Event(typ, val)
-        
-        Method 2:
-        >>> myevent = Event((typ, val))
+        """Supports multiple representations:
+        * no value: Event(typ)
+        * type and value: Event(typ, val)
+        * as a duplet: Event((typ, val))
         """
         if isinstance(type, Event):
             self.type = type.type
@@ -25,7 +24,7 @@ class Event:
             self.type = type
             self.value = value
 
-    # Convenient methods
+    # Methods of convenience
     
     def is_key(self, key: str | None = None):
         """Checks if event is a key event

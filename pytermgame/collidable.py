@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from . import _active, terminal
-from .group import Group
 
 if TYPE_CHECKING:
     from .coords import Coords

@@ -5,18 +5,18 @@ Principle: build everything on top of ptg.sprite, avoid coupling normal non-UI s
 
 from __future__ import annotations
 
-from typing import Iterable, TypeVar, Generic, TYPE_CHECKING, TypeVarTuple, NamedTuple
+from typing import Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple
 
-from pytermgame import key
-from pytermgame.event import Event
-
+from . import key
 from .coords import Coords
+from .event import Event
 from .sprite import Sprite
 from .surface import Surface
 
 _S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
 
+# only export stable sprites
 __all__ = ["Container", "OccupiedContainer", "MinSize", "MaxSize", "Padding", "Border"]
 
 class Dimensions(NamedTuple):
@@ -35,20 +35,6 @@ class Dimensions(NamedTuple):
         assert self.width is not None
         assert self.height is not None
         return Surface.blank(self.width, self.height)
-
-"""
-
-Border(...).wrap(
-    child
-)
-
-Column()
-    .apply_style()
-    .wrap(
-        *children
-    )
-
-"""
 
 class Container(Sprite, Generic[_S]):
     """Unlocks .wrap() and .child
@@ -89,7 +75,6 @@ class Container(Sprite, Generic[_S]):
     # def get_innermost_child(self: Container[Container[_S2]]) -> _S2: ...
     # @overload
     # def get_innermost_child(self: Container[_S2]) -> _S2: ...
-    
     def get_innermost_child(self):
         if isinstance(self.child, Container):
             return self.child.get_innermost_child()
@@ -274,6 +259,7 @@ class Border(Container[_S]):
         self.inner_height = inner_height
         self.update_surf()
 
+# VERY UNSTABLE !!
 class Collection(Sprite):
     """Unlocks .wrap() and .children
     

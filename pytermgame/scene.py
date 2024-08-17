@@ -139,5 +139,3 @@ class Scene(SpriteList):
 
         for i in range(old_index, new_index+1):
             self.sprites[i]._z = i
-
-
