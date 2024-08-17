@@ -6,9 +6,15 @@ Therefore the cursor object and operations belongs in global scope and not game/
 (this module functionally behaves like an object)
 """
 
+import sys
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Literal
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+    class StrEnum(str, Enum): ...
 
 from .coords import Coords
 from . import terminal

@@ -1,9 +1,8 @@
 from __future__ import annotations
+
 from math import floor
 import string
-from typing import TYPE_CHECKING, Any, Self, TypeVar, Generic, overload
-
-from pytermgame.coords import Coords
+from typing import TypeVar, Generic
 
 from .event import Event
 from . import cursor, key
