@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from typing import Iterable, TypeVar, Generic, TYPE_CHECKING, TypeVarTuple, NamedTuple
 
+from pytermgame import key
+from pytermgame.event import Event
+
 from .coords import Coords
 from .sprite import Sprite
 from .surface import Surface
@@ -70,6 +73,8 @@ class Container(Sprite, Generic[_S]):
             self.place(child._coords - self.get_child_offset())
             self._scene.move_sprite_to_below(self, child)
         return self
+    
+    __gt__ = wrap
     
     def get_child(self) -> _S:
         if self.child is None:
@@ -137,16 +142,13 @@ class Container(Sprite, Generic[_S]):
     def get_child_offset(self) -> Coords:
         return Coords(0, 0)
     
-    def set_surf(self, *args, **kwargs):
-        super().set_surf(*args, **kwargs)
-        if self.child is not None and not self.child.placed:
-            # this is currently the reason why coords is set before surf
-            # should only be called in self.place()
-            self.child.place(self._coords + self.get_child_offset())
-    
     def new_surf_factory(self) -> Surface:
         if self.child is None: # vacant
             return self.new_vacant_surf()
+        if not self.child.placed:
+            # this is currently the reason why coords is set before surf
+            # should only be called in self.place()
+            self.child.place(self._coords + self.get_child_offset())
         return self.new_occupied_surf()
 
 class OccupiedContainer(Container[_S]):
@@ -250,7 +252,6 @@ class Border(Container[_S]):
             + ("│" + " " * inner_width + "│" + "\n") * inner_height
             + "└" + "─" * inner_width + "┘"
         )
-
     
     # def new_surf_factory(self) -> Surface:
     #     # self depends on child
@@ -278,7 +279,7 @@ class Collection(Sprite):
     
     A collection must be occupied."""
 
-    children: tuple[Sprite] | None
+    children: tuple[Sprite, ...] | None
     
     def __init__(self, children: Iterable[Sprite] | None = None):
         super().__init__()
@@ -286,17 +287,12 @@ class Collection(Sprite):
         if children is not None:
             for child in children:
                 child._parent = self
-                # if children.placed:
-                #     self.place(children._coords - self.get_child_offset())
-                #     self._scene.move_sprite_to_below(self, children)
     
-    def wrap(self, *children):
+    def wrap(self, *children: Sprite):
         self.children = children
         for child in children:
+            assert not child.placed, "children of collection should not be manually placed"
             child._parent = self
-        # if child.placed:
-        #     self.place(child._coords - self.get_child_offset())
-        #     self._scene.move_sprite_to_below(self, child)
         return self
     
     def get_children(self):
@@ -306,16 +302,11 @@ class Collection(Sprite):
     
     def set_dirty(self, propagate=True):
         if self.children is not None and self.placed and self._rendered.dirty:
-            self.build()
-            # self.child.move(*(self._coords - self._rendered.coords))
+            self.build() # rebuild entire tree
         super().set_dirty(propagate)
 
     def get_child_offset(self) -> Coords:
         return Coords(0, 0)
-    
-    def new_surf_factory(self) -> Surface:
-        """The parent collection has the responsibility to place unplaced children in .new_surf_factory()"""
-        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
     
     def build(self) -> Dimensions:
         """When this method is called, coords are guranteed to be concrete
@@ -326,6 +317,9 @@ class Collection(Sprite):
         * return self dimensions
         """
         raise NotImplementedError("Subclasses of UIElement must implement .build()")
+    
+    def new_surf_factory(self) -> Surface:
+        return self.build().to_surf()
 
 def _set_coords(sprite: Sprite, coords: Coords):
     if sprite.placed:
@@ -333,19 +327,14 @@ def _set_coords(sprite: Sprite, coords: Coords):
     else:
         sprite.place(coords)
 
-class Column(Collection):
-    def __init__(self, children: Iterable[Sprite] | None = None):
-        super().__init__(children)
-    
+class Column(Collection):    
     def build(self) -> Dimensions:
         # this should be called in the surf stage of .place()
         # which means ._coords are present
         
-        # we will ignore max_size for now
         assert self.children is not None
 
-        width = 0
-        height = 0
+        width = height = 0
 
         for child in self.children:
             _set_coords(child, self._coords.dy(height))
@@ -353,7 +342,44 @@ class Column(Collection):
             width = max(width, child.width)
         
         return Dimensions(width, height)
-    
-    def new_surf_factory(self) -> Surface:
-        size = self.build()
-        return size.to_surf()
+
+class Row(Collection):
+    def build(self) -> Dimensions:
+        assert self.children is not None
+
+        width = height = 0
+
+        for child in self.children:
+            _set_coords(child, self._coords.dx(width))
+            width += child.width
+            height = max(height, child.height)
+        
+        return Dimensions(width, height)
+
+class SelectionMenu(Column):
+    def on_placed(self):
+        self.selected_index = 0
+        self.selected.apply_style(inverted=True)
+
+    @property
+    def selected(self):
+        assert self.children is not None, "SelectionMenu must have children"
+        assert len(self.children) > 0, "SelectionMenu must have at least one child"
+        return self.children[self.selected_index]
+
+    def process(self, event: Event) -> bool:
+        assert self.children is not None, "SelectionMenu must have children"
+        assert len(self.children) > 0, "SelectionMenu must have at least one child"
+        if event.is_key(key.UP):
+            if self.selected_index > 0:
+                self.selected.apply_style(inverted=False)
+                self.selected_index -= 1
+                self.selected.apply_style(inverted=True)
+            return True
+        elif event.is_key(key.DOWN):
+            if self.selected_index < len(self.children) - 1:
+                self.selected.apply_style(inverted=False)
+                self.selected_index += 1
+                self.selected.apply_style(inverted=True)
+            return True
+        return False
