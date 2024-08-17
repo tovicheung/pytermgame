@@ -1,6 +1,11 @@
+"""ptg.ui: build UI using sprites
+
+Principle: build everything on top of ptg.sprite, avoid coupling normal non-UI sprites with UI attributes/methods
+"""
+
 from __future__ import annotations
 
-from typing import TypeVar, Generic, TYPE_CHECKING
+from typing import Iterable, TypeVar, Generic, TYPE_CHECKING, TypeVarTuple, NamedTuple
 
 from .coords import Coords
 from .sprite import Sprite
@@ -10,6 +15,37 @@ _S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
 
 __all__ = ["Container", "OccupiedContainer", "MinSize", "MaxSize", "Padding", "Border"]
+
+class Dimensions(NamedTuple):
+    width: int | None
+    height: int | None
+    
+    @classmethod
+    def from_surf(cls, surf: Surface):
+        return cls(surf.width, surf.height)
+    
+    @classmethod
+    def from_sprite(cls, sprite: Sprite):
+        return cls(sprite.surf.width, sprite.surf.height)
+    
+    def to_surf(self):
+        assert self.width is not None
+        assert self.height is not None
+        return Surface.blank(self.width, self.height)
+
+"""
+
+Border(...).wrap(
+    child
+)
+
+Column()
+    .apply_style()
+    .wrap(
+        *children
+    )
+
+"""
 
 class Container(Sprite, Generic[_S]):
     """Unlocks .wrap() and .child
@@ -81,9 +117,11 @@ class Container(Sprite, Generic[_S]):
         return tuple(self._flatten())
     
     def set_dirty(self, propagate=True):
-        if self.child is not None and self.placed and self._rendered.dirty:
+        if self.child is not None and self.placed and (self._rendered.coords != self._coords or self._rendered.surf != self.surf):
+            # this is here because
+            # 1. coords may be modified in .set_surf() eg align right
+            # 2. child needs to move with parent
             self.child.goto(*(self._coords + self.get_child_offset()))
-            # self.child.move(*(self._coords - self._rendered.coords))
         super().set_dirty(propagate)
     
     # Subclasses of Container must implement these:
@@ -99,11 +137,16 @@ class Container(Sprite, Generic[_S]):
     def get_child_offset(self) -> Coords:
         return Coords(0, 0)
     
+    def set_surf(self, *args, **kwargs):
+        super().set_surf(*args, **kwargs)
+        if self.child is not None and not self.child.placed:
+            # this is currently the reason why coords is set before surf
+            # should only be called in self.place()
+            self.child.place(self._coords + self.get_child_offset())
+    
     def new_surf_factory(self) -> Surface:
         if self.child is None: # vacant
             return self.new_vacant_surf()
-        if not self.child.placed:
-            self.child.place(self._coords + self.get_child_offset())
         return self.new_occupied_surf()
 
 class OccupiedContainer(Container[_S]):
@@ -124,7 +167,7 @@ class MinSize(OccupiedContainer[_S]):
     def get_child_coords(self) -> Coords:
         return self._coords
     
-    def new_occupied_factory(self) -> Surface:
+    def new_occupied_surf(self) -> Surface:
         min_width = max(self.min_width or self.child.width, self.child.width)
         min_height = max(self.min_height or self.child.height, self.child.height)
         return Surface.blank(min_width, min_height)
@@ -229,3 +272,88 @@ class Border(Container[_S]):
         self.inner_width = inner_width
         self.inner_height = inner_height
         self.update_surf()
+
+class Collection(Sprite):
+    """Unlocks .wrap() and .children
+    
+    A collection must be occupied."""
+
+    children: tuple[Sprite] | None
+    
+    def __init__(self, children: Iterable[Sprite] | None = None):
+        super().__init__()
+        self.children = None
+        if children is not None:
+            for child in children:
+                child._parent = self
+                # if children.placed:
+                #     self.place(children._coords - self.get_child_offset())
+                #     self._scene.move_sprite_to_below(self, children)
+    
+    def wrap(self, *children):
+        self.children = children
+        for child in children:
+            child._parent = self
+        # if child.placed:
+        #     self.place(child._coords - self.get_child_offset())
+        #     self._scene.move_sprite_to_below(self, child)
+        return self
+    
+    def get_children(self):
+        if self.children is None:
+            raise ValueError("Invalid call, children are not supplied")
+        return self.children
+    
+    def set_dirty(self, propagate=True):
+        if self.children is not None and self.placed and self._rendered.dirty:
+            self.build()
+            # self.child.move(*(self._coords - self._rendered.coords))
+        super().set_dirty(propagate)
+
+    def get_child_offset(self) -> Coords:
+        return Coords(0, 0)
+    
+    def new_surf_factory(self) -> Surface:
+        """The parent collection has the responsibility to place unplaced children in .new_surf_factory()"""
+        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
+    
+    def build(self) -> Dimensions:
+        """When this method is called, coords are guranteed to be concrete
+        
+        This method should:
+        * receive a max_size dimensions
+        * set children coords (with _set_coords(sprite, coords))
+        * return self dimensions
+        """
+        raise NotImplementedError("Subclasses of UIElement must implement .build()")
+
+def _set_coords(sprite: Sprite, coords: Coords):
+    if sprite.placed:
+        sprite.goto(*coords)
+    else:
+        sprite.place(coords)
+
+class Column(Collection):
+    def __init__(self, children: Iterable[Sprite] | None = None):
+        super().__init__(children)
+    
+    def build(self) -> Dimensions:
+        # this should be called in the surf stage of .place()
+        # which means ._coords are present
+        
+        # we will ignore max_size for now
+        assert self.children is not None
+
+        width = 0
+        height = 0
+
+        for child in self.children:
+            _set_coords(child, self._coords.dy(height))
+            height += child.height
+            width = max(width, child.width)
+        
+        return Dimensions(width, height)
+    
+    def new_surf_factory(self) -> Surface:
+        size = self.build()
+        return size.to_surf()

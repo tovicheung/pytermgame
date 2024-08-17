@@ -190,10 +190,7 @@ class Sprite(Collidable):
         # Resolve surface: set self.surf
         
         if (not hasattr(type(self), "surf")) and (not hasattr(self, "surf")):
-            try:
-                self.update_surf()
-            except NotImplementedError:
-                raise NotImplementedError("Subclass of Sprite must define either .surf or .new_surf_factory()") from None
+            self.update_surf()
         else:
             self.surf = Surface.coerce(self.surf)
 
@@ -203,7 +200,7 @@ class Sprite(Collidable):
 
         self.on_placed()
 
-        self._rendered = RenderedState(True, False, self._coords, self.surf)
+        self._rendered = RenderedState(dirty=True, on_screen=False, coords=self._coords, surf=self.surf)
         self.placed = True
 
         return self
