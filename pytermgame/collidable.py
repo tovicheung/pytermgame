@@ -13,10 +13,10 @@ class Collidable:
     """Represents anything that can be collided by a sprite
     (or more precisely, collided by a set of coordinates and a surface)"""
 
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         raise NotImplementedError("Subclasses of Collidable must implement ._is_colliding_raw()")
 
-    def _is_colliding_sprite(self, other: Sprite, old=False):
+    def _is_colliding_sprite(self, other: Sprite, old=False) -> bool:
         if (not old) and other.hidden:
             return False
         if old and (not other._rendered.on_screen):
@@ -24,19 +24,19 @@ class Collidable:
         return self._is_colliding_raw(other._rendered.coords if old else other._coords, other._rendered.surf)
 
 class _ScreenTop(Collidable):
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return _active.get_scene().apply_scroll(other_coords).y < 0
 
 class _ScreenBottom(Collidable):
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return _active.get_scene().apply_scroll(other_coords).y + other_surf.height > terminal.height()
 
 class _ScreenLeft(Collidable):
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return _active.get_scene().apply_scroll(other_coords).x < 0
 
 class _ScreenRight(Collidable):
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return _active.get_scene().apply_scroll(other_coords).x + other_surf.width > terminal.width()
 
 class ScreenEdge:

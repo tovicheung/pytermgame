@@ -38,7 +38,7 @@ def _ensure_placed(f):
 
 NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
 
-def _iter_collidables(nested_collidables: NestedCollidables):
+def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
     if isinstance(nested_collidables, Collidable):
         yield nested_collidables
         return
@@ -97,9 +97,9 @@ class Sprite(Collidable):
     style: Style
 
     # If set to a Group(), automatically add instances to the group
-    group: Group | None = None
+    group: Group
 
-    def __init__(self):
+    def __init__(self) -> None:
         # sprite is now in abstract state
 
         # initialized in .place()
@@ -157,9 +157,39 @@ class Sprite(Collidable):
         """
         raise NotImplementedError("Sprite.update_surf() should only be called if Sprite.new_surf_factory() is defined.")
     
+    # Styling
+
+    @overload
+    def apply_style(self, style: Style) -> Self: ...
+    @overload
+    def apply_style(self, *, 
+        align_horizontal: Dir | None = None,
+        align_vertical: Dir | None = None,
+        fg: Color | None = None,
+        bg: Color | None = None,
+        bold: bool | None = None,
+        inverted: bool | None = None) -> Self: ...
+    
+    def apply_style(self, style: Style | None = None, **style_options) -> Self:
+        """Apply style to sprite. 2 ways to use:
+        
+        Method 1: use a `Style` object
+        (your type checker probably likes this more)
+        >>> sprite.apply_style(Style(fg = Color.red, bg = Color.green))
+
+        Method 2: provide arguments directly
+        >>> sprite.apply_style(fg = Color.red, bg = Color.green)
+        """
+        if style is None:
+            style = Style(**style_options)
+        changed = self.style.update(style)
+        if changed:
+            self.set_dirty()
+        return self
+    
     # State conversion methods
 
-    def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None):
+    def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None) -> Self:
         """After a sprite is being placed, it:
         - is attached to a scene
         - has XYZ coordinates on the scene
@@ -195,7 +225,7 @@ class Sprite(Collidable):
             self.surf = Surface.coerce(self.surf)
 
         # add to class group if one exists
-        if isinstance(self.group, Group):
+        if hasattr(type(self), "group") and isinstance(type(self).group, Group):
             self.group.add(self)
 
         self.on_placed()
@@ -205,7 +235,7 @@ class Sprite(Collidable):
 
         return self
 
-    def kill(self):
+    def kill(self) -> None:
         """Set the sprite as a zombie and erases it from the scene.
     
         Zombies are truly killed in Group.update() via Sprite._kill() (see below)
@@ -216,7 +246,7 @@ class Sprite(Collidable):
         self.render(flush=False, erase=True)
         self.zombie = True
 
-    def _kill(self):
+    def _kill(self) -> None:
         """Truly kills a sprite, should only call as zombie."""
 
         # frees all references and destroyed by garbage collector
@@ -225,13 +255,13 @@ class Sprite(Collidable):
 
     # Methods subclasses can override
 
-    def on_placed(self):
+    def on_placed(self) -> None:
         """called AUTOMATICALLY after place()
         Initial coordinates and styles can be customized.
         Position methods such as .goto() and .move() can be used.
         """
 
-    def update(self):
+    def update(self) -> None:
         """called MANUALLY, often from group.update() or game.update()
         Users are free to customize the behaviour of .update() in their sprites.
         """
@@ -239,67 +269,28 @@ class Sprite(Collidable):
     # Properties of a sprite
 
     @property
-    def x(self):
+    def x(self) -> int:
         return floor(self._coords.x)
     
     @property
-    def y(self):
+    def y(self) -> int:
         return floor(self._coords.y)
     
     @property
-    def z(self):
+    def z(self) -> int:
         return self._z
     
     @property
-    def width(self):
+    def width(self) -> int:
         return self.surf.width
     
     @property
-    def height(self):
+    def height(self) -> int:
         return self.surf.height
     
-    @overload
-    def apply_style(self, style: Style) -> Self: ...
-    @overload
-    def apply_style(self, *, 
-        align_horizontal: Dir | None = None,
-        align_vertical: Dir | None = None,
-        fg: Color | None = None,
-        bg: Color | None = None,
-        bold: bool | None = None,
-        inverted: bool | None = None) -> Self: ...
-    
-    def apply_style(self, style: Style | None = None, **style_options) -> Self:
-        """Apply style to sprite. 2 ways to use:
-        
-        Method 1: use a `Style` object
-        (your type checker probably likes this more)
-        >>> sprite.apply_style(Style(fg = Color.red, bg = Color.green))
-
-        Method 2: provide arguments directly
-        >>> sprite.apply_style(fg = Color.red, bg = Color.green)
-        """
-        if style is None:
-            style = Style(**style_options)
-        changed = self.style.update(style)
-        if changed:
-            self.set_dirty()
-        return self
-    
     # Rendering
-
-    # def _crop_surf(self, max_width: int, max_height: int):
-    #     if self.style.align_horizontal == Dir.left:
-    #         surf = self.surf.crop_to_left(max_width)
-    #     else:
-    #         surf = self.surf.crop_to_right(max_width)
-    #     if self.style.align_vertical == Dir.top:
-    #         surf = surf.crop_to_top(max_height)
-    #     else:
-    #         surf = surf.crop_to_bottom(max_height)
-    #     self.set_surf(surf)
     
-    def _render(self, flush=True, erase=False):
+    def _render(self, flush=True, erase=False) -> None:
         if erase:
             coords = self._rendered.coords
             surf = self._rendered.surf.to_blank()
@@ -351,7 +342,7 @@ class Sprite(Collidable):
         if flush:
             terminal.flush() # flush at once, not every line
 
-    def render(self, flush=True, erase=False):
+    def render(self, flush=True, erase=False) -> None:
         """Render sprite onto terminal
         - flush: whether to flush stdout after rendering
         - erase:
@@ -381,7 +372,7 @@ class Sprite(Collidable):
 
     # Movement
 
-    def set_dirty(self, propagate=True):
+    def set_dirty(self, propagate=True) -> None:
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
@@ -392,11 +383,11 @@ class Sprite(Collidable):
                 # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
                 sprite.set_dirty()
 
-    def goto(self, x, y):
+    def goto(self, x, y) -> None:
         self._coords = Coords(x, y)
         self.set_dirty()
 
-    def bound(self, x_min: int | None = None, x_max: int | None = None, y_min: int | None = None, y_max: int | None = None):
+    def bound(self, x_min: int | None = None, x_max: int | None = None, y_min: int | None = None, y_max: int | None = None) -> None:
         if x_min is not None and self.x < x_min:
             self.set_x(x_min)
         if x_max is not None and self.x > x_max:
@@ -406,7 +397,7 @@ class Sprite(Collidable):
         if y_max is not None and self.y > y_max:
             self.set_y(y_max)
 
-    def bound_on_screen(self):
+    def bound_on_screen(self) -> None:
         if self.x < 0:
             self.set_x(0)
         if self.y < 0:
@@ -416,19 +407,19 @@ class Sprite(Collidable):
         if self.y + self.height > terminal.height():
             self.set_y(terminal.height() - self.height)
 
-    def move(self, dx, dy):
+    def move(self, dx, dy) -> None:
         self._coords = self._coords + Coords(dx, dy)
         self.set_dirty()
 
-    def set_x(self, x):
+    def set_x(self, x) -> None:
         self._coords = self._coords.with_x(x)
         self.set_dirty()
 
-    def set_y(self, y):
+    def set_y(self, y) -> None:
         self._coords = self._coords.with_y(y)
         self.set_dirty()
     
-    def set_surf(self, surf: Surface):
+    def set_surf(self, surf: Surface) -> None:
         if self.placed:
             old_surf = self.surf
         self.surf = surf
@@ -441,22 +432,22 @@ class Sprite(Collidable):
         if self._parent is not None and self._parent.placed:
             self._parent.update_surf()
     
-    def update_surf(self):
+    def update_surf(self) -> None:
         self.set_surf(self.new_surf_factory())
 
-    def hide(self):
+    def hide(self) -> None:
         if self.hidden:
             return
         self.hidden = True
         self.set_dirty()
 
-    def show(self):
+    def show(self) -> None:
         if not self.hidden:
             return
         self.hidden = False
         self.set_dirty()
     
-    def virtual(self):
+    def virtual(self) -> _Virtual:
         """Usage:
         
         >>> with sprite.virtual():
@@ -472,30 +463,30 @@ class Sprite(Collidable):
     # disambiguation: collision = overlap
     
     @_ensure_placed
-    def get_movement_collisions(self) -> Generator[Sprite, None, None]:
+    def get_movement_collisions(self) -> Generator[Sprite]:
         """Get collision of both old and new states"""
         # TODO: better name and documentation
         for sprite in self._scene.sprites:
             if sprite is not self and (sprite._is_colliding_sprite(self) or sprite._is_colliding_sprite(self, old=True)):
                 yield sprite
     
-    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface):
+    def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return (self.x - other_surf.width < other_coords.x < self.x + self.width) \
             and (self.y - other_surf.height < other_coords.y < self.y + self.height) \
     
-    def _is_colliding_sprite(self, other: Sprite, old=False):
+    def _is_colliding_sprite(self, other: Sprite, old=False) -> bool:
         if self is other:
             return False
         return super()._is_colliding_sprite(other, old)
 
     @_ensure_placed
-    def was_colliding(self, collidable: Collidable):
+    def was_colliding(self, collidable: Collidable) -> bool:
         if not self._rendered.on_screen:
             return False
         return collidable._is_colliding_sprite(self, old=True)
 
     @_ensure_placed
-    def was_colliding_any(self, sprite_or_sprites: NestedCollidables):
+    def was_colliding_any(self, sprite_or_sprites: NestedCollidables) -> bool:
         """Check if sprite's rendered state is colliding with any of the collidables.
 
         Takes in collidables nested in any way.
@@ -515,13 +506,13 @@ class Sprite(Collidable):
         return False
 
     @_ensure_placed
-    def is_colliding(self, sprite: Collidable):
+    def is_colliding(self, sprite: Collidable) -> bool:
         if self.hidden:
             return False
         return sprite._is_colliding_sprite(self)
 
     @_ensure_placed
-    def is_colliding_any(self, nested_collidables: NestedCollidables):
+    def is_colliding_any(self, nested_collidables: NestedCollidables) -> bool:
         """Check if sprite is colliding with any of the collidables.
         
         Takes in collidables nested in any way.
@@ -541,7 +532,7 @@ class Sprite(Collidable):
         return False
     
     @_ensure_placed
-    def get_collisions_with(self, nested_collidables: NestedCollidables):
+    def get_collisions_with(self, nested_collidables: NestedCollidables) -> Generator[Collidable]:
         """Returns the subset of collidables that sprite is colliding with
         
         Takes in collidables nested in any way.
@@ -608,7 +599,7 @@ class _Virtual:
     def __exit__(self, typ, val, tb):
         self.owner._virtual = False
 
-def Object(surf: SurfaceLike):
+def Object(surf: SurfaceLike) -> Sprite:
     """Short singular sprite creator
     
     usage:
@@ -635,10 +626,10 @@ class KinematicSprite(Sprite):
         self.vx = 0
         self.vy = 0
         
-    def move(self, dx=None, dy=None):
+    def move(self, dx=None, dy=None) -> None:
         super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)
     
-    def move_until_collision(self, sprite_or_sprites: Sprite | Group | Iterable[Sprite | Group]) -> set[Collidable]:
+    def move_until_collision(self, sprite_or_sprites: NestedCollidables) -> set[Collidable]:
         """self.move() but stops on collision
         Returns the list of sprites it collided with.
         """

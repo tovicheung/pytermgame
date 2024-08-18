@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from fractions import Fraction
+from math import floor
 from typing import TypeAlias, Sequence, ClassVar
 import sys
 
@@ -111,7 +112,7 @@ class FloatCoords(complex, Coords):
 
 class FracCoords(Coords):
     def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
-        self.x = x
-        self.y = y
+        self.x = Fraction(x)
+        self.y = Fraction(y)
 
 Coords.ORIGIN = Coords(0, 0) # type: ignore

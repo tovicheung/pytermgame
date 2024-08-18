@@ -61,6 +61,8 @@ class Style:
         return changed
     
     def to_ansi(self):
+        assert self.fg is not None, "Cannot call .to_ansi() on style without fg"
+        assert self.bg is not None, "Cannot call .to_ansi() on style without bg"
         ansi = Color.to_fg_ansi(self.fg) + Color.to_bg_ansi(self.bg)
         if self.bold:
             ansi += "\033[1m"

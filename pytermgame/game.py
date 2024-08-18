@@ -43,7 +43,7 @@ class Game:
             fps: int | None = 30,
             alternate_screen: bool = True,
             show_cursor: bool = False,
-            silent_errors: tuple[type[BaseException]] = (KeyboardInterrupt,),
+            silent_errors: tuple[type[BaseException], ...] = (KeyboardInterrupt,),
             text_wrapping: bool = False,
             clear_first: bool = False,
             ):
