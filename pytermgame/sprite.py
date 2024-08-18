@@ -15,7 +15,7 @@ from . import terminal, _active
 from .collidable import Collidable
 from .coords import Coords, XY
 from .group import Group
-from .style import Style, Dir, Color
+from .style import Style, Dir, Color, _resolve_style
 from .scene import Scene
 from .surface import Surface, SurfaceLike
 
@@ -110,10 +110,11 @@ class Sprite(Collidable):
         self._groups: list[Group] = []
         
         # styling
-        self.style = Style.default()
+        self.style = Style() # all unspecified
+        self._resolved_style: Style | None = None # none means requires resolving
 
         if hasattr(type(self), "style"):
-            self.style.update(type(self).style)
+            self.style.merge(type(self).style)
 
         # user-accessible attributes
         self.placed = False
@@ -182,8 +183,9 @@ class Sprite(Collidable):
         """
         if style is None:
             style = Style(**style_options)
-        changed = self.style.update(style)
+        changed = self.style.merge(style)
         if changed:
+            self._resolved_style = None
             self.set_dirty()
         return self
     
@@ -323,7 +325,9 @@ class Sprite(Collidable):
         ansi = "\033[m"
         
         if not erase:
-            ansi += self.style.to_ansi()
+            if self._resolved_style is None:
+                self._resolved_style = _resolve_style(self)
+            ansi += self._resolved_style.to_ansi()
         
         line_coords_base = coords.with_x(0) if coords.x < 0 else coords.with_x(terminal.width() - 1) if coords.x >= terminal.width() else coords
 

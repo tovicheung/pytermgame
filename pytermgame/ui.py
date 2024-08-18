@@ -1,6 +1,11 @@
 """ptg.ui: build UI using sprites
 
 Principle: build everything on top of ptg.sprite, avoid coupling normal non-UI sprites with UI attributes/methods
+
+Terminology:
+* a Container has children and inherits styles to them
+
+
 """
 
 from __future__ import annotations
@@ -35,6 +40,7 @@ def _place_or_set_coords(sprite: Sprite, coords: Coords):
     else:
         sprite.place(coords)
 
+# unused for now
 class Dimensions(NamedTuple):
     width: int
     height: int
@@ -49,8 +55,6 @@ class Dimensions(NamedTuple):
     
     def to_surf(self):
         return Surface.blank(self.width, self.height)
-
-# Container: single sprite composition
 
 class Container(Sprite, Generic[_S]):
     """Unlocks .child, .wrap() and .get_inner_dimensions()"""
@@ -118,21 +122,21 @@ class Container(Sprite, Generic[_S]):
     
     @override
     def set_dirty(self, propagate=True):
-        if self.child is not None and self.placed and (self._rendered.coords != self._coords or self._rendered.surf != self.surf):
+        if self.child is not None and self.placed and self._rendered.coords != self._coords:
             # this is here because
             # 1. coords may be modified in .set_surf() eg align right
             # 2. child needs to move when (a) parent moves and (b) parent surf changes (eg padding change)
             self.child.goto(*(self._coords + self.get_child_offset()))
         super().set_dirty(propagate)
     
-    def get_inner_dimensions(self) -> Dimensions:
+    def get_inner_dimensions(self) -> tuple[int, int]:
         if self.child is None:
-            return Dimensions(0, 0)
-        return Dimensions.from_sprite(self.child)
+            return 0, 0
+        return self.child.width, self.child.height
     
     @override
     def update_surf(self):
-        if self.child is not None and not self.child.placed:
+        if self.child is not None:
             # this is currently the reason why coords is set before surf
             # should only be called in self.place()
             _place_or_set_coords(self.child, self._coords + self.get_child_offset())
@@ -145,7 +149,6 @@ class Container(Sprite, Generic[_S]):
     
     # Subclasses of Container must override:
     
-    @override
     def new_surf_factory(self) -> Surface:
         """Note when implementing:
         1. self._coords is set
@@ -244,9 +247,6 @@ class Border(Container[_S]):
         self.inner_height = inner_height
         self.update_surf()
 
-# Collection: multi sprite composition
-
-# VERY UNSTABLE !!
 class Collection(Sprite):
     """Unlocks .wrap() and .children
     
@@ -273,27 +273,33 @@ class Collection(Sprite):
             raise ValueError("Invalid call, children are not supplied")
         return self.children
     
+    @override
     def set_dirty(self, propagate=True):
-        if self.children is not None and self.placed and (self._rendered.coords != self._coords):
+        if self.children is not None and self.placed and self._rendered.coords != self._coords:
             delta = self._coords - self._rendered.coords
             for child in self.children:
                 child.goto(*(child._rendered.coords + delta))
         super().set_dirty(propagate)
     
-    def build(self) -> Dimensions:
-        """When this method is called, coords are guranteed to be concrete
-        
-        This method should:
-        * set children coords (with _set_coords(sprite, coords))
-        * return self dimensions
-        """
-        raise NotImplementedError("Subclasses of UIElement must implement .build()")
-    
+    # Subclasses of Collection must override:
+
     def new_surf_factory(self) -> Surface:
-        return self.build().to_surf()
+        """In this method, a collection should:
+        * _place_or_set_coords() children
+        * determine dimensions
+        * create surf, usually from Surface.blank(width, height)
+        """
+        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
+    
+    # Unused:
+    
+    def build(self) -> Dimensions:
+        # might be used when constraints are implemented
+        raise Exception("Method is unused")
+        raise NotImplementedError("Subclasses of Collection must implement .build()")
 
 class Column(Collection):    
-    def build(self) -> Dimensions:
+    def new_surf_factory(self):
         assert self.children is not None
 
         width = height = 0
@@ -303,10 +309,10 @@ class Column(Collection):
             height += child.height
             width = max(width, child.width)
         
-        return Dimensions(width, height)
+        return Surface.blank(width, height)
 
 class Row(Collection):
-    def build(self) -> Dimensions:
+    def new_surf_factory(self):
         assert self.children is not None
 
         width = height = 0
@@ -316,7 +322,7 @@ class Row(Collection):
             width += child.width
             height = max(height, child.height)
         
-        return Dimensions(width, height)
+        return Surface.blank(width, height)
 
 class SelectionMenu(Column):
     def on_placed(self):

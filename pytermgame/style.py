@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from enum import Enum, IntEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .sprite import Sprite
 
 class Color(IntEnum):
     black = 0
@@ -31,12 +35,7 @@ class Dir(Enum):
 class Style:
     """Styling options for sprites. Intended to be mutable.
     
-    When it is set as Sprite.style:
-    - styling for that sprite
-    - should contain default values instead of None
-
-    When it is passed as an argument to Sprite.set_style():
-    - unspecified fields should be None
+    If set as Sprite.style, should not contain unspecified fields.
     """
 
     # we cannot set default values here because None means unspecified
@@ -51,7 +50,7 @@ class Style:
     def default(cls):
         return cls(Dir.left, Dir.top, Color.default, Color.default, False, False)
     
-    def update(self, other: Style):
+    def merge(self, other: Style) -> bool:
         changed = False
         for field in fields(other):
             val = getattr(other, field.name)
@@ -69,3 +68,16 @@ class Style:
         if self.inverted:
             ansi += "\033[7m"
         return ansi
+
+def _resolve_style(sprite: Sprite) -> Style:
+    # Modifies sprite._resolved_style in place
+
+    resolved_style = Style.default()
+
+    if sprite._parent is not None:
+        sprite._parent._resolved_style = _resolve_style(sprite._parent)
+        resolved_style.merge(sprite._parent._resolved_style)
+
+    resolved_style.merge(sprite.style)
+
+    return resolved_style
