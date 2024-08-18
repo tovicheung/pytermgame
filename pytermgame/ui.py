@@ -3,15 +3,15 @@
 Principle: build everything on top of ptg.sprite, avoid coupling normal non-UI sprites with UI attributes/methods
 
 Terminology:
-* a Container has children and inherits styles to them
-
-
+* a Container must have zero or one child
+* a Collection must have one or more children
+* a Collection defines how their children are arranged
 """
 
 from __future__ import annotations
 
 import sys
-from typing import Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+from typing import Callable, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
 
 # some methods of Sprite are overriden and it is best to mark them
 if sys.version_info >= (3, 12):
@@ -28,11 +28,16 @@ from .surface import Surface
 
 _S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
+_T = TypeVar("_T")
 
 # only export stable sprites
 __all__ = ["Container", "MinSize", "MaxSize", "Padding", "Border"]
 
 # Helpers
+
+# for type checking only
+def _copy_signature(f: _T) -> Callable[..., _T]:
+    return lambda x: x
 
 def _place_or_set_coords(sprite: Sprite, coords: Coords):
     if sprite.placed:
@@ -119,6 +124,13 @@ class Container(Sprite, Generic[_S]):
         """
         # evaluate all at once, instead of creating a lot of temporary tuples
         return tuple(self._flatten())
+    
+    @override
+    @_copy_signature(Sprite.apply_style)
+    def apply_style(self, *args, **kwargs):
+        super().apply_style(*args, **kwargs)
+        assert self.child is not None
+        self.child._resolved_style = None
     
     @override
     def set_dirty(self, propagate=True):
@@ -258,13 +270,13 @@ class Collection(Sprite):
         super().__init__()
         self.children = None
         if children is not None:
+            self.children = tuple(children)
             for child in children:
                 child._parent = self
     
     def wrap(self, *children: Sprite):
         self.children = children
         for child in children:
-            assert not child.placed, "children of collection should not be manually placed"
             child._parent = self
         return self
     
@@ -272,6 +284,21 @@ class Collection(Sprite):
         if self.children is None:
             raise ValueError("Invalid call, children are not supplied")
         return self.children
+    
+    def attach(self, child: Sprite):
+        if self.children is None:
+            raise ValueError("Invalid call, children are not supplied")
+        if child._parent is not None:
+            raise ValueError(f"Child already has parent: {child._parent}")
+        child._parent = self
+        self.children = self.children + (child,)
+    
+    @override
+    @_copy_signature(Sprite.apply_style)
+    def apply_style(self, *args, **kwargs):
+        super().apply_style(*args, **kwargs)
+        for child in self.get_children():
+            child._resolved_style = None
     
     @override
     def set_dirty(self, propagate=True):
@@ -300,11 +327,9 @@ class Collection(Sprite):
 
 class Column(Collection):    
     def new_surf_factory(self):
-        assert self.children is not None
-
         width = height = 0
 
-        for child in self.children:
+        for child in self.get_children():
             _place_or_set_coords(child, self._coords.dy(height))
             height += child.height
             width = max(width, child.width)
@@ -313,11 +338,9 @@ class Column(Collection):
 
 class Row(Collection):
     def new_surf_factory(self):
-        assert self.children is not None
-
         width = height = 0
 
-        for child in self.children:
+        for child in self.get_children():
             _place_or_set_coords(child, self._coords.dx(width))
             width += child.width
             height = max(height, child.height)
