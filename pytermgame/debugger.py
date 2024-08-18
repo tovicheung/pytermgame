@@ -1,6 +1,12 @@
 from __future__ import annotations
 
+import sys
 from typing import TYPE_CHECKING
+
+if sys.platform != "win32":
+    import termios
+    import fcntl
+    import os
 
 from . import terminal as term
 from . import _active
@@ -45,8 +51,23 @@ class Debugger(Sprite):
         while True:
             term.home()
             term.goto(0, term.height()-2)
+            
+            if sys.platform != "win32":
+                fd = sys.stdin.fileno()
+                old_term = termios.tcgetattr(fd)
+                new_term = termios.tcgetattr(fd)
+                new_term[3] = new_term[3] | termios.ICANON | termios.ECHO
+                termios.tcsetattr(fd, termios.TCSANOW, new_term)
+                old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags & (~os.O_NONBLOCK))
+            
             print("empty=leave | [t]ick | fps <N>")
             cmd = input(">").strip()
+            
+            if sys.platform != "win32":
+                termios.tcsetattr(fd, termios.TCSANOW, old_term)
+                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
+            
             if len(cmd) == 0:
                 break
             elif cmd.startswith("t"):
@@ -57,7 +78,7 @@ class Debugger(Sprite):
                     value = cmd[3:].strip()
                     fps = None if value == "None" else int(value)
                     _active.get_active().fps = fps
-                    _active.get_active().spf = None if value == "None" else 1 / fps
+                    _active.get_active().spf = None if fps is None else 1 / fps
                 except Exception:
                     pass
             term.clear()
