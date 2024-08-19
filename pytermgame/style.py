@@ -45,6 +45,9 @@ class Style:
     bg: Color | None = None
     bold: bool | None = None
     inverted: bool | None = None
+    
+    # used externally
+    _resolved_priority: int | None = None
 
     @classmethod
     def default(cls):
@@ -69,15 +72,29 @@ class Style:
             ansi += "\033[7m"
         return ansi
 
+# Priority:
+# 0 = from parent(s), default also treated as parent
+# 1 = from self
+
 def _resolve_style(sprite: Sprite) -> Style:
-    # Modifies sprite._resolved_style in place
+    # affects parents
 
     resolved_style = Style.default()
+    resolved_style._resolved_priority = 0
+
+    for i, field in enumerate(fields(sprite.style)):
+        val = getattr(sprite.style, field.name)
+        if val is not None:
+            setattr(resolved_style, field.name, val)
+            resolved_style._resolved_priority |= (1 << i)
 
     if sprite._parent is not None:
-        sprite._parent._resolved_style = _resolve_style(sprite._parent)
-        resolved_style.merge(sprite._parent._resolved_style)
+        sprite._parent._resolved_style = parent_style = _resolve_style(sprite._parent)
 
-    resolved_style.merge(sprite.style)
+        inverted = ~resolved_style._resolved_priority
+
+        for i, field in enumerate(fields(parent_style)):
+            if inverted & (1 << i):
+                setattr(resolved_style, field.name, getattr(parent_style, field.name))
 
     return resolved_style

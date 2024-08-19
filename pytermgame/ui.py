@@ -2,10 +2,13 @@
 
 Principle: build everything on top of ptg.sprite, avoid coupling normal non-UI sprites with UI attributes/methods
 
-Terminology:
-* a Container must have zero or one child
-* a Collection must have one or more children
-* a Collection defines how their children are arranged
+Container
+* must have zero or one child
+* has well-defined inner dimensions
+
+Collection
+* must have one or more children
+* defines how their children are arranged
 """
 
 from __future__ import annotations
@@ -162,9 +165,9 @@ class Container(Sprite, Generic[_S]):
     # Subclasses of Container must override:
     
     def new_surf_factory(self) -> Surface:
-        """Note when implementing:
-        1. self._coords is set
-        2. use self.get_inner_dimensions() instead of self.child.width or self.child.height because self.child may be None
+        """When implementing:
+        * use .get_inner_dimensions() to get inner width and height
+        * does NOT have to place child
         """
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
 
@@ -311,8 +314,8 @@ class Collection(Sprite):
     # Subclasses of Collection must override:
 
     def new_surf_factory(self) -> Surface:
-        """In this method, a collection should:
-        * _place_or_set_coords() children
+        """When implementing:
+        * use _place_or_set_coords(x) on children
         * determine dimensions
         * create surf, usually from Surface.blank(width, height)
         """
