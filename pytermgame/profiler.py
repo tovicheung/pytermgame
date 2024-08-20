@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cache
 import typing
 
 from .sprite import Sprite
@@ -18,11 +19,6 @@ class ProfileException(BaseException):
 
     def __str__(self):
         return "Profiler raised an exception: " + self.msg + "\nGame state:\n" + str(self.profiler.state)
-
-def _ifnone(val, none):
-    if val is None:
-        return none
-    return val
 
 def _fmt(val, ifnone=0):
     if val is None:

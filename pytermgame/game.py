@@ -23,7 +23,6 @@ else:
     from enum import Enum
     class StrEnum(str, Enum): ...
 
-from enum import StrEnum
 if sys.platform != "win32":
     import termios
     import fcntl
@@ -63,7 +62,7 @@ class Game:
             silent_errors: tuple[type[BaseException], ...] = (KeyboardInterrupt,),
             text_wrapping: bool = False,
             clear_first: bool = False,
-            update_screen_size: UpdateScreenSize | Literal["always", "every_tick", "none"]= "every_tick",
+            update_screen_size: UpdateScreenSize | Literal["always", "every_tick", "none"] = "every_tick",
             ):
         """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
@@ -102,7 +101,7 @@ class Game:
         # A game must have a scene at all times
         self.scene = Scene()
 
-        self.last_tick = 0
+        self._tick_start = 0
         self.ntick = 0
     
     # Start and end
@@ -118,7 +117,7 @@ class Game:
 
     def start(self):
         if self.update_screen_size == UpdateScreenSize.none:
-            terminal._enable_size_cache()
+            terminal._set_size_cache()
 
         # determine the control codes to send
 
@@ -239,25 +238,20 @@ class Game:
         - increase tick count
         """
 
-        # TODO: integrate with last_tick below
-        now = time.time()
-        if self._last_tick_time is not None:
-            self._last_tick_dur = now - self._last_tick_time
-        self._last_tick_time = now
+        _tick_ignore_duration = 0
 
         if self._block_next_tick:
             self._block_next_tick = False
+            start = time.time()
             self.debugger.block() # type: ignore
-            self._last_tick_time = time.time()
-
-        if self.update_screen_size == UpdateScreenSize.every_tick:
-            terminal._update_size_cache()
+            _tick_ignore_duration = time.time() - start
         
         if self.debugger is not None and self._block_key is not None and not event._got:
             for key in event.get_keys():
                 if key == self._block_key:
+                    start = time.time()
                     self.debugger.block() # type: ignore
-                    self._last_tick_time = time.time()
+                    _tick_ignore_duration = time.time() - start
                 else:
                     event.queue.append((event.KEYEVENT, key))
 
@@ -269,16 +263,23 @@ class Game:
             if self.ntick == timer[1]:
                 add_event(timer[0])
 
-        if (not timeless) and self.fps is not None and self.spf is not None:
-            # self.spf is not None  is here only for type checkers
-            next_tick = self.last_tick + self.spf
-            now = time.time()
-            if now < next_tick:
-                time.sleep(next_tick - now)
+        if self.update_screen_size == UpdateScreenSize.every_tick:
+            terminal._set_size_cache()
         
         event._got = False
 
-        self.last_tick = time.time()
+        if (not timeless) and self.fps is not None and self.spf is not None:
+            end_of_tick = self._tick_start + self.spf
+            now = time.time()
+            if now < end_of_tick:
+                time.sleep(end_of_tick - now)
+        
+        now = time.time()
+
+        # duration of last tick
+        self._last_tick_dur = now - self._tick_start - _tick_ignore_duration
+
+        self._tick_start = now
         self.ntick += 1
 
     def update(self):

@@ -40,13 +40,7 @@ pip install .
 Unfortunately i am too broke to afford a mac
 
 ## Examples
-Examples are included in the repo root:
-- `ex1_jet_and_ball.py`
-- `ex2_cookie_clicker.py`
-- `ex3_pong.py`
-- `ex4_breakout.py`
-- `ex5_space_shooter.py`
-- `ex6_wordle.py`
+Examples are included in `examples/`.
 
 Playing instructions are included in the respective files.
 

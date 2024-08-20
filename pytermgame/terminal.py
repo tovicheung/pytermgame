@@ -23,16 +23,13 @@ def height():
 
 ## Internal use
 
-def _enable_size_cache():
-    global _width, _height
-    _width, _height = width, height
-    _update_size_cache()
+_width, _height = width, height
 
 def _disable_size_cache():
     global width, height
     width, height = _width, _height
 
-def _update_size_cache():
+def _set_size_cache():
     global width, height
     w, h = os.get_terminal_size()
     width = wraps(width)(lambda: w)
