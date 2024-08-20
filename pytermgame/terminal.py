@@ -3,20 +3,40 @@
 This submodule can be used independently for controlling the terminal.
 """
 
-from typing import SupportsInt
-from random import randint
+from functools import wraps
 import os
+from random import randint
 import sys
+from typing import SupportsInt
 
 WINDOWS = sys.platform == "win32"
 
 # Terminal size
+
+## Normal use
 
 def width():
     return os.get_terminal_size().columns
 
 def height():
     return os.get_terminal_size().lines
+
+## Internal use
+
+def _enable_size_cache():
+    global _width, _height
+    _width, _height = width, height
+    _update_size_cache()
+
+def _disable_size_cache():
+    global width, height
+    width, height = _width, _height
+
+def _update_size_cache():
+    global width, height
+    w, h = os.get_terminal_size()
+    width = wraps(width)(lambda: w)
+    height = wraps(height)(lambda: h)
 
 # I/O
 

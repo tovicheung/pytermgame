@@ -13,7 +13,7 @@ class Ball(ptg.KinematicSprite):
         self.bounce((ptg.screen, Ball.group))
 
 try:
-    with ptg.Game(fps=30) as game:
+    with ptg.Game(fps=30, update_screen_size = "every_tick") as game:
         prof, disp = ptg.Profiler(game, sample_ticks=30).with_display()
 
         ptg.clock.add_interval(ptg.event.USEREVENT, ticks=10)

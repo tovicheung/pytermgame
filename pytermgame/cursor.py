@@ -55,6 +55,9 @@ def move(dx: int = 0, dy: int = 0):
     state.coords = state.coords.dx(dx).dy(dy)
     state.dirty = True
 
+def is_visible():
+    return state.visible
+
 _buffer = ""
 
 def write_ansi():

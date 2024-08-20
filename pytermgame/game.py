@@ -5,7 +5,7 @@ This module contains the Game class, which controls the entire game.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 import time
 import sys
 
@@ -17,10 +17,27 @@ from .debugger import Debugger
 from .event import add_event, EventLike
 from .scene import Scene
 
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+    class StrEnum(str, Enum): ...
+
+from enum import StrEnum
 if sys.platform != "win32":
     import termios
     import fcntl
     import os
+
+class UpdateScreenSize(StrEnum):
+    # always get the latest screen size
+    always = "always"
+
+    # update and cache screen size every tick
+    every_tick = "every_tick"
+
+    # assume the screen size is fixed
+    none = "none"
 
 class Game:
     """The class that ties everything together.
@@ -46,6 +63,7 @@ class Game:
             silent_errors: tuple[type[BaseException], ...] = (KeyboardInterrupt,),
             text_wrapping: bool = False,
             clear_first: bool = False,
+            update_screen_size: UpdateScreenSize | Literal["always", "every_tick", "none"]= "every_tick",
             ):
         """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
@@ -54,6 +72,7 @@ class Game:
         - silent_errors - what errors should not be displayed
         - text_wrapping - whether to wrap overflow in terminal
         - clear_first - whether to clear the terminal before starting
+        - update_screen_size - when to get the latest screen size via os.get_terminal_size()
         """
 
         # Initialization options
@@ -63,6 +82,7 @@ class Game:
         self.silent_errors = silent_errors
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
+        self.update_screen_size = UpdateScreenSize(update_screen_size)
 
         # Don't compute every tick
         self.spf = None if self.fps is None else 1 / self.fps
@@ -97,6 +117,9 @@ class Game:
             return True
 
     def start(self):
+        if self.update_screen_size == UpdateScreenSize.none:
+            terminal._enable_size_cache()
+
         # determine the control codes to send
 
         if sys.platform != "win32":
@@ -141,6 +164,9 @@ class Game:
             fcntl.fcntl(self._nix_fd, fcntl.F_SETFL, self._nix_old_flags)
         
         type(self)._active = None
+        
+        if self.update_screen_size == UpdateScreenSize.none:
+            terminal._disable_size_cache()
 
     def wrapper(self, f):
         self.start()
@@ -224,6 +250,8 @@ class Game:
             self.debugger.block() # type: ignore
             self._last_tick_time = time.time()
 
+        if self.update_screen_size == UpdateScreenSize.every_tick:
+            terminal._update_size_cache()
         
         if self.debugger is not None and self._block_key is not None and not event._got:
             for key in event.get_keys():

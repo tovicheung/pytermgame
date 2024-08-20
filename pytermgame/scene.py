@@ -70,13 +70,17 @@ class Scene(SpriteList):
                 terminal.flush()
             return
         
-        terminal.hide_cursor(flush=True)
+        if cursor.is_visible():
+            terminal.hide_cursor(flush=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=False)
+        
+        if cursor.is_visible():
+            cursor.write_ansi()
+        
         # flush once after all the rendering
-        cursor.write_ansi()
         terminal.flush()
     
     def update(self):
