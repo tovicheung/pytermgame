@@ -292,7 +292,7 @@ class Sprite(Collidable):
     
     # Rendering
     
-    def _render(self, flush=True, erase=False) -> None:
+    def _render(self, flush: bool = True, erase: bool = False) -> None:
         if erase:
             coords = self._rendered.coords
             surf = self._rendered.surf.to_blank()
@@ -346,7 +346,7 @@ class Sprite(Collidable):
         if flush:
             terminal.flush() # flush at once, not every line
 
-    def render(self, flush=True, erase=False) -> None:
+    def render(self, flush: bool = True, erase: bool = False) -> None:
         """Render sprite onto terminal
         - flush: whether to flush stdout after rendering
         - erase:
@@ -376,7 +376,7 @@ class Sprite(Collidable):
 
     # Movement
 
-    def set_dirty(self, propagate=True) -> None:
+    def set_dirty(self, propagate: bool = True) -> None:
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
@@ -387,7 +387,7 @@ class Sprite(Collidable):
                 # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
                 sprite.set_dirty()
 
-    def goto(self, x, y) -> None:
+    def goto(self, x: int | float | Fraction, y: int | float | Fraction) -> None:
         self._coords = Coords(x, y)
         self.set_dirty()
 
@@ -411,15 +411,15 @@ class Sprite(Collidable):
         if self.y + self.height > terminal.height():
             self.set_y(terminal.height() - self.height)
 
-    def move(self, dx, dy) -> None:
+    def move(self, dx: int | float | Fraction, dy: int | float | Fraction) -> None:
         self._coords = self._coords + Coords(dx, dy)
         self.set_dirty()
 
-    def set_x(self, x) -> None:
+    def set_x(self, x: int | float | Fraction) -> None:
         self._coords = self._coords.with_x(x)
         self.set_dirty()
 
-    def set_y(self, y) -> None:
+    def set_y(self, y: int | float | Fraction) -> None:
         self._coords = self._coords.with_y(y)
         self.set_dirty()
     
@@ -478,7 +478,7 @@ class Sprite(Collidable):
         return (self.x - other_surf.width < other_coords.x < self.x + self.width) \
             and (self.y - other_surf.height < other_coords.y < self.y + self.height) \
     
-    def _is_colliding_sprite(self, other: Sprite, old=False) -> bool:
+    def _is_colliding_sprite(self, other: Sprite, old: bool = False) -> bool:
         if self is other:
             return False
         return super()._is_colliding_sprite(other, old)
@@ -630,7 +630,7 @@ class KinematicSprite(Sprite):
         self.vx = 0
         self.vy = 0
         
-    def move(self, dx=None, dy=None) -> None:
+    def move(self, dx: int | float | Fraction | None = None, dy: int | float | Fraction | None = None) -> None:
         super().move(self.vx if dx is None else dx, self.vy if dy is None else dy)
     
     def move_until_collision(self, sprite_or_sprites: NestedCollidables) -> set[Collidable]:
@@ -672,7 +672,7 @@ class KinematicSprite(Sprite):
         with self.virtual():
             for _ in range(intervals):
 
-                states = set()
+                states: set[tuple[Fraction, Fraction]] = set()
 
                 tmp_mask_x = 0
                 tmp_mask_y = 0

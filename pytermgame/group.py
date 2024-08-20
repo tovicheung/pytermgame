@@ -55,7 +55,7 @@ class Group:
         for sprite in self:
             sprite.update()
 
-    def render(self, flush=True, erase=False):
+    def render(self, flush: bool = True, erase: bool = False):
         for sprite in self:
             sprite.render(flush=False, erase=erase)
 

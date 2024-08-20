@@ -16,7 +16,7 @@ class Collidable:
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         raise NotImplementedError("Subclasses of Collidable must implement ._is_colliding_raw()")
 
-    def _is_colliding_sprite(self, other: Sprite, old=False) -> bool:
+    def _is_colliding_sprite(self, other: Sprite, old: bool = False) -> bool:
         if (not old) and other.hidden:
             return False
         if old and (not other._rendered.on_screen):

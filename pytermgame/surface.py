@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterable, TypeAlias
+from typing import Generator, Iterable, TypeAlias
 
 class Surface:
     """2D immutable string surface"""
 
-    def __init__(self, string: str | Iterable[str], _blank=False):
+    def __init__(self, string: str | Iterable[str], _blank: bool = False):
         if isinstance(string, str):
             self._lines = string.splitlines()
             if len(self._lines) == 0:
@@ -52,7 +52,7 @@ class Surface:
     def height(self):
         return self._height
     
-    def __getitem__(self, args):
+    def __getitem__(self, args: int | tuple[int, int]):
         """Element access
         
         surf[(x, y)] = character at (x, y)
@@ -64,7 +64,7 @@ class Surface:
             raise ValueError("Invalid arguments")
         return self._lines[args[1]][args[0]]
     
-    def lines(self):
+    def lines(self) -> Generator[str, None, None]:
         yield from self._lines
 
     def to_blank(self):

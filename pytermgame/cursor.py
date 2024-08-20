@@ -79,6 +79,7 @@ class CursorShape(StrEnum):
     verticle = "verticle"
 
 def set_style(shape: CursorShape | Literal["block", "underscore", "verticle"], blink: bool):
+    shape = CursorShape(shape)
     match shape:
         case CursorShape.block:
             n = 1

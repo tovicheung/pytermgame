@@ -5,7 +5,8 @@ This module contains the Game class, which controls the entire game.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal
+from types import TracebackType
+from typing import TYPE_CHECKING, Any, Callable, Literal
 import time
 import sys
 
@@ -110,7 +111,7 @@ class Game:
         self.start()
         return self
 
-    def __exit__(self, typ, val, tb):
+    def __exit__(self, typ: type[BaseException], val: Any, tb: TracebackType):
         self.cleanup()
         if typ in self.silent_errors:
             return True
@@ -167,10 +168,17 @@ class Game:
         if self.update_screen_size == UpdateScreenSize.none:
             terminal._disable_size_cache()
 
-    def wrapper(self, f):
+    def run(self, f: Callable[[Game], None]):
+        """Intended use:
+        ```python
+        @Game(...).run
+        def my_super_fun_game(game: Game):
+            ...
+        ```
+        """
         self.start()
         try:
-            f()
+            f(self)
         except self.silent_errors:
             pass
         finally:
@@ -228,7 +236,7 @@ class Game:
 
     # Methods to be called each game loop
 
-    def tick(self, timeless=False):
+    def tick(self, timeless: bool = False):
         """Blocks the game until one tick has passed.
         Does not wait if timeless is true
         

@@ -22,9 +22,12 @@ if sys.platform == "win32":
         return "\x00" + ch2
 
     def get_keys() -> list[str]:
-        keys = []
+        keys: list[str] = []
         while msvcrt.kbhit():
-            keys.append(_getkey())
+            key = _getkey()
+            if key is None:
+                raise ValueError("_getkey() returned None")
+            keys.append(key)
         return keys
 else:
     import os

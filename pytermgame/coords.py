@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from enum import Enum
 from fractions import Fraction
-from math import floor
 from typing import TypeAlias, Sequence, ClassVar
 import sys
 
@@ -27,8 +26,10 @@ class Coords:
             return inst
         raise ValueError(f"Unknown COORDS_TYPE {COORDS_TYPE}")
     
-    x: int | float | Fraction
-    y: int | float | Fraction
+    @property
+    def x(self) -> int | float | Fraction: ...
+    @property
+    def y(self) -> int | float | Fraction: ...
     
     def __neg__(self) -> Self:
         return type(self)(-self.x, -self.y)
@@ -64,10 +65,10 @@ class Coords:
     def dy(self, dy: int | float | Fraction):
         return type(self)(self.x, self.y + dy)
     
-    def with_x(self, x):
+    def with_x(self, x: int | float | Fraction):
         return type(self)(x, self.y)
     
-    def with_y(self, y):
+    def with_y(self, y: int | float | Fraction):
         return type(self)(self.x, y)
     
     def __iter__(self):
@@ -91,10 +92,10 @@ class FloatCoords(complex, Coords):
     def __neg__(self):
         return type(self)(super().__neg__())
     
-    def __add__(self, other):
+    def __add__(self, other: complex | Self):
         return type(self)(super().__add__(other))
     
-    def __sub__(self, other):
+    def __sub__(self, other: complex | Self):
         return type(self)(super().__sub__(other))
     
     def to_term(self):
@@ -112,7 +113,15 @@ class FloatCoords(complex, Coords):
 
 class FracCoords(Coords):
     def __init__(self, x: int | float | Fraction, y: int | float | Fraction):
-        self.x = Fraction(x)
-        self.y = Fraction(y)
+        self._x = Fraction(x)
+        self._y = Fraction(y)
+    
+    @property
+    def x(self):
+        return self._x
+    
+    @property
+    def y(self):
+        return self._y
 
 Coords.ORIGIN = Coords(0, 0) # type: ignore

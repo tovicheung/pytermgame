@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if sys.platform != "win32":
     import termios
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
     from .game import Game
 
 class _dummy:
-    def __getattribute__(self, name):
+    def __getattribute__(self, name: str):
         return self
     
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: ..., **kwargs: ...):
         # dummy method calls
         return self
 
@@ -30,19 +30,19 @@ class Debugger(Sprite):
     surf = Surface("No debug info yet")
 
     def on_placed(self):
-        self.data = {}
+        self.data: dict[Any, Any] = {}
         self.active = True
     
     def hook(self, game: Game):
         game.debugger = self
         return self
 
-    def field(self, key, value):
+    def field(self, key: Any, value: Any):
         self.data[key] = value
         self._rendered.dirty = True
         return self
 
-    def render(self, flush=True, erase=False):
+    def render(self, flush: bool = True, erase: bool = False):
         super().render(flush, True)
         self.surf = Surface("Debug: " + str(self.data))
         super().render(flush, erase)

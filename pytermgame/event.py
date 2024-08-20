@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from ._get_key import get_keys
 from . import key as _key
@@ -54,7 +54,7 @@ class Event:
             return other.type == self.type and other.value == self.value
         return self.as_pair() == other
     
-    def value_passes(self, func):
+    def value_passes(self, func: Callable[[Any], Any]):
         """equivalent to func(event.value) but silences errors
         
         Example:

@@ -46,19 +46,6 @@ class FText(Sprite):
     def format(self, *args, **kwargs):
         self.set_surf(Surface(self.string.format(*args, **kwargs)))
 
-# currently unused, this descriptor may replace Value.value in the future
-class _Value(Generic[_T]):
-    def __init__(self, value: _T):
-        raise Exception("unused")
-        self.value = value
-
-    def __get__(self, obj, objtype=None) -> _T:
-        return self.value
-    
-    def __set__(self, obj: Value, value: _T):
-        self.value = value
-        obj.update_surf()
-
 class Value(Sprite, Generic[_T]):
     "Value display"
 
@@ -84,7 +71,7 @@ class Counter(Value[int]):
         self.increment(-by)
 
 class Gauge(Sprite):
-    def __init__(self, full, length, value=0):
+    def __init__(self, full: int, length: int, value: int | float = 0):
         super().__init__()
         self.full = full
         self.value = value
@@ -94,7 +81,7 @@ class Gauge(Sprite):
         n = floor(self.value / self.full * self.length)
         return Surface("[" + "#" * n + " " * (self.length - n) + "]")
 
-    def update_value(self, value):
+    def update_value(self, value: int | float):
         self.value = value
         self.update_surf()
 
@@ -116,7 +103,7 @@ class TextInput(Sprite):
             self.cur = len(value)
         self.update_surf()
     
-    def process(self, event: Event, allow_insert = string.digits + string.ascii_letters + string.punctuation + " "):
+    def process(self, event: Event, allow_insert: str = string.digits + string.ascii_letters + string.punctuation + " "):
         """Tries to process the event and returns True if processed, else False.
         
         This method may be standardized in the future for more keyboard-based sprites.

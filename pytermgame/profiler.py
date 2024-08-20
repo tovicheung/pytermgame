@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cache
-import typing
+from typing import TYPE_CHECKING, Any
 
 from .sprite import Sprite
 from .surface import Surface
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from .game import Game
 
 @dataclass
@@ -20,17 +19,16 @@ class ProfileException(BaseException):
     def __str__(self):
         return "Profiler raised an exception: " + self.msg + "\nGame state:\n" + str(self.profiler.state)
 
-def _fmt(val, ifnone=0):
+def _fmt(val: Any, ifnone: Any = 0) -> str:
     if val is None:
         return _fmt(ifnone)
-    if isinstance(val, int):
-        return str(val)
-    elif isinstance(val, float):
+    if isinstance(val, float):
         return val.__format__(".4f")
+    return str(val)
 
 @dataclass
 class State:
-    tick_durations: list
+    tick_durations: list[float]
     sprites: int
     intervals: int
     live_fps: float
@@ -49,17 +47,23 @@ class Profiler:
     The game (or any other part of ptg) does not know about the profiler (unlike the debugger)
     """
 
-    def __init__(self, game: Game, sample_ticks=10):
+    def __init__(self, game: Game, sample_ticks: int = 10):
         self.game = game
         self.sample_ticks = sample_ticks
         self.state = State.new()
 
-    def err(self, msg):
+    def err(self, msg: Any):
         raise ProfileException(str(msg), self)
     
     def tick(self):
-        self.state.live_fps = 0 if self.game._last_tick_dur is None or self.game._last_tick_dur <= 0 else 1 / self.game._last_tick_dur
-        self.state.tick_durations.append(self.game._last_tick_dur)
+        _last_tick_dur = self.game._last_tick_dur
+
+        if _last_tick_dur is None or _last_tick_dur <= 0:
+            self.state.live_fps = 0
+        else:
+            self.state.live_fps = 1 / _last_tick_dur
+            self.state.tick_durations.append(_last_tick_dur)
+        
         if len(self.state.tick_durations) > self.sample_ticks:
             self.state.tick_durations.pop(0)
         
@@ -74,13 +78,13 @@ class Profiler:
 
         return self
 
-    def min_fps(self, min_fps):
+    def min_fps(self, min_fps: int | float):
         fps = self.state.live_fps
-        if fps is not None and fps < min_fps:
+        if fps < min_fps:
             self.err(f"Game fps ({_fmt(fps)}) is lower than minimum ({_fmt(min_fps)})")
         return self
 
-    def min_average_fps(self, min_fps):
+    def min_average_fps(self, min_fps: int | float):
         a = self.state.average_fps
         if a is not None and a < min_fps:
             self.err(f"Game fps ({_fmt(a)}) is lower than minimum ({_fmt(min_fps)})")

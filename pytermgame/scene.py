@@ -1,11 +1,12 @@
 from __future__ import annotations
+from types import TracebackType
 
 from .coords import Coords, XY
 from . import cursor, terminal
 from .group import SpriteList
 
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Generator
 
 if TYPE_CHECKING:
     from .surface import Surface
@@ -54,7 +55,7 @@ class Scene(SpriteList):
         # [future: collision]
         # self.mat = OccupancyMatrix()
     
-    def get_dirty(self):
+    def get_dirty(self) -> Generator[Sprite, None, None]:
         """Get the SpriteList sorted by z-coordinate (bottom to top)"""
         yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
     
@@ -111,7 +112,7 @@ class Scene(SpriteList):
         Scene._active_context = self
         return self
     
-    def __exit__(self, typ, val, tb):
+    def __exit__(self, typ: type[BaseException], val: Any, tb: TracebackType):
         Scene._active_context = None
 
     def apply_scroll(self, coords: Coords):

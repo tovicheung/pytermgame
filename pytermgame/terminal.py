@@ -37,7 +37,7 @@ def _set_size_cache():
 
 # I/O
 
-def write(string: str, flush=False):
+def write(string: str, flush: bool = False):
     sys.stdout.write(string)
     if flush:
         sys.stdout.flush()
@@ -47,10 +47,10 @@ def flush():
 
 # Terminal configuration
 
-def enable_alternate_buffer(flush=True):
+def enable_alternate_buffer(flush: bool = True):
     write("\033[?1049h", flush)
 
-def disable_alternate_buffer(flush=True):
+def disable_alternate_buffer(flush: bool = True):
     write("\033[?1049l", flush)
 
 def enable_autowrap():
@@ -65,10 +65,10 @@ def goto(x: SupportsInt, y: SupportsInt):
     """Note: 1-based"""
     write(f"\033[{int(y)};{int(x)}H")
 
-def hide_cursor(flush=True):
+def hide_cursor(flush: bool = True):
     write("\033[?25l", flush)
 
-def show_cursor(flush=True):
+def show_cursor(flush: bool = True):
     write("\033[?25h", flush)
 
 def home():

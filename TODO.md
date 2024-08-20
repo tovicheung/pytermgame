@@ -29,9 +29,6 @@ Future updates
     * Drawbacks:
         * huge changes in api
 
-- Provide simple interface for positioning (`[future: layout]`)
-    * top of screen, horizontally middle, etc
-
 - Game state?
 
 Design choices made
