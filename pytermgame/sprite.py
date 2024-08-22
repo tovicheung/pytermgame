@@ -481,6 +481,8 @@ class Sprite(Collidable):
     def _is_colliding_sprite(self, other: Sprite, old: bool = False) -> bool:
         if self is other:
             return False
+        if self.hidden:
+            return False
         return super()._is_colliding_sprite(other, old)
 
     @_ensure_placed
