@@ -36,8 +36,12 @@ class Surface:
 
     @classmethod
     def blank(cls, width: int, height: int):
-        """Generate a blank rectangular surface"""
+        """Generate a blank rectangular surface filled with spaces"""
         return cls((" " * width + "\n") * height)
+    
+    @classmethod
+    def phantom(cls, width: int, height: int):
+        return PhantomSurface(width, height)
     
     @classmethod
     def strip(cls, string: str):
@@ -75,6 +79,8 @@ class Surface:
             string += " " * len(line) + "\n"
         return type(self).strip(string)
     
+    # may be useful in future
+
     def crop_to_left(self, max_width: int):
         return Surface(x[:max_width] for x in self.lines())
     
@@ -88,3 +94,14 @@ class Surface:
         return Surface(self._lines[-max_height:])
 
 SurfaceLike: TypeAlias = Surface | str | list[str]
+
+class PhantomSurface(Surface):
+    """A PhantomSurface is simply empty. It only has a size."""
+
+    def __init__(self, width: int, height: int):
+        self._width = width
+        self._height = height
+    
+    def lines(self) -> Generator[str, None, None]:
+        return
+        yield

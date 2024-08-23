@@ -1,14 +1,6 @@
-"""
-pytermgame example: simple wordle
-
-Controls:
-    type and press enter
-
-Note: this is very simple wordle, no word validity checks
-"""
+# Same as ex6_wordle, but using UI structures
 
 import pytermgame as ptg
-
 import random
 
 # with open("assets/wordle.txt") as f:
@@ -16,29 +8,27 @@ import random
 words = ["hello", "world"]
 
 answer = random.choice(words)
-
 round = 1
 
 with ptg.Game(show_cursor=True) as game:
-    winlose = "lose"
+    win_or_lose = "lose"
 
-    message = ptg.Value("Type and press enter ...").place()
-    border = ptg.Border(inner_width=7, inner_height=1).place((0, 1))
-    word_input = ptg.TextInput().place((2, 2))
+    message = ptg.Value("Type and press enter ...").place((0, 0))
 
-    # This example demonstrates an alternative game structure
+    # UI
+    container = ptg.Border().wrap(
+        column := ptg.ui.Column().wrap(
+            word_input := ptg.TextInput()
+        )
+    ).place((0, 1))
 
     while game.loop():
-
-        # game updates and renders first
         game.update()
         game.render()
-
-        # then blocks until an event is available        
+     
         event = ptg.event.wait_for_event()
 
         if event.is_key(ptg.key.ENTER):
-            # 5-letter check
             if len(word_input.value) != 5:
                 message.update_value("Word must be 5 letters long")
                 continue
@@ -47,10 +37,12 @@ with ptg.Game(show_cursor=True) as game:
                 continue
             message.update_value("") # clear last message
 
-            # draw results
             correct = 0
+            char_sprites: list[ptg.Sprite] = []
+
             for i, char in enumerate(word_input.value):
-                sprite = ptg.Text(char).place((2 + i, 1 + round))
+                char_sprite = ptg.Text(char)
+
                 if answer[i] == char:
                     color = ptg.Color.green
                     correct += 1
@@ -58,30 +50,34 @@ with ptg.Game(show_cursor=True) as game:
                     color = ptg.Color.yellow
                 else:
                     color = ptg.Color.red
-                sprite.apply_style(ptg.Style(fg = color))
+                
+                char_sprite.apply_style(ptg.Style(fg = color))
+                char_sprites.append(char_sprite)
+
+            column.insert_child(
+                # arrange characters side by side
+                ptg.ui.Row(char_sprites),
+
+                # insert above word input
+                position = -1
+            )
             
             if correct == 5:
-                winlose = "win"
-                # game.break_loop()
+                win_or_lose = "win"
                 break
-                # here we can break directly as there is only one layer of loop
             
             if round == 5:
-                winlose = "lose"
-                # game.break_loop()
+                win_or_lose = "lose"
                 break
             
             # update input
             round += 1
-            word_input.move(0, 1)
             word_input.update_value("")
-            border.resize(inner_width=7, inner_height=border.inner_height+1)
         
         elif word_input.process(event):
-            # word_input tries to process the event
             pass
 
-    ptg.Text(f"You {winlose}! The word is {answer}!").place((0, 8))
+    ptg.Text(f"You {win_or_lose}! The word is {answer}!").place((0, 8))
     ptg.Text("Press space to exit").place((0, 9))
     ptg.cursor.hide()
 

@@ -14,7 +14,7 @@ Collection
 from __future__ import annotations
 
 import sys
-from typing import Callable, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+from typing import Any, Callable, Iterable, ParamSpec, Self, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
 
 # some methods of Sprite are overriden and it is best to mark them
 if sys.version_info >= (3, 12):
@@ -29,6 +29,7 @@ from .event import Event
 from .sprite import Sprite
 from .surface import Surface
 
+_P = ParamSpec("_P")
 _S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
 _T = TypeVar("_T")
@@ -40,6 +41,10 @@ __all__ = ["Container", "MinSize", "MaxSize", "Padding", "Border"]
 
 # for type checking only
 def _copy_signature(f: _T) -> Callable[..., _T]:
+    return lambda x: x
+
+# for type checking only
+def _set_return_type(typ: type[_T]) -> Callable[[Callable[_P, Any]], Callable[_P, _T]]:
     return lambda x: x
 
 def _place_or_set_coords(sprite: Sprite, coords: Coords):
@@ -129,11 +134,11 @@ class Container(Sprite, Generic[_S]):
         return tuple(self._flatten())
     
     @override
-    @_copy_signature(Sprite.apply_style)
     def apply_style(self, *args, **kwargs):
         super().apply_style(*args, **kwargs)
-        assert self.child is not None
-        self.child._resolved_style = None
+        if self.child is not None:
+            self.child._resolved_style = None
+        return self
     
     @override
     def set_dirty(self, propagate=True):
@@ -281,6 +286,8 @@ class Collection(Sprite):
         self.children = children
         for child in children:
             child._parent = self
+            if self.placed:
+                self._scene.move_sprite_to_below(self, child)
         return self
     
     def get_children(self):
@@ -288,16 +295,16 @@ class Collection(Sprite):
             raise ValueError("Invalid call, children are not supplied")
         return self.children
     
-    def attach(self, child: Sprite):
+    def insert_child(self, child: Sprite, position: int = -1):
         if self.children is None:
             raise ValueError("Invalid call, children are not supplied")
         if child._parent is not None:
             raise ValueError(f"Child already has parent: {child._parent}")
         child._parent = self
-        self.children = self.children + (child,)
+        self.children = self.children[:position] + (child,) + self.children[position:]
+        self.update_surf()
     
     @override
-    @_copy_signature(Sprite.apply_style)
     def apply_style(self, *args, **kwargs):
         super().apply_style(*args, **kwargs)
         for child in self.get_children():
@@ -337,7 +344,7 @@ class Column(Collection):
             height += child.height
             width = max(width, child.width)
         
-        return Surface.blank(width, height)
+        return Surface.phantom(width, height)
 
 class Row(Collection):
     def new_surf_factory(self):
@@ -348,7 +355,7 @@ class Row(Collection):
             width += child.width
             height = max(height, child.height)
         
-        return Surface.blank(width, height)
+        return Surface.phantom(width, height)
 
 class SelectionMenu(Column):
     def on_placed(self):

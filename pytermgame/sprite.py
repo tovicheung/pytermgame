@@ -17,7 +17,7 @@ from .coords import Coords, XY
 from .group import Group
 from .style import Style, Dir, Color, _resolve_style
 from .scene import Scene
-from .surface import Surface, SurfaceLike
+from .surface import PhantomSurface, Surface, SurfaceLike
 
 def _ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
@@ -293,6 +293,11 @@ class Sprite(Collidable):
     # Rendering
     
     def _render(self, flush: bool = True, erase: bool = False) -> None:
+        # Note: this could potentially be abstracted away into Surface.render(coords)
+
+        if isinstance(self.surf, PhantomSurface):
+            return
+
         if erase:
             coords = self._rendered.coords
             surf = self._rendered.surf.to_blank()
