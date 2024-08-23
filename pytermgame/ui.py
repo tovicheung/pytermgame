@@ -14,7 +14,7 @@ Collection
 from __future__ import annotations
 
 import sys
-from typing import Any, Callable, Iterable, ParamSpec, Self, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+from typing import Iterable, Self, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
 
 # some methods of Sprite are overriden and it is best to mark them
 if sys.version_info >= (3, 12):
@@ -29,25 +29,15 @@ from .event import Event
 from .sprite import Sprite
 from .surface import Surface
 
-_P = ParamSpec("_P")
 _S = TypeVar("_S", bound=Sprite)
 _S2 = TypeVar("_S2", bound=Sprite)
-_T = TypeVar("_T")
 
 # only export stable sprites
 __all__ = ["Container", "MinSize", "MaxSize", "Padding", "Border"]
 
 # Helpers
 
-# for type checking only
-def _copy_signature(f: _T) -> Callable[..., _T]:
-    return lambda x: x
-
-# for type checking only
-def _set_return_type(typ: type[_T]) -> Callable[[Callable[_P, Any]], Callable[_P, _T]]:
-    return lambda x: x
-
-def _place_or_set_coords(sprite: Sprite, coords: Coords):
+def place_or_set_coords(sprite: Sprite, coords: Coords):
     if sprite.placed:
         sprite.goto(*coords)
     else:
@@ -69,9 +59,9 @@ class Dimensions(NamedTuple):
     def to_surf(self):
         return Surface.blank(self.width, self.height)
 
-class Container(Sprite, Generic[_S]):
-    """Unlocks .child, .wrap() and .get_inner_dimensions()"""
-    
+# Base classes
+
+class Container(Sprite, Generic[_S]):    
     def __init__(self, child: _S | None = None):
         super().__init__()
         self.child = child
@@ -91,49 +81,12 @@ class Container(Sprite, Generic[_S]):
             self._scene.move_sprite_to_below(self, child)
         return self
     
-    # Border() > Text()  is equivalent to  Border().wrap(Text()) or Border(child = Text())
-    __gt__ = wrap
+    def get_inner_dimensions(self) -> tuple[int, int]:
+        if self.child is None:
+            return 0, 0
+        return self.child.width, self.child.height
     
-    @overload
-    def get_innermost_child(self: Container[Container[Container[Container[_S2]]]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[Container[Container[_S2]]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[Container[_S2]]) -> _S2: ...
-    @overload
-    def get_innermost_child(self: Container[_S2]) -> _S2: ...
-    def get_innermost_child(self):
-        if isinstance(self.child, Container):
-            return self.child.get_innermost_child()
-        return self.child
-    
-    def _flatten(self):
-        yield self
-        if isinstance(self.child, Container):
-            yield from self.child._flatten()
-        else:
-            yield self.child
-    
-    @overload
-    def flatten(self: Container[Container[Container[Container[_S2]]]]) -> tuple[Container[Container[Container[Container[_S2]]]], Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[Container[Container[_S2]]]) -> tuple[Container[Container[Container[_S2]]], Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[Container[_S2]]) -> tuple[Container[Container[_S2]], Container[_S2], _S2]: ...
-    @overload
-    def flatten(self: Container[_S2]) -> tuple[Container[_S2], _S2]: ...
-    def flatten(self):
-        """Returns tuple of the nested structure
-        Example:
-        ```python
-        messy = Border(Border(Border(x)))
-        outermost, middle, inner, x = messy.flatten()
-        ```
-        """
-        # evaluate all at once, instead of creating a lot of temporary tuples
-        return tuple(self._flatten())
-    
-    @override
+    @override # TODO: add type support
     def apply_style(self, *args, **kwargs):
         super().apply_style(*args, **kwargs)
         if self.child is not None:
@@ -149,17 +102,12 @@ class Container(Sprite, Generic[_S]):
             self.child.goto(*(self._coords + self.get_child_offset()))
         super().set_dirty(propagate)
     
-    def get_inner_dimensions(self) -> tuple[int, int]:
-        if self.child is None:
-            return 0, 0
-        return self.child.width, self.child.height
-    
     @override
     def update_surf(self):
         if self.child is not None:
             # this is currently the reason why coords is set before surf
             # should only be called in self.place()
-            _place_or_set_coords(self.child, self._coords + self.get_child_offset())
+            place_or_set_coords(self.child, self._coords + self.get_child_offset())
         super().update_surf()
     
     # Subclasses of Container may override:
@@ -176,6 +124,83 @@ class Container(Sprite, Generic[_S]):
         """
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
 
+class Collection(Sprite):
+    children: tuple[Sprite, ...] | None
+    
+    def __init__(self, children: Iterable[Sprite] | None = None):
+        super().__init__()
+        self.children = None
+        if children is not None:
+            self.children = tuple(children)
+            for child in children:
+                child._parent = self
+    
+    @overload
+    def wrap(self, children: Iterable[Sprite]) -> Self: ...
+    @overload
+    def wrap(self, *children: Sprite) -> Self: ...
+    def wrap(self, children: Iterable[Sprite] | Sprite, *other_args: Sprite):
+        if isinstance(children, Iterable):
+            children = tuple(children)
+        else:
+            children = (children,) + other_args
+        self.children = children
+        for child in children:
+            child._parent = self
+        return self
+
+    def get_children(self):
+        if self.children is None:
+            raise ValueError("Invalid call, children are not supplied")
+        return self.children
+    
+    def insert_child(self, child: Sprite, position: int | None = None):
+        if self.children is None:
+            raise ValueError("Invalid call, children are not supplied")
+        if child._parent is not None:
+            raise ValueError(f"Child already has parent: {child._parent}")
+        child._parent = self
+
+        if position is None:
+            position = len(self.children)
+
+        self.children = self.children[:position] + (child,) + self.children[position:]
+        self.update_surf()
+    
+    @override # TODO: add type support
+    def apply_style(self, *args, **kwargs):
+        super().apply_style(*args, **kwargs)
+        for child in self.get_children():
+            child._resolved_style = None
+        return self
+    
+    @override
+    def set_dirty(self, propagate=True):
+        if self.children is not None and self.placed and self._rendered.coords != self._coords:
+            delta = self._coords - self._rendered.coords
+            for child in self.children:
+                child.goto(*(child._rendered.coords + delta))
+        super().set_dirty(propagate)
+    
+    # Subclasses of Collection must override:
+
+    def new_surf_factory(self) -> Surface:
+        """When implementing:
+        * use _place_or_set_coords(x) on children
+        * determine dimensions
+        * create surf, usually from Surface.blank(width, height)
+        """
+        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
+    
+    # Unused:
+    
+    def build(self) -> Dimensions:
+        # might be used when constraints are implemented
+        raise Exception("Method is unused")
+        raise NotImplementedError("Subclasses of Collection must implement .build()")
+
+# Containers
+
 class MinSize(Container[_S]):
     def __init__(self, min_width: int | None = None, min_height: int | None = None, child: _S | None = None):
         super().__init__(child)
@@ -184,10 +209,7 @@ class MinSize(Container[_S]):
     
     if TYPE_CHECKING:
         def wrap(self, child: _S2) -> MinSize[_S2]: ...
-    
-    def get_child_coords(self) -> Coords:
-        return self._coords
-    
+
     def new_surf_factory(self) -> Surface:
         inner_width, inner_height = self.get_inner_dimensions()
         min_width = max(self.min_width or inner_width, inner_width)
@@ -202,9 +224,6 @@ class MaxSize(Container[_S]):
     
     if TYPE_CHECKING:
         def wrap(self, child: _S2) -> MaxSize[_S2]: ...
-    
-    def get_child_coords(self) -> Coords:
-        return self._coords
     
     def new_surf_factory(self) -> Surface:
         inner_width, inner_height = self.get_inner_dimensions()
@@ -267,80 +286,14 @@ class Border(Container[_S]):
         self.inner_height = inner_height
         self.update_surf()
 
-class Collection(Sprite):
-    """Unlocks .wrap() and .children
-    
-    A collection must be occupied."""
-
-    children: tuple[Sprite, ...] | None
-    
-    def __init__(self, children: Iterable[Sprite] | None = None):
-        super().__init__()
-        self.children = None
-        if children is not None:
-            self.children = tuple(children)
-            for child in children:
-                child._parent = self
-    
-    def wrap(self, *children: Sprite):
-        self.children = children
-        for child in children:
-            child._parent = self
-            if self.placed:
-                self._scene.move_sprite_to_below(self, child)
-        return self
-    
-    def get_children(self):
-        if self.children is None:
-            raise ValueError("Invalid call, children are not supplied")
-        return self.children
-    
-    def insert_child(self, child: Sprite, position: int = -1):
-        if self.children is None:
-            raise ValueError("Invalid call, children are not supplied")
-        if child._parent is not None:
-            raise ValueError(f"Child already has parent: {child._parent}")
-        child._parent = self
-        self.children = self.children[:position] + (child,) + self.children[position:]
-        self.update_surf()
-    
-    @override
-    def apply_style(self, *args, **kwargs):
-        super().apply_style(*args, **kwargs)
-        for child in self.get_children():
-            child._resolved_style = None
-    
-    @override
-    def set_dirty(self, propagate=True):
-        if self.children is not None and self.placed and self._rendered.coords != self._coords:
-            delta = self._coords - self._rendered.coords
-            for child in self.children:
-                child.goto(*(child._rendered.coords + delta))
-        super().set_dirty(propagate)
-    
-    # Subclasses of Collection must override:
-
-    def new_surf_factory(self) -> Surface:
-        """When implementing:
-        * use _place_or_set_coords(x) on children
-        * determine dimensions
-        * create surf, usually from Surface.blank(width, height)
-        """
-        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
-    
-    # Unused:
-    
-    def build(self) -> Dimensions:
-        # might be used when constraints are implemented
-        raise Exception("Method is unused")
-        raise NotImplementedError("Subclasses of Collection must implement .build()")
+# Collections
 
 class Column(Collection):    
     def new_surf_factory(self):
         width = height = 0
 
         for child in self.get_children():
-            _place_or_set_coords(child, self._coords.dy(height))
+            place_or_set_coords(child, self._coords.dy(height))
             height += child.height
             width = max(width, child.width)
         
@@ -351,7 +304,7 @@ class Row(Collection):
         width = height = 0
 
         for child in self.get_children():
-            _place_or_set_coords(child, self._coords.dx(width))
+            place_or_set_coords(child, self._coords.dx(width))
             width += child.width
             height = max(height, child.height)
         

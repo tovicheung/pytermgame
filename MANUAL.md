@@ -114,4 +114,69 @@ Should be used when the surface depends on each sprite's attributes and may chan
 
 `.update_surf()` is automatically called in `.place()` to generate the initial surface.
 
+# UI in pytermgame
 
+An easy-to-use and intuitive API for creating flexible UI using pytermgame is in the making. Check out the `pytermgame.ui` submodule.
+
+## Interop with the base sprite model
+
+Parent-child relationships have been introduced to all sprites via the `._parent` private attribute.
+* If a child has a placed parent, it will call `.update_surf()` on the parent everytime the child's surf is changed (in `.set_surf()`).
+* A child will inherit style options that it hasn't specified from its parent.
+
+Note: this would not affect games that do not use UI constructs.
+
+## Container
+
+A container extends its child's dimensions or add additional details around it. A container can have zero or one child. A container's inner dimensions are the dimensions of the child.
+
+When a container has no child, its inner dimensions are 0x0.
+
+Example: definition of Padding
+```python
+class Padding(Container[_S]):
+    def __init__(self, top: int = 0, bottom: int = 0, left: int = 0, right: int = 0, child: _S | None = None):
+        # optional child argument at last
+        super().__init__(child)
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
+    
+    # -- alternative constructors omitted --
+    
+    # define child offset (no offset if undefined)
+    def get_child_offset(self) -> Coords:
+        return Coords(self.left, self.top)
+    
+    # a Container must define this
+    def new_surf_factory(self) -> Surface:
+        # do not use .child.width and .child.height directly
+        inner_width, inner_height = self.get_inner_dimensions()
+
+        width = inner_width + self.left + self.right
+        height = inner_height + self.top + self.bottom
+
+        # create surface, often blank
+        return Surface.blank(width, height)
+```
+
+## Collection
+
+A collection defines how its children are arranged.
+
+Example: definition of Column
+```python
+class Column(Collection):
+    # a Collection must define this
+    def new_surf_factory(self):
+        width = height = 0
+
+        for child in self.get_children():
+            # helper function provided in ptg.ui
+            place_or_set_coords(child, self._coords.dy(height))
+            height += child.height
+            width = max(width, child.width)
+        
+        return Surface.phantom(width, height)
+```
