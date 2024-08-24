@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
-from functools import wraps
+from functools import lru_cache, wraps
 from math import floor
 from typing import Iterable, Generator, TypeAlias, overload
 import sys
@@ -38,7 +38,7 @@ def _ensure_placed(f):
 
 NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
 
-def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
+def __iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
     if isinstance(nested_collidables, Collidable):
         yield nested_collidables
         return
@@ -48,14 +48,19 @@ def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collid
         return
     raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
 
+# very temporary optimization
+@lru_cache
+def _iter_collidables(nested_collidables: NestedCollidables) -> list[Collidable]:
+    return list(__iter_collidables(nested_collidables))
+
 @dataclass
 class RenderedState:
-    """Sprite's coords and surface when it was last rendered on screen
+    """Sprite's state when it was last rendered on screen
     
     self.dirty == True:
     - sprite needs to be re-rendered (erase and paint)
-    - does NOT guarantee self.coords != sprite.coords or self.surf != sprite.surf
-        (since re-render can also be triggered by collisions)
+    - in most cases: self.coords != sprite.coords or self.surf != sprite.surf
+        (unless sprite.set_dirty() called manually)
     
     self.dirty == False:
     - sprite does not need to be re-rendered
