@@ -94,13 +94,12 @@ class Container(Sprite, Generic[_S]):
         return self
     
     @override
-    def set_dirty(self, propagate=True):
+    def set_dirty(self):
         if self.child is not None and self.placed and self._rendered.coords != self._coords:
             # this is here because
             # 1. coords may be modified in .set_surf() eg align right
             # 2. child needs to move when (a) parent moves and (b) parent surf changes (eg padding change)
             self.child.goto(*(self._coords + self.get_child_offset()))
-        super().set_dirty(propagate)
     
     @override
     def update_surf(self):
@@ -175,12 +174,11 @@ class Collection(Sprite):
         return self
     
     @override
-    def set_dirty(self, propagate=True):
+    def set_dirty(self):
         if self.children is not None and self.placed and self._rendered.coords != self._coords:
             delta = self._coords - self._rendered.coords
             for child in self.children:
                 child.goto(*(child._rendered.coords + delta))
-        super().set_dirty(propagate)
     
     # Subclasses of Collection must override:
 

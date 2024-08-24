@@ -65,7 +65,8 @@ class RenderedState:
     """
     dirty: bool
     on_screen: bool
-    coords: Coords # note: screen coords not scene coords
+    coords: Coords
+    screen_coords: Coords # for erasing
     surf: Surface
 
 class Sprite(Collidable):
@@ -125,9 +126,6 @@ class Sprite(Collidable):
 
         # a sprite's parent updates its surface if the sprite's surface changes
         self._parent: Sprite | None = None
-        
-        # [future: collision]
-        # self._collisions: set[Sprite] = set()
 
     def _debug(self) -> str:
         # returns a debug info string
@@ -232,7 +230,7 @@ class Sprite(Collidable):
 
         self.on_placed()
 
-        self._rendered = RenderedState(dirty=True, on_screen=False, coords=self._coords, surf=self.surf)
+        self._rendered = RenderedState(dirty=True, on_screen=False, coords=self._coords, screen_coords=self._coords, surf=self.surf)
         self.placed = True
 
         return self
@@ -291,65 +289,6 @@ class Sprite(Collidable):
         return self.surf.height
     
     # Rendering
-    
-    def _render(self, flush: bool = True, erase: bool = False) -> None:
-        # Note: this could potentially be abstracted away into Surface.render(coords)
-
-        if isinstance(self.surf, PhantomSurface):
-            return
-
-        if erase:
-            coords = self._rendered.coords
-            surf = self._rendered.surf.to_blank()
-
-            # # [future: collision]
-            # self._scene.mat.remove(self)
-        else:
-            coords = self._scene.apply_scroll(self._coords)
-            surf = self.surf
-
-            # [future: collision]
-            # self._collisions = self._scene.mat.add(self)
-
-        if coords.x + surf.width < 0 or \
-            coords.y + surf.height < 0 or \
-            coords.x >= terminal.width() or \
-            coords.y >= terminal.height():
-            return # out of screen, do nothing!
-
-        if coords.x < 0:
-            # partially out of left bound
-            slice_x = slice(int(abs(coords.x)), None, None)
-        elif coords.x + surf.width > terminal.width():
-            # partially out of right bound
-            # terminal.width() - int(coords.x) = how many chars to show
-            slice_x = slice(None, terminal.width() - int(coords.x), None)
-        else:
-            slice_x = slice(None, None, None)
-        
-        ansi = "\033[m"
-        
-        if not erase:
-            if self._resolved_style is None:
-                self._resolved_style = _resolve_style(self)
-            ansi += self._resolved_style.to_ansi()
-        
-        line_coords_base = coords.with_x(0) if coords.x < 0 else coords.with_x(terminal.width() - 1) if coords.x >= terminal.width() else coords
-
-        for i, line in enumerate(surf.lines()):
-            segment = line[slice_x]
-            if len(segment) == 0:
-                continue
-            line_coords = line_coords_base.dy(i)
-            if line_coords.y < 0 or line_coords.y >= terminal.height():
-                continue # line is vertically out of screen
-            terminal.goto(*line_coords.to_term())
-            terminal.write(ansi + segment)
-
-        terminal.write("\033[m")
-
-        if flush:
-            terminal.flush() # flush at once, not every line
 
     def render(self, flush: bool = True, erase: bool = False) -> None:
         """Render sprite onto terminal
@@ -361,8 +300,8 @@ class Sprite(Collidable):
         if self.zombie:
             return
         
-        if self.hidden:
-            erase = True
+        if self.hidden and not erase:
+            return
         
         if erase and not self._rendered.on_screen:
             return
@@ -373,24 +312,40 @@ class Sprite(Collidable):
         if (not erase) and not self._rendered.on_screen:
             self._rendered.on_screen = True
         
-        self._render(flush, erase)
+        # self._render(flush, erase)
+
+        if erase:
+            coords = self._rendered.screen_coords
+            surf = self._rendered.surf.to_blank()
+        else:
+            coords = self._scene.apply_scroll(self._coords)
+            surf = self.surf
+
+        ansi = "\033[m"
+        if not erase:
+            if self._resolved_style is None:
+                self._resolved_style = _resolve_style(self)
+            ansi += self._resolved_style.to_ansi()
         
-        self._rendered.coords = self._scene.apply_scroll(self._coords)
+        surf.render(coords, ansi, flush=flush)
+        
+        self._rendered.coords = self._coords
+        self._rendered.screen_coords = self._scene.apply_scroll(self._coords)
         self._rendered.surf = self.surf
         self._rendered.dirty = False
 
     # Movement
 
-    def set_dirty(self, propagate: bool = True) -> None:
+    def set_dirty(self) -> None:
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
-        if not propagate:
-            return
-        for sprite in self.get_movement_collisions():
-            if not sprite.zombie:
-                # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
-                sprite.set_dirty()
+        # if not propagate:
+        #     return
+        # for sprite in self.get_movement_collisions():
+        #     if not sprite.zombie:
+        #         # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
+        #         sprite.set_dirty()
 
     def goto(self, x: int | float | Fraction, y: int | float | Fraction) -> None:
         self._coords = Coords(x, y)
@@ -560,44 +515,6 @@ class Sprite(Collidable):
         for sp in _iter_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 yield sp
-    
-    # # [future: collision]
-    if False:
-
-        @_ensure_placed
-        def get_collisions(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
-            if self.hidden:
-                return
-            for sp in _iter_collidables(sprite_or_sprites):
-                if sp in self._collisions:
-                    yield sp
-                elif isinstance(sp, Collidable) and sp._is_colliding_sprite(self):
-                    yield sp
-        
-        get_collisions_with = get_collisions
-
-        @_ensure_placed
-        def get_old_collisions(self):
-            yield from self._scene.mat.get_collisions(self._rendered.coords, self._rendered.surf)
-        
-        @_ensure_placed
-        def get_all_collisions(self):
-            yield from self._collisions
-        
-        @_ensure_placed
-        def get_movement_collisions(self):
-            yield from self._collisions
-            if self._was_on_screen:
-                for sp in self.get_old_collisions():
-                    if sp not in self._collisions:
-                        yield sp
-        
-        @_ensure_placed
-        def is_colliding_any(self, sprite_or_sprites: Collidable | Group | Iterable[Collidable | Group]):
-            for sp in _iter_collidables(sprite_or_sprites):
-                if sp in self._collisions:
-                    return True
-            return False
 
 class _Virtual:
     def __init__(self, owner: Sprite):
@@ -663,7 +580,9 @@ class KinematicSprite(Sprite):
     def bounce(self, nested_collidables: NestedCollidables) -> set[Collidable]:
         """self.move() but sprite bounces
         The final position and velocity are calculated by simulating sub-tick movements via .virtual().
-        Returns sprites that have been collided with
+        Returns sprites that have been collided with.
+
+        Note: bouncing on other KinematicSprites are a little unreliable.
         """
         # minimum intervals to divide the motion into
         # such that for each interval the maximum delta in each axis is 1

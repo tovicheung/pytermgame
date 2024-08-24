@@ -17,28 +17,6 @@ def _iter_coords(coords: Coords, surf: Surface):
         for x in range(int(coords.x), int(coords.x)+surf.width):
             yield (x, y)
 
-# [future: collision]
-if False:
-    class OccupancyMatrix(defaultdict[tuple[int, int], set[Sprite]]):
-        def __init__(self):
-            super().__init__(lambda: set())
-
-        def get_collisions(self, coords: Coords, surf: Surface):
-            for (x, y) in _iter_coords(coords, surf):
-                yield from filter(lambda x: not x.hidden, self[(x, y)])
-        
-        def add(self, sprite: Sprite):
-            # add sprite and return collisions as byproduct
-            collisions = set()
-            for (x, y) in _iter_coords(sprite._coords, sprite.surf):
-                collisions.update(self[(x, y)])
-                self[(x, y)].add(sprite)
-            return collisions
-        
-        def remove(self, sprite: Sprite):
-            for (x, y) in _iter_coords(sprite._rendered.coords, sprite._rendered.surf):
-                if sprite in self[(x, y)]:
-                    self[(x, y)].remove(sprite)
 
 class Scene(SpriteList):
     """A scene is essentially a list of sprites ordered by z-coordinate. (and also a cursor)"""
@@ -51,19 +29,34 @@ class Scene(SpriteList):
         super().__init__((), name = "Scene")
 
         self.offset = Coords.ORIGIN
-
-        # [future: collision]
-        # self.mat = OccupancyMatrix()
     
-    def get_dirty(self) -> Generator[Sprite, None, None]:
-        """Get the SpriteList sorted by z-coordinate (bottom to top)"""
-        yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
+    # def get_render_queue(self) -> Generator[Sprite]:
+    #     # no need to sort here because it is already ordered
+    #     yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
+    
+    def get_render_queue(self) -> list[Sprite]:
+        # no need to sort here because it is already ordered
+        # yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
+        dirty: set[Sprite] = set()
+
+        def _traverse(sprite: Sprite):
+            dirty.add(sprite)
+            for sp in sprite.get_movement_collisions():
+                if sp not in dirty:
+                    _traverse(sp)
+
+        for sprite in filter(lambda sp: sp._rendered.dirty, self.sprites):
+            _traverse(sprite)
+        
+        return sorted(dirty, key=lambda sp: sp._z)
     
     def rerender(self):
         """Erases and re-renders dirty sprites.
         Not to be confused with Scene.render(), it only calls .render() on all sprites.
         """
-        dirty = tuple(self.get_dirty())
+        # dirty = sorted(set(self.get_render_queue()), key=lambda sp: sp._z)
+
+        dirty = self.get_render_queue()
 
         if len(dirty) == 0: # prevents rapid cursor blinks
             if cursor.state.dirty:
@@ -123,7 +116,7 @@ class Scene(SpriteList):
         if dx != 0 or dy != 0:
             for sprite in self:
                 # no need to propagate since we are setting for all sprites
-                sprite.set_dirty(propagate=False)
+                sprite.set_dirty()
     
     def set_scroll(self, offset: XY):
         self.offset = Coords.coerce(offset)

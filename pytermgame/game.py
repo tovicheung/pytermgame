@@ -118,7 +118,7 @@ class Game:
 
     def start(self):
         if self.update_screen_size == UpdateScreenSize.none:
-            terminal._set_size_cache()
+            terminal.set_size_cache()
 
         # determine the control codes to send
 
@@ -166,7 +166,7 @@ class Game:
         type(self)._active = None
         
         if self.update_screen_size == UpdateScreenSize.none:
-            terminal._disable_size_cache()
+            terminal.disable_size_cache()
 
     def run(self, f: Callable[[Game], None]):
         """Intended use:
@@ -272,7 +272,7 @@ class Game:
                 add_event(timer[0])
 
         if self.update_screen_size == UpdateScreenSize.every_tick:
-            terminal._set_size_cache()
+            terminal.set_size_cache()
         
         event._got = False
 

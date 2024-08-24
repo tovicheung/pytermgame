@@ -25,15 +25,15 @@ def height():
 
 _width, _height = width, height
 
-def _disable_size_cache():
+def disable_size_cache():
     global width, height
     width, height = _width, _height
 
-def _set_size_cache():
+def set_size_cache():
     global width, height
     w, h = os.get_terminal_size()
-    width = wraps(width)(lambda: w)
-    height = wraps(height)(lambda: h)
+    width = wraps(_width)(lambda: w)
+    height = wraps(_height)(lambda: h)
 
 # I/O
 
