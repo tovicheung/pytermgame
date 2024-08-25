@@ -64,6 +64,7 @@ class Game:
             text_wrapping: bool = False,
             clear_first: bool = False,
             update_screen_size: UpdateScreenSize | Literal["always", "every_tick", "none"] = "every_tick",
+            time_source: Callable[[], int | float] = time.perf_counter,
             ):
         """Initialization options:
         - fps - frames per second, execute as fast as possible if set to None
@@ -73,6 +74,7 @@ class Game:
         - text_wrapping - whether to wrap overflow in terminal
         - clear_first - whether to clear the terminal before starting
         - update_screen_size - when to get the latest screen size via os.get_terminal_size()
+        - time_source: function to get time eg time.perf_counter or time.time
         """
 
         # Initialization options
@@ -83,6 +85,7 @@ class Game:
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
         self.update_screen_size = UpdateScreenSize(update_screen_size)
+        self.time_source = time_source
 
         # Don't compute every tick
         self.spf = None if self.fps is None else 1 / self.fps
@@ -205,11 +208,6 @@ class Game:
         """Get the scene of the currently active game"""
         return cls.get_active().scene
     
-    @classmethod
-    def get_sprites(cls):
-        """Get the sprites of the scene of the currently active game"""
-        return cls.get_scene().sprites
-    
     # Scene
 
     def new_scene(self):
@@ -246,20 +244,21 @@ class Game:
         - increase tick count
         """
 
+        get_time = self.time_source
         _tick_ignore_duration = 0
 
         if self._block_next_tick:
             self._block_next_tick = False
-            start = time.time()
+            start = get_time()
             self.debugger.block() # type: ignore
-            _tick_ignore_duration = time.time() - start
+            _tick_ignore_duration = get_time() - start
         
         if self.debugger is not None and self._block_key is not None and not event._got:
             for key in event.get_keys():
                 if key == self._block_key:
-                    start = time.time()
+                    start = get_time()
                     self.debugger.block() # type: ignore
-                    _tick_ignore_duration = time.time() - start
+                    _tick_ignore_duration = get_time() - start
                 else:
                     event.queue.append((event.KEYEVENT, key))
 
@@ -278,11 +277,11 @@ class Game:
 
         if (not timeless) and self.fps is not None and self.spf is not None:
             end_of_tick = self._tick_start + self.spf
-            now = time.time()
+            now = get_time()
             if now < end_of_tick:
                 time.sleep(end_of_tick - now)
         
-        now = time.time()
+        now = get_time()
 
         # duration of last tick
         self._last_tick_dur = now - self._tick_start - _tick_ignore_duration
