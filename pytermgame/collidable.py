@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 from . import _active, terminal
 
@@ -39,10 +39,10 @@ class _ScreenRight(Collidable):
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return _active.get_scene().apply_scroll(other_coords).x + other_surf.width > terminal.width()
 
-class ScreenEdge:
-    top = _ScreenTop()
-    bottom = _ScreenBottom()
-    left = _ScreenLeft()
-    right = _ScreenRight()
+class _Viewport(NamedTuple):
+    top: _ScreenTop = _ScreenTop()
+    bottom: _ScreenBottom = _ScreenBottom()
+    left: _ScreenLeft = _ScreenLeft()
+    right: _ScreenRight = _ScreenRight()
 
-screen = (ScreenEdge.top, ScreenEdge.bottom, ScreenEdge.left, ScreenEdge.right)
+viewport = _Viewport()

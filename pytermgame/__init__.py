@@ -1,7 +1,7 @@
 # commonly used names
 
 # class-based
-from .collidable import ScreenEdge, screen
+from .collidable import viewport
 from .coords import Coords
 from .debugger import Debugger
 from .game import Game

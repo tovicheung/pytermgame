@@ -10,7 +10,7 @@ class Ball(ptg.KinematicSprite):
         self.vy = random.choice((-1, 1))
     
     def update(self):
-        self.bounce((ptg.screen, Ball.group))
+        self.bounce((ptg.viewport, Ball.group))
 
 try:
     with ptg.Game(fps=30, update_screen_size = "every_tick") as game:

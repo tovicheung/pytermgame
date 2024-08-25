@@ -25,11 +25,11 @@ class Ball(ptg.KinematicSprite):
     on_placed = new_round
 
     def update(self):
-        for collidee in self.bounce((pad1, pad2, ptg.screen)):
-            if collidee is ptg.ScreenEdge.left:
+        for collidee in self.bounce((pad1, pad2, ptg.viewport)):
+            if collidee is ptg.viewport.left:
                 score2.increment(1)
                 self.new_round()
-            elif collidee is ptg.ScreenEdge.right:
+            elif collidee is ptg.viewport.right:
                 score1.increment(1)
                 self.new_round()
 

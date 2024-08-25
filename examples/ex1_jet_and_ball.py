@@ -27,7 +27,7 @@ class Ball(ptg.Sprite):
     def update(self):
         self.move(-1, 0)
     
-        if self.is_colliding(ptg.ScreenEdge.left):
+        if self.is_colliding(ptg.viewport.left):
             score.increment()
             self.kill()
             return

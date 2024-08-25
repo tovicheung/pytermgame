@@ -17,7 +17,7 @@ from .coords import Coords, XY
 from .group import Group
 from .style import Style, Dir, Color, _resolve_style
 from .scene import Scene
-from .surface import PhantomSurface, Surface, SurfaceLike
+from .surface import Surface, SurfaceLike
 
 def _ensure_placed(f):
     """Ensures that the method is called only after placing the sprite
@@ -38,20 +38,20 @@ def _ensure_placed(f):
 
 NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
 
-def __iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
+def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
     if isinstance(nested_collidables, Collidable):
         yield nested_collidables
         return
     if isinstance(nested_collidables, Iterable):
         for x in nested_collidables:
-            yield from _iter_collidables(x)
+            yield from _flatten_collidables(x)
         return
     raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
 
 # very temporary optimization
 @lru_cache
-def _iter_collidables(nested_collidables: NestedCollidables) -> list[Collidable]:
-    return list(__iter_collidables(nested_collidables))
+def _flatten_collidables(nested_collidables: NestedCollidables) -> list[Collidable]:
+    return list(_iter_collidables(nested_collidables))
 
 @dataclass
 class RenderedState:
@@ -471,7 +471,7 @@ class Sprite(Collidable):
         """
         if not self._rendered.on_screen:
             return False
-        for sp in _iter_collidables(sprite_or_sprites):
+        for sp in _flatten_collidables(sprite_or_sprites):
             if sp._is_colliding_sprite(self, old=True):
                 return True
         return False
@@ -497,7 +497,7 @@ class Sprite(Collidable):
         """
         if self.hidden:
             return False
-        for sp in _iter_collidables(nested_collidables):
+        for sp in _flatten_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 return True
         return False
@@ -517,7 +517,7 @@ class Sprite(Collidable):
         """
         if self.hidden:
             return
-        for sp in _iter_collidables(nested_collidables):
+        for sp in _flatten_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 yield sp
 

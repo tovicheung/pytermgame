@@ -34,7 +34,7 @@ class Asteroid(ptg.Sprite):
         if not self.zombie:
             self.move(-0.5, 0)
 
-            if self.is_colliding(ptg.ScreenEdge.left):
+            if self.is_colliding(ptg.viewport.left):
                 self.kill()
                 score_counter.decrement()
 
@@ -48,7 +48,7 @@ class Bullet(ptg.KinematicSprite):
         self.vx = 6
 
     def update(self):
-        collidees = self.move_until_collision((Asteroid.group, ptg.ScreenEdge.right))
+        collidees = self.move_until_collision((Asteroid.group, ptg.viewport.right))
         if collidees:
             self.kill()
             for sprite in collidees:

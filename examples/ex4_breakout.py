@@ -24,10 +24,10 @@ class Ball(ptg.KinematicSprite):
 
     def update(self):
         # Bouncing mechanism
-        for collidee in self.bounce((Tile.group, pad, ptg.screen)):
+        for collidee in self.bounce((Tile.group, pad, ptg.viewport)):
             if isinstance(collidee, Tile):
                 collidee.kill()
-            elif collidee is ptg.ScreenEdge.bottom:
+            elif collidee is ptg.viewport.bottom:
                 game.break_loop()
         
         if len(Tile.group) == 0:
