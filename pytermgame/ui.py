@@ -26,7 +26,7 @@ else:
 from . import key
 from .coords import Coords
 from .event import Event
-from .sprite import Sprite
+from .sprite import Parent, Sprite
 from .surface import Surface
 
 _S = TypeVar("_S", bound=Sprite)
@@ -61,7 +61,7 @@ class Dimensions(NamedTuple):
 
 # Base classes
 
-class Container(Sprite, Generic[_S]):    
+class Container(Parent, Generic[_S]):    
     def __init__(self, child: _S | None = None):
         super().__init__()
         self.child = child
@@ -81,6 +81,16 @@ class Container(Sprite, Generic[_S]):
             self._scene.move_sprite_to_below(self, child)
         return self
     
+    def has_child(self, child: Sprite) -> bool:
+        return child is self.child
+    
+    def remove_child(self, child: Sprite) -> None:
+        if not self.has_child(child):
+            raise ValueError(f"Parent {self} does not have child {child}")
+        child._parent = None
+        self.child = None
+        self.update_surf()
+    
     def get_inner_dimensions(self) -> tuple[int, int]:
         if self.child is None:
             return 0, 0
@@ -95,6 +105,7 @@ class Container(Sprite, Generic[_S]):
     
     @override
     def set_dirty(self):
+        super().set_dirty()
         if self.child is not None and self.placed and self._rendered.coords != self._coords:
             # this is here because
             # 1. coords may be modified in .set_surf() eg align right
@@ -123,7 +134,7 @@ class Container(Sprite, Generic[_S]):
         """
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
 
-class Collection(Sprite):
+class Collection(Parent):
     children: tuple[Sprite, ...] | None
     
     def __init__(self, children: Iterable[Sprite] | None = None):
@@ -147,6 +158,19 @@ class Collection(Sprite):
         for child in children:
             child._parent = self
         return self
+    
+    def has_child(self, child: Sprite) -> bool:
+        return self.children is not None and child is self.children
+    
+    def remove_child(self, child: Sprite) -> None:
+        if not self.has_child(child):
+            raise ValueError(f"Parent {self} does not have child {child}")
+        child._parent = None
+        assert self.children is not None # for typing
+        index = self.children.index(child)
+
+        self.children = self.children[:index] + self.children[index+1:]
+        self.update_surf()
 
     def get_children(self):
         if self.children is None:
@@ -175,6 +199,7 @@ class Collection(Sprite):
     
     @override
     def set_dirty(self):
+        super().set_dirty()
         if self.children is not None and self.placed and self._rendered.coords != self._coords:
             delta = self._coords - self._rendered.coords
             for child in self.children:

@@ -53,7 +53,7 @@ class Coords:
 
     def to_term(self):
         """0-based to 1-based"""
-        return type(self)(self.x + 1, self.y + 1)
+        return type(self)(int(self.x + 1), int(self.y + 1))
     
     def d(self, other: XY):
         other = Coords.coerce(other)
@@ -99,7 +99,7 @@ class FloatCoords(complex, Coords):
         return type(self)(super().__sub__(other))
     
     def to_term(self):
-        return type(self)(self + 1 + 1j)
+        return type(self)(int(self.x + 1) + int(self.y + 1) * 1j)
     
     def d(self, other: XY):
         coords = type(self).coerce(other)

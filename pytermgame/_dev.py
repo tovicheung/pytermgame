@@ -22,16 +22,18 @@ if ENSURE_SPRITE_DESTRUCTION:
     import gc
     from .sprite import Sprite
 
-    _Sprite_kill = Sprite._kill
+    def finalizer(self):
+        a = gc.get_referrers(self)
+        if len(a) == 0:
+            return
+        string = ""
+        for referrer in a:
+            bbbb = gc.get_referrers(referrer)
+            bbbb.remove(a)
+            string += str(bbbb) + "  >>>  " + str(referrer) + "\n"
+        raise ValueError(string)
 
-    @wraps(Sprite._kill)
-    def _kill(self: Sprite):
-        _Sprite_kill(self)
-        assert len(self._groups) == 0, f"attempted to kill sprite but sprite is still in groups: {self._groups}"
-        refs = gc.get_referrers(self)
-        assert len(refs) == 0, f"attempted to kill sprite but sprite is still referenced by: {refs}"
-    
-    Sprite._kill = _kill
+    Sprite.__del__ = finalizer
 
 if ENSURE_VALID_TERMCOORDS:
     from . import terminal

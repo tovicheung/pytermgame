@@ -29,24 +29,21 @@ class Scene(SpriteList):
         super().__init__((), name = "Scene")
 
         self.offset = Coords.ORIGIN
-    
-    # def get_render_queue(self) -> Generator[Sprite]:
-    #     # no need to sort here because it is already ordered
-    #     yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
+        self._next_z = 0
     
     def get_render_queue(self) -> list[Sprite]:
         # no need to sort here because it is already ordered
         # yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
         dirty: set[Sprite] = set()
 
-        def _traverse(sprite: Sprite):
-            dirty.add(sprite)
+        def _traverse(sprite: Sprite, dirty_set: set):
+            dirty_set.add(sprite)
             for sp in sprite.get_movement_collisions():
-                if sp not in dirty:
-                    _traverse(sp)
+                if sp not in dirty_set:
+                    _traverse(sp, dirty_set)
 
         for sprite in filter(lambda sp: sp._rendered.dirty, self.sprites):
-            _traverse(sprite)
+            _traverse(sprite, dirty)
         
         return sorted(dirty, key=lambda sp: sp._z)
     
@@ -68,8 +65,11 @@ class Scene(SpriteList):
             terminal.hide_cursor(flush=True)
         for dirty_sprite in dirty:
             dirty_sprite.render(flush=False, erase=True)
+            if dirty_sprite.zombie:
+                dirty_sprite._kill()
         for dirty_sprite in dirty:
-            dirty_sprite.render(flush=False, erase=False)
+            if not dirty_sprite.zombie:
+                dirty_sprite.render(flush=False, erase=False)
         
         if cursor.is_visible():
             cursor.write_ansi()
@@ -78,24 +78,14 @@ class Scene(SpriteList):
         terminal.flush()
     
     def update(self):
-        """Calls .update() on sprites and kills zombies
-
-        Therefore, there are two situations to call Group.update() in every game loop:
-        1. your implement Sprite.update() in your sprites
-        2. you kill your sprites
-        """
-        kills: list[Sprite] = []
+        """Call .update() on every sprite"""
         for sprite in self:
             sprite.update()
-            if sprite.zombie:
-                kills.append(sprite)
-        while len(kills):
-            # avoid making unnecessary references
-            kills.pop()._kill()
 
-    def _next_z(self):
+    def _get_next_z(self):
         """called by sprites to get the next available z-coordinate"""
-        return len(self.sprites)
+        self._next_z += 1
+        return self._next_z - 1
     
     # Context manager for easy sprite creation and placement
 

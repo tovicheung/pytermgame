@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
 from functools import lru_cache, wraps
 from math import floor
-from typing import Iterable, Generator, TypeAlias, overload
+from typing import Iterable, Generator, Protocol, TypeAlias, overload
 import sys
 
 if sys.version_info >= (3, 11):
@@ -31,7 +32,7 @@ def _ensure_placed(f):
     def _new(self: Sprite, *args, **kwargs):
         if not self.placed:
             raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it by calling Sprite.place() ({self._debug()})")
-        if self.zombie:
+        if self.zombie and False:
             raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is zombie and waiting to be garbage collected ({self._debug()})")
         return f(self, *args, **kwargs)
     return _new
@@ -49,30 +50,26 @@ def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collid
     raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
 
 # very temporary optimization
-@lru_cache
+# @lru_cache
 def _flatten_collidables(nested_collidables: NestedCollidables) -> list[Collidable]:
     return list(_iter_collidables(nested_collidables))
 
 @dataclass
 class RenderedState:
-    """Sprite's state when it was last rendered on screen
-    
-    self.dirty == True:
-    - sprite needs to be re-rendered (erase and paint)
-    - in most cases: self.coords != sprite.coords or self.surf != sprite.surf
-        (unless sprite.set_dirty() called manually)
-    
-    self.dirty == False:
-    - sprite does not need to be re-rendered
+    """Sprite's state when it was last rendered on screen"""
 
-    self.on_screen == False:
-    - sprite was not on screen, no need to erase
-    """
+    # should sprite be re-rendered?
     dirty: bool
+
+    # was sprite rendered on screen?
     on_screen: bool
+    
     coords: Coords
     screen_coords: Coords # for erasing
     surf: Surface
+
+    # for erasing
+    collisions: set[Sprite]
 
 class Sprite(Collidable):
     """
@@ -130,16 +127,18 @@ class Sprite(Collidable):
         self._virtual = False
 
         # a sprite's parent updates its surface if the sprite's surface changes
-        self._parent: Sprite | None = None
+        self._parent: Parent | None = None
 
     def _debug(self) -> str:
         # returns a debug info string
-        debug = f"{type(self).__name__} sprite"
+        debug = f"{type(self).__name__}"
         if self.placed:
-            debug += f" placed at {self._coords}"
+            debug += f"({self._coords})"
         if self.zombie:
-            debug += " which is a zombie"
+            debug = "zombie " + debug
         return debug
+    
+    __repr__ = _debug
     
     def new_surf_factory(self) -> Surface:
         """A factory to dynamically generate a sprite's surface.
@@ -220,7 +219,7 @@ class Sprite(Collidable):
         # Resolve coords: set self._coords, self._z
     
         self._coords = Coords.coerce(coords)
-        self._z = scene._next_z()
+        self._z = scene._get_next_z()
         
         # Resolve surface: set self.surf
         
@@ -235,7 +234,7 @@ class Sprite(Collidable):
 
         self.on_placed()
 
-        self._rendered = RenderedState(dirty=True, on_screen=False, coords=self._coords, screen_coords=self._coords, surf=self.surf)
+        self._rendered = RenderedState(dirty=True, on_screen=False, coords=self._coords, screen_coords=self._coords, surf=self.surf, collisions=set())
         self.placed = True
 
         return self
@@ -248,15 +247,24 @@ class Sprite(Collidable):
         """
         if self.zombie:
             return
-        self.render(flush=False, erase=True)
+        
+        self.hide()
         self.zombie = True
 
     def _kill(self) -> None:
-        """Truly kills a sprite, should only call as zombie."""
+        """Frees as much references as possible.
+        This should only be called by Scene after ensuring it is erased.
+        """
 
-        # frees all references and destroyed by garbage collector
         while len(self._groups):
             self._groups[0].remove(self)
+        
+        if self._parent is not None:
+            self._parent.remove_child(self)
+        
+        # Potential remaining referrers:
+        # * user's variable  --  nothing we can do
+        # * RenderedState.collisions -- will eventually be taken care of by gc
 
     # Methods subclasses can override
 
@@ -302,9 +310,6 @@ class Sprite(Collidable):
             - True -> use whitespaces to overwrite the old surface on the terminal
             - False -> render current surface
         """
-        if self.zombie:
-            return
-        
         if self.hidden and not erase:
             return
         
@@ -338,6 +343,10 @@ class Sprite(Collidable):
         self._rendered.screen_coords = self._scene.apply_scroll(self._coords)
         self._rendered.surf = self.surf
         self._rendered.dirty = False
+        try:
+            self._rendered.collisions = self._collisions
+        except AttributeError:
+            ...
 
     # Movement
 
@@ -345,12 +354,6 @@ class Sprite(Collidable):
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
-        # if not propagate:
-        #     return
-        # for sprite in self.get_movement_collisions():
-        #     if not sprite.zombie:
-        #         # if we re-render a sprite, we must also re-render other sprites touching it to avoid overlapping
-        #         sprite.set_dirty()
 
     def goto(self, x: int | float | Fraction, y: int | float | Fraction) -> None:
         self._coords = Coords(x, y)
@@ -404,12 +407,14 @@ class Sprite(Collidable):
     def update_surf(self) -> None:
         self.set_surf(self.new_surf_factory())
 
+    @_ensure_placed
     def hide(self) -> None:
         if self.hidden:
             return
         self.hidden = True
         self.set_dirty()
 
+    @_ensure_placed
     def show(self) -> None:
         if not self.hidden:
             return
@@ -435,9 +440,13 @@ class Sprite(Collidable):
     def get_movement_collisions(self) -> Generator[Sprite]:
         """Get collision of both old and new states"""
         # TODO: better name and documentation
+
+        self._collisions = set()
         for sprite in self._scene.sprites:
-            if sprite is not self and (sprite._is_colliding_sprite(self) or sprite._is_colliding_sprite(self, old=True)):
+            if sprite is not self and (sprite._is_colliding_sprite(self)): # or sprite._is_colliding_sprite(self, old=True)):
+                self._collisions.add(sprite)
                 yield sprite
+        yield from self._rendered.collisions
     
     def _is_colliding_raw(self, other_coords: Coords, other_surf: Surface) -> bool:
         return (self.x - other_surf.width < other_coords.x < self.x + self.width) \
@@ -542,6 +551,15 @@ def Object(surf: SurfaceLike) -> Sprite:
     sprite = Sprite()
     sprite.surf = Surface.coerce(surf)
     return sprite
+
+class Parent(Sprite, ABC):
+    @abstractmethod
+    def remove_child(self, child: Sprite) -> None:
+        pass
+
+    @abstractmethod
+    def has_child(self, child: Sprite) -> bool:
+        pass
 
 class KinematicSprite(Sprite):
     """A KinematicSprite has velocity, unlocking more complex interactions
