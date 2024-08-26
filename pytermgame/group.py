@@ -61,27 +61,3 @@ class Group:
 
         if flush:
             terminal.flush()
-
-class SpriteList(Group):
-    """Ordered group of sprites"""
-
-    def __init__(self, sprites: Iterable[Sprite], name: str | None = None):
-        self.sprites = list(sprites)
-        self.name = name
-
-    # Group operations
-
-    def add(self, *sprites: Sprite):
-        self.sprites.extend(sprites)
-        for sprite in sprites:
-            sprite._groups.append(self)
-
-    def extend(self, sprites: Iterable[Sprite]):
-        self.sprites.extend(sprites)
-        for sprite in sprites:
-            sprite._groups.append(self)
-
-    def remove(self, *sprites: Sprite):
-        for sprite in sprites:
-            self.sprites.remove(sprite)
-            sprite._groups.remove(self)

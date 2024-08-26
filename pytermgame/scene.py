@@ -1,39 +1,51 @@
 from __future__ import annotations
 from types import TracebackType
 
-from .coords import Coords, XY
 from . import cursor, terminal
-from .group import SpriteList
+from .coords import Coords, XY
 
-from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from .surface import Surface
     from .sprite import Sprite
 
-def _iter_coords(coords: Coords, surf: Surface):
-    for y in range(int(coords.y), int(coords.y)+surf.height):
-        for x in range(int(coords.x), int(coords.x)+surf.width):
-            yield (x, y)
-
-
-class Scene(SpriteList):
-    """A scene is essentially a list of sprites ordered by z-coordinate. (and also a cursor)"""
+class Scene:
+    """A scene is essentially a list of sprites ordered by z-coordinate."""
 
     # IMPORTANT: +Z is top, -Z is bottom
 
     _active_context: Scene | None = None
 
     def __init__(self):
-        super().__init__((), name = "Scene")
-
+        self.sprites: list[Sprite] = []
         self.offset = Coords.ORIGIN
         self._next_z = 0
     
-    def get_render_queue(self) -> list[Sprite]:
-        # no need to sort here because it is already ordered
-        # yield from filter(lambda sp: sp._rendered.dirty, self.sprites)
+    # Sprite interaction
+
+    def _get_next_z(self):
+        """called by sprites to get the next available z-coordinate"""
+        self._next_z += 1
+        return self._next_z - 1
+
+    def add(self, sprite: Sprite):
+        self.sprites.append(sprite)
+    
+    def update(self):
+        """Call .update() on every sprite in the scene"""
+        for sprite in self.sprites:
+            sprite.update()
+    
+    # Render and re-render
+
+    def render(self, flush: bool = True, erase: bool = False):
+        for sprite in self.sprites:
+            sprite.render(flush=False, erase=erase)
+
+        if flush:
+            terminal.flush()
+    
+    def get_rerender_queue(self) -> list[Sprite]:
         dirty: set[Sprite] = set()
 
         def _traverse(sprite: Sprite, dirty_set: set):
@@ -53,7 +65,7 @@ class Scene(SpriteList):
         """
         # dirty = sorted(set(self.get_render_queue()), key=lambda sp: sp._z)
 
-        dirty = self.get_render_queue()
+        dirty = self.get_rerender_queue()
 
         if len(dirty) == 0: # prevents rapid cursor blinks
             if cursor.state.dirty:
@@ -77,17 +89,7 @@ class Scene(SpriteList):
         # flush once after all the rendering
         terminal.flush()
     
-    def update(self):
-        """Call .update() on every sprite"""
-        for sprite in self:
-            sprite.update()
-
-    def _get_next_z(self):
-        """called by sprites to get the next available z-coordinate"""
-        self._next_z += 1
-        return self._next_z - 1
-    
-    # Context manager for easy sprite creation and placement
+    # Context manager for easy sprite placement
 
     def __enter__(self):
         if Scene._active_context is not None:
@@ -97,6 +99,8 @@ class Scene(SpriteList):
     
     def __exit__(self, typ: type[BaseException], val: Any, tb: TracebackType):
         Scene._active_context = None
+    
+    # Scrolling
 
     def apply_scroll(self, coords: Coords):
         return coords.d(-self.offset)
@@ -104,14 +108,14 @@ class Scene(SpriteList):
     def scroll(self, dx: int = 0, dy: int = 0):
         self.offset = self.offset.d((dx, dy))
         if dx != 0 or dy != 0:
-            for sprite in self:
+            for sprite in self.sprites:
                 # no need to propagate since we are setting for all sprites
                 sprite.set_dirty()
     
     def set_scroll(self, offset: XY):
         self.offset = Coords.coerce(offset)
     
-    # Sprite ordering
+    # Sprite ordering (unstable)
 
     def move_sprite_to_below(self, sprite_to_move: Sprite, reference_sprite: Sprite):
         if sprite_to_move not in self.sprites:

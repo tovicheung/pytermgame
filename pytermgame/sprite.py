@@ -251,13 +251,14 @@ class Sprite(Collidable):
         self.hide()
         self.zombie = True
 
+        while len(self._groups) > 1:
+            group = self._groups[0]
+            group.remove(self)
+
     def _kill(self) -> None:
         """Frees as much references as possible.
         This should only be called by Scene after ensuring it is erased.
         """
-
-        while len(self._groups):
-            self._groups[0].remove(self)
         
         if self._parent is not None:
             self._parent.remove_child(self)

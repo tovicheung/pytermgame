@@ -36,23 +36,13 @@ They become a "concrete" sprite that can be rendered and interacted with.
 
 #### 3. Zombie state
 
-Sprites become zombies after `.kill()` is called. Zombies are truly destroyed all at once by the game (usually per tick).
-
-## Sprite groups and lists
-
-A `Group` is essentially a set of sprites. Sprites are aware of their presence in groups.
-
-Groups can perform sprite operations on all its sprites:
-* `Group.update()`: calls `.update()` on all its sprites
-* `Group.render()`: calls `.render()` on all its sprites and only flushes stdout at the end
-
-A `SpriteList` is an ordered list of sprites. Otherwise it is the same as a group.
+Sprites become zombies after `.kill()` is called. Zombies:
+* cannot be collided with
+* frees as much references as possible
 
 ## Scenes
 
 A `Scene` is a part of a game that can be attached by sprites. One and only one scene must be active at all times during a game.
-
-A scene is implemented as a SpriteList, with its sprites ordered by z-coordinate.
 
 ## How to attach a sprite to a scene
 
