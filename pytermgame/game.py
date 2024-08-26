@@ -137,7 +137,7 @@ class Game:
         
         if self.alternate_screen:
             terminal.enable_alternate_buffer()
-        else:
+        elif self.clear_first:
             terminal.clear()
 
         if self.show_cursor:
@@ -150,9 +150,6 @@ class Game:
             terminal.enable_autowrap()
         else:
             terminal.disable_autowrap()
-        
-        if self.clear_first:
-            terminal.clear()
 
         type(self)._active = self
         self.ntick = -1
