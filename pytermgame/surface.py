@@ -62,6 +62,9 @@ class Surface:
     def height(self):
         return self._height
     
+    def get_dimensions(self):
+        return self.width, self.height
+    
     def __getitem__(self, args: int | tuple[int, int]):
         """Element access
         

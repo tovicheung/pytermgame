@@ -14,7 +14,10 @@ Collection
 from __future__ import annotations
 
 import sys
-from typing import Iterable, Self, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+from typing import Callable, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+
+if sys.version_info >= (3, 11):
+    from typing import Self
 
 # some methods of Sprite are overriden and it is best to mark them
 if sys.version_info >= (3, 12):
@@ -340,13 +343,9 @@ class SelectionMenu(Column):
 
     @property
     def selected(self):
-        assert self.children is not None, "SelectionMenu must have children"
-        assert len(self.children) > 0, "SelectionMenu must have at least one child"
-        return self.children[self.selected_index]
+        return self.get_children()[self.selected_index]
 
     def process(self, event: Event) -> bool:
-        assert self.children is not None, "SelectionMenu must have children"
-        assert len(self.children) > 0, "SelectionMenu must have at least one child"
         if event.is_key(key.UP):
             if self.selected_index > 0:
                 self.selected.apply_style(inverted=False)
@@ -354,9 +353,109 @@ class SelectionMenu(Column):
                 self.selected.apply_style(inverted=True)
             return True
         elif event.is_key(key.DOWN):
-            if self.selected_index < len(self.children) - 1:
+            if self.selected_index < len(self.get_children()) - 1:
                 self.selected.apply_style(inverted=False)
                 self.selected_index += 1
                 self.selected.apply_style(inverted=True)
             return True
         return False
+
+class TileMap(Collection, Generic[_S]):
+    children: tuple[_S, ...]
+
+    if TYPE_CHECKING:
+        def get_children(self) -> tuple[_S, ...]: ...
+
+    def __init__(self, cols: int, rows: int, children: Iterable[_S] | None = None):
+        super().__init__(children)
+        self.cols = cols
+        self.rows = rows
+        if children is not None:
+            assert len(self.get_children()) == cols * rows, f"Size mismatch, expected {cols}x{rows}={cols * rows}, got {len(self.get_children())}"
+    
+    @classmethod
+    def from_factory(cls, cols: int, rows: int, children_factory: Callable[[int, int], _S2]) -> TileMap[_S2]:
+        children = [children_factory(x, y) for y in range(rows) for x in range(cols)]
+        return cls(cols, rows, children) # type: ignore
+
+    def on_placed(self):
+        self.selected_index = 0
+        self.selected.apply_style(inverted=True)
+    
+    def get(self, col: int, row: int):
+        return self.get_children()[row * self.cols + col]
+    
+    def get_adjacent(self, col: int, row: int, edges: bool = True, corners: bool = True):
+        if row > 0:
+            if edges: yield self.get(col, row - 1)
+            if col > 0:
+                if corners: yield self.get(col - 1, row - 1)
+            if col < self.cols - 1:
+                if corners: yield self.get(col + 1, row - 1)
+
+        if row < self.rows - 1:
+            if edges: yield self.get(col, row + 1)
+            if col > 0:
+                if corners: yield self.get(col - 1, row + 1)
+            if col < self.cols - 1:
+                if corners: yield self.get(col + 1, row + 1)
+        
+        if col > 0:
+            if edges: yield self.get(col - 1, row)
+        if col < self.cols - 1:
+            if edges: yield self.get(col + 1, row)
+
+    @property
+    def selected(self):
+        return self.get_children()[self.selected_index]
+
+    def process(self, event: Event) -> bool:
+        if event.is_key(key.UP):
+            if self.selected_index >= self.cols:
+                self.selected.apply_style(inverted=False)
+                self.selected_index -= self.cols
+                self.selected.apply_style(inverted=True)
+            return True
+        elif event.is_key(key.DOWN):
+            if self.selected_index < len(self.get_children()) - self.cols:
+                self.selected.apply_style(inverted=False)
+                self.selected_index += self.cols
+                self.selected.apply_style(inverted=True)
+            return True
+        elif event.is_key(key.LEFT):
+            if self.selected_index % self.cols != 0:
+                self.selected.apply_style(inverted=False)
+                self.selected_index -= 1
+                self.selected.apply_style(inverted=True)
+        elif event.is_key(key.RIGHT):
+            if self.selected_index % self.cols != self.cols - 1:
+                self.selected.apply_style(inverted=False)
+                self.selected_index += 1
+                self.selected.apply_style(inverted=True)
+        return False
+    
+    def new_surf_factory(self) -> Surface:
+        # child_width, child_height = self.get_children()[0].surf.get_dimensions()
+        width = height = 0
+
+        children = self.get_children()
+        child_coords = self._coords
+
+        for row in range(self.rows):
+            max_height = 0
+            total_width = 0
+
+            for col in range(self.cols):
+                child = children[row * self.cols + col]
+                place_or_set_coords(child, child_coords)
+
+                child_coords = child_coords.dx(child.width)
+                total_width += child.width
+                max_height = max(max_height, child.height)
+            
+            child_coords = child_coords.dy(max_height).with_x(self._coords.x)
+            width = max(width, total_width)
+            height += max_height
+        
+        return Surface.phantom(width, height)
+
