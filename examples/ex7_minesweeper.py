@@ -52,12 +52,11 @@ with ptg.Game() as game:
         )
     ).place((2, 2))
     
-    for event in game.event_loop():
-        if menu.process(event):
-            pass
-        elif event.is_key("space"):
-            board_size = menu.selected_index + 5
+    for event in game.event_loop_with_processors(menu):
+        if event.is_key("space"):
             game.break_loop()
+    
+    board_size = menu.selected_index + 5
     
     game.new_scene()
     
@@ -83,12 +82,11 @@ with ptg.Game() as game:
     ).place((2, 4))
 
     # Initial selection
-    for event in game.event_loop():
-        if tmap.process(event):
-            pass
-        elif event.is_key("space"):
-            initial = tmap.selected
+    for event in game.event_loop_with_processors(tmap):
+        if event.is_key("space"):
             game.break_loop()
+    
+    initial = tmap.selected
 
     # 3. Generate mines based on initial selection
 
@@ -105,10 +103,8 @@ with ptg.Game() as game:
 
     # 4. Main game loop
 
-    for event in game.event_loop():
-        if tmap.process(event):
-            pass
-        elif event.is_key("space"):
+    for event in game.event_loop_with_processors(tmap):
+        if event.is_key("space"):
             tmap.selected.click()
         elif event.is_key("f"):
             selected = tmap.selected
@@ -138,4 +134,3 @@ with ptg.Game() as game:
 
     game.render() # last render
     ptg.event.wait_for_event()
-    

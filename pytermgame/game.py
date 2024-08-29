@@ -6,7 +6,7 @@ This module contains the Game class, which controls the entire game.
 from __future__ import annotations
 
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Callable, Generator, Literal
 import time
 import sys
 
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 from . import terminal, event, cursor
 from .debugger import Debugger
-from .event import add_event, EventLike
 from .scene import Scene
 
 if sys.version_info >= (3, 11):
@@ -229,13 +228,13 @@ class Game:
     
     # Clock
 
-    def add_timer(self, event: EventLike, ticks: int):
+    def add_timer(self, event: event.EventLike, ticks: int):
         self.timers.append((event, self.ntick + ticks))
     
     def clear_timers(self):
         self.timers.clear()
 
-    def add_interval(self, event: EventLike, ticks: int):
+    def add_interval(self, event: event.EventLike, ticks: int):
         self.intervals.append((event, ticks, self.ntick % ticks))
     
     def clear_intervals(self):
@@ -273,11 +272,11 @@ class Game:
 
         for interval in self.intervals:
             if (self.ntick - interval[2]) % interval[1] == 0:
-                add_event(interval[0])
+                event.add_event(interval[0])
 
         for timer in self.timers:
             if self.ntick == timer[1]:
-                add_event(timer[0])
+                event.add_event(timer[0])
 
         if self.update_screen_size == UpdateScreenSize.every_tick:
             terminal.set_size_cache()
@@ -320,7 +319,7 @@ class Game:
     def break_loop(self):
         self._break_loop = True
     
-    def event_loop(self, update: bool = True, render: bool = True):
+    def event_loop(self, update: bool = True, render: bool = True) -> Generator[event.Event]:
         """Gets event and loop until .break_loop() is called.
         update / render: whether to call .update() / .render() each loop
         """
@@ -330,6 +329,19 @@ class Game:
             if render:
                 self.render()
             yield event.wait_for_event()
+    
+    def event_loop_with_processors(self, *processors: event.EventProcessor, update: bool = True, render: bool = True):
+        while self.loop():
+            if update:
+                self.update()
+            if render:
+                self.render()
+            ev = event.wait_for_event()
+            for processor in processors:
+                if processor.process(ev):
+                    break
+            else:
+                yield ev
 
 # Initialize ptg._active
 
