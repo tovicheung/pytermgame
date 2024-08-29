@@ -14,7 +14,7 @@ Collection
 from __future__ import annotations
 
 import sys
-from typing import Callable, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
+from typing import Callable, Generator, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -385,7 +385,7 @@ class TileMap(Collection, Generic[_S]):
     def get(self, col: int, row: int):
         return self.get_children()[row * self.cols + col]
     
-    def get_adjacent(self, col: int, row: int, edges: bool = True, corners: bool = True):
+    def get_adjacent(self, col: int, row: int, edges: bool = True, corners: bool = True) -> Generator[_S]:
         if row > 0:
             if edges: yield self.get(col, row - 1)
             if col > 0:

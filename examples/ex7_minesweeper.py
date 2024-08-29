@@ -1,5 +1,4 @@
 import pytermgame as ptg
-from pytermgame import _dev
 
 import random
 
@@ -15,7 +14,7 @@ class Cell(ptg.Value):
         self.revealed = False
         self.marked = False
     
-    def reveal(self):
+    def reveal(self): # recursive
         if self.revealed:
             return
         self.revealed = True
@@ -41,7 +40,33 @@ class Cell(ptg.Value):
             self.reveal()
 
 with ptg.Game() as game:
-    mines_left = 6
+
+    # 1. Select board size
+
+    column = ptg.ui.Column().wrap(
+        ptg.Text("Up/down arrow to select board size, space to confirm"),
+        menu := ptg.ui.SelectionMenu().wrap(
+            ptg.Text("5x5"),
+            ptg.Text("6x6"),
+            ptg.Text("7x7"),
+        )
+    ).place((2, 2))
+    
+    while True:
+        game.render()
+
+        event = ptg.event.wait_for_event()
+        if menu.process(event):
+            pass
+        elif event.is_key("space"):
+            board_size = menu.selected_index + 5
+            break
+    
+    game.new_scene()
+    
+    # 2. Generate initial board
+
+    mines_left = board_size
 
     ptg.ui.Column().wrap(
         ptg.ui.Row().wrap(
@@ -56,7 +81,7 @@ with ptg.Game() as game:
     ).place((0, 0))
 
     tmap = ptg.ui.TileMap.from_factory(
-        cols = 6, rows = 6,
+        cols = board_size, rows = board_size,
         children_factory = lambda x, y: Cell(x, y)
     ).place((2, 4))
 
@@ -70,8 +95,9 @@ with ptg.Game() as game:
         elif event.is_key("space"):
             initial = tmap.selected
             break
-    
-    # not too close to initial
+
+    # 3. Generate mines based on initial selection
+
     possible_mines = list(filter(lambda cell: abs(cell.col - initial.col) + abs(cell.row - initial.row) > 2, tmap.get_children()))
 
     for mine in random.sample(possible_mines, mines_left):
@@ -83,6 +109,8 @@ with ptg.Game() as game:
     
     initial.click()
 
+    # 4. Main game loop
+
     while game.loop():
         game.render()
 
@@ -93,9 +121,9 @@ with ptg.Game() as game:
             tmap.selected.click()
         elif event.is_key("f"):
             selected = tmap.selected
-            if selected.revealed:
+            if selected.revealed: # cell is revealed
                 pass
-            elif selected.marked:
+            elif selected.marked: # cell is marked as a mine
                 selected.marked = False
                 selected.update_value("?")
                 mines_left += 1
