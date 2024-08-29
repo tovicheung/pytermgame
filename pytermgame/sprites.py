@@ -89,9 +89,10 @@ class TextInput(Sprite):
     """A simple text input interface.
     Note: requires .update()"""
 
-    def __init__(self):
+    def __init__(self, allow_insert: str = string.digits + string.ascii_letters + string.punctuation + " "):
         super().__init__()
         self.value = ""
+        self.allow_insert = allow_insert
         self.cur = 0
     
     def new_surf_factory(self) -> Surface:
@@ -103,19 +104,7 @@ class TextInput(Sprite):
             self.cur = len(value)
         self.update_surf()
     
-    def process(self, event: Event, allow_insert: str = string.digits + string.ascii_letters + string.punctuation + " "):
-        """Tries to process the event and returns True if processed, else False.
-        
-        This method may be standardized in the future for more keyboard-based sprites.
-
-        Example:
-        ```python
-        if sprite1.process(event):
-            pass
-        elif sprite2.process(event):
-            pass
-        ```
-        """
+    def process(self, event: Event):
         if event.is_key(key.LEFT):
             self.cur = max(0, self.cur - 1)
             return True
@@ -136,11 +125,12 @@ class TextInput(Sprite):
         elif event.is_key(key.END) or event.is_key(key.DOWN):
             self.cur = len(self.value)
             return True
-        elif event.is_key() and event.value_passes(allow_insert.__contains__):
+        elif event.is_key() and event.value_passes(self.allow_insert.__contains__):
             # `event.value in allow_insert` is not used because value may not be str
             self.update_value(self.value[:self.cur] + str(event.value) + self.value[self.cur:])
             self.cur += 1
             return True
+        return False
     
     def update(self):
         cursor.goto(self.x + self.cur, self.y)

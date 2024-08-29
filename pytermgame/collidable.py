@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NamedTuple
+from functools import lru_cache
+from typing import TYPE_CHECKING, Generator, Iterable, NamedTuple, TypeAlias
 
 from . import _active, terminal
 
@@ -46,3 +47,24 @@ class _Viewport(NamedTuple):
     right: _ScreenRight = _ScreenRight()
 
 viewport = _Viewport()
+
+# Helpers
+
+NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
+
+def flatten_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
+    if isinstance(nested_collidables, Collidable):
+        yield nested_collidables
+        return
+    if isinstance(nested_collidables, Iterable):
+        for x in nested_collidables:
+            yield from flatten_collidables(x)
+        return
+    raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
+
+_real_flatten_collidables = flatten_collidables
+
+# set by Game
+@lru_cache
+def _flatten_collidables_cached(nested_collidables: NestedCollidables) -> list[Collidable]:
+    return list(_real_flatten_collidables(nested_collidables))

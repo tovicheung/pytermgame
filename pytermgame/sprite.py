@@ -1,19 +1,18 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
 from dataclasses import dataclass
 from fractions import Fraction
-from functools import lru_cache, wraps
+from functools import wraps
 from math import floor
-from typing import Iterable, Generator, Protocol, TypeAlias, overload
+from typing import Generator, overload
 import sys
 
 if sys.version_info >= (3, 11):
     from typing import Self
 
 from . import terminal, _active
-from .collidable import Collidable
+from .collidable import Collidable, flatten_collidables, NestedCollidables
 from .coords import Coords, XY
 from .group import Group
 from .style import Style, Dir, Color, _resolve_style
@@ -36,23 +35,6 @@ def _ensure_placed(f):
             raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is zombie and waiting to be garbage collected ({self._debug()})")
         return f(self, *args, **kwargs)
     return _new
-
-NestedCollidables: TypeAlias = "Collidable | Iterable[Collidable | NestedCollidables]"
-
-def _iter_collidables(nested_collidables: NestedCollidables) -> Generator[Collidable]:
-    if isinstance(nested_collidables, Collidable):
-        yield nested_collidables
-        return
-    if isinstance(nested_collidables, Iterable):
-        for x in nested_collidables:
-            yield from _flatten_collidables(x)
-        return
-    raise TypeError(f"Argument must be collidable or nested iterables of collidables, got {nested_collidables}")
-
-# very temporary optimization
-# @lru_cache
-def _flatten_collidables(nested_collidables: NestedCollidables) -> list[Collidable]:
-    return list(_iter_collidables(nested_collidables))
 
 @dataclass
 class RenderedState:
@@ -481,7 +463,7 @@ class Sprite(Collidable):
         """
         if not self._rendered.on_screen:
             return False
-        for sp in _flatten_collidables(sprite_or_sprites):
+        for sp in flatten_collidables(sprite_or_sprites):
             if sp._is_colliding_sprite(self, old=True):
                 return True
         return False
@@ -507,7 +489,7 @@ class Sprite(Collidable):
         """
         if self.hidden:
             return False
-        for sp in _flatten_collidables(nested_collidables):
+        for sp in flatten_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 return True
         return False
@@ -527,7 +509,7 @@ class Sprite(Collidable):
         """
         if self.hidden:
             return
-        for sp in _flatten_collidables(nested_collidables):
+        for sp in flatten_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 yield sp
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Protocol
 
 from ._get_key import get_keys
 from . import key as _key
@@ -123,3 +123,16 @@ def wait_until(event: EventLike):
         for e in get():
             if event == e:
                 return e
+
+class EventProcessor(Protocol):
+    """Tries to process the event and returns True if processed, else False.
+
+    Example:
+    ```python
+    if sprite1.process(event):
+        pass
+    elif sprite2.process(event):
+        pass
+    ```
+    """
+    def process(self, event: Event) -> bool: ...

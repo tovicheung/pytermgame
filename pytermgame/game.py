@@ -64,6 +64,7 @@ class Game:
             text_wrapping: bool = False,
             clear_first: bool = False,
             update_screen_size: UpdateScreenSize | Literal["always", "every_tick", "none"] = "every_tick",
+            cache_nested_collidables: bool = False,
             time_source: Callable[[], int | float] = time.perf_counter,
             ):
         """Initialization options:
@@ -74,6 +75,8 @@ class Game:
         - text_wrapping - whether to wrap overflow in terminal
         - clear_first - whether to clear the terminal before starting
         - update_screen_size - when to get the latest screen size via os.get_terminal_size()
+        - cache_nested_collidables - whether to @lru_cache collidable.flatten_collidables
+            : results in huge performance boost in collision-heavy games, but killed sprites may not be immediately collected by gc
         - time_source: function to get time eg time.perf_counter or time.time
         """
 
@@ -85,6 +88,7 @@ class Game:
         self.text_wrapping = text_wrapping
         self.clear_first = clear_first
         self.update_screen_size = UpdateScreenSize(update_screen_size)
+        self.cache_nested_collidables = cache_nested_collidables
         self.time_source = time_source
 
         # Don't compute every tick
@@ -150,6 +154,10 @@ class Game:
             terminal.enable_autowrap()
         else:
             terminal.disable_autowrap()
+        
+        if self.cache_nested_collidables:
+            from . import collidable
+            collidable.flatten_collidables = collidable._flatten_collidables_cached
 
         type(self)._active = self
         self.ntick = -1
@@ -167,6 +175,10 @@ class Game:
         
         if self.update_screen_size == UpdateScreenSize.none:
             terminal.disable_size_cache()
+        
+        if self.cache_nested_collidables:
+            from . import collidable
+            collidable.flatten_collidables = collidable._real_flatten_collidables
 
     def run(self, f: Callable[[Game], None]):
         """Intended use:
@@ -307,6 +319,17 @@ class Game:
 
     def break_loop(self):
         self._break_loop = True
+    
+    def event_loop(self, update: bool = True, render: bool = True):
+        """Gets event and loop until .break_loop() is called.
+        update / render: whether to call .update() / .render() each loop
+        """
+        while self.loop():
+            if update:
+                self.update()
+            if render:
+                self.render()
+            yield event.wait_for_event()
 
 # Initialize ptg._active
 
