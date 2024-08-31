@@ -104,6 +104,12 @@ Should be used when the surface depends on each sprite's attributes and may chan
 
 `.update_surf()` is automatically called in `.place()` to generate the initial surface.
 
+## Time and clocks
+
+To emit an event periodically, use `ptg.clock.add_timer()`. The appropriate amount of events will be emitted whenever `ptg.event.get()` is called. Timers only depend on the current time.
+
+To emit an event based on tick, use `game.add_interval()`. The game will check for emitted events every `.tick()`. Intervals depend only on game ticks.
+
 # UI in pytermgame
 
 An easy-to-use and intuitive API for creating flexible UI using pytermgame is in the making. Check out the `pytermgame.ui` submodule.

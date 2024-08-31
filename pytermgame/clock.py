@@ -1,57 +1,71 @@
+from __future__ import annotations
+
+from math import floor
 import time
 from typing import TypeAlias
 
-from .event import EventLike
+from .event import Event, EventLike
 from .game import Game
 
-# Thread-based intervals do not make sense in a tick-based game
-# 
-# import threading
-# 
-# class Repeat(threading.Timer):
-#     def run(self):
-#         while not self.finished.wait(self.interval):
-#             self.function(*self.args, **self.kwargs)
-# 
-# def set_timer(event: EventLike, secs: float, as_interval = False):
-#     """Triggers an event every n seconds.
-#     Timers run on separate seconds."""
-#     if as_interval:
-#         active = Game.get_active()
-#         if active.fps is None:
-#             raise Exception("Cannot set timers using intervals when fps=None (ie as fast as possible)")
-#         set_interval(event, round(secs * active.fps))
-#     else:
-#         def _func():
-#             add_event(event)
-#         Game.get_active().add_timer(Repeat(interval=secs, function=_func))
+class Timer:
+    _next_id = 0
+    _pool: set[Timer] = set()
 
-def add_interval(event: EventLike, ticks: int | None = None, secs: float | None = None):
-    """Triggers an event every n ticks.
-    Intervals are managed and triggered by the game."""
-    if ticks is None:
-        if secs is None:
-            raise ValueError("Either ticks or secs must be a value")
-        fps = Game.get_active().fps
-        if fps is None:
-            raise ValueError("Cannot set secs-based interval on game with fps=None")
-        ticks = round(fps * secs)
-    Game.get_active().add_interval(event, ticks)
+    @classmethod
+    def get_running(cls):
+        return tuple(cls._pool)
+    
+    def __init__(self, event: Event, secs: float, loops: int = 0):
+        self.id = None
+        self.event = event
+        self.secs = secs
+        self.loops = loops
+        self.running = False
+    
+    def start(self):
+        self.id = Timer._next_id
+        Timer._next_id += 1
 
-def add_timer(event: EventLike, ticks: int | None = None, secs: float | None = None):
-    if ticks is None:
-        if secs is None:
-            raise ValueError("Either ticks or secs must be a value")
-        fps = Game.get_active().fps
-        if fps is None:
-            raise ValueError("Cannot set secs-based timer on game with fps=None")
-        ticks = round(fps * secs)
-    Game.get_active().add_timer(event, ticks)
+        Timer._pool.add(self)
+        self.running = True
+        self.last_emit_time = time.time()
+
+        return self.id
+    
+    def stop(self):
+        self.id = None
+        
+        Timer._pool.remove(self)
+        self.running = False
+
+    def emit_events(self) -> tuple[Event, ...]:
+        if not self.running:
+            raise Exception("i am not running")
+        now = time.time()
+
+        n = floor((now - self.last_emit_time) / self.secs)
+        if n < 1:
+            return ()
+        
+        self.last_emit_time = self.last_emit_time + self.secs * n
+        if self.loops > 0:
+            if self.loops < n:
+                n = self.loops
+            self.loops -= n
+            if self.loops <= 0:
+                self.stop()
+                
+        return (self.event,) * n
+
+def add_timer(event: EventLike, secs: float, loop: int = 0) -> int:
+    return Timer(Event(event), secs, loop).start()
+
+def remove_timer(id: int):
+    for timer in Timer.get_running():
+        if timer.id == id:
+            timer.stop()
+            return
 
 # Convenient aliases
 wait = sleep = time.sleep
 get_time = gettime = time.time
-
-# Type aliases
-Interval: TypeAlias = tuple[EventLike, int, int]
-Timer: TypeAlias = tuple[EventLike, int]

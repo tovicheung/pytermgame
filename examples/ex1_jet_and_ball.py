@@ -55,7 +55,7 @@ with ptg.Game() as game:
     NEWBALL = ptg.event.USEREVENT + 1
     SHOWJET = ptg.event.USEREVENT + 2
 
-    ptg.clock.add_interval(NEWBALL, 5)
+    game.add_interval(NEWBALL, ticks=5)
 
     # Sprites
 

@@ -3,9 +3,8 @@ from __future__ import annotations
 from typing import Any, Callable, Protocol
 
 from ._get_key import get_keys
-from . import key as _key
+from . import key as _key, clock as _clock
 
-# TODO: use NamedTuple
 class Event:
     __slots__ = ("type", "value")
 
@@ -97,6 +96,9 @@ def get() -> list[Event]:
     events = [Event(KEYEVENT, key) for key in get_keys()]
     events.extend(_queue)
     _queue.clear()
+
+    for timer in _clock.Timer.get_running():
+        events.extend(timer.emit_events())
 
     return events
 

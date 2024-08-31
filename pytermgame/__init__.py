@@ -1,5 +1,8 @@
 # commonly used names
 
+# put at top to prevent circular imports
+from . import clock
+
 # class-based
 from .collidable import viewport
 from .coords import Coords
@@ -15,7 +18,7 @@ from .surface import Surface
 from .ui import *
 
 # function-based
-from . import clock, cursor, event, key, terminal
+from . import cursor, event, key, terminal
 
 # terminal test
 

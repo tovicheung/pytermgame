@@ -84,7 +84,7 @@ with ptg.Game() as game:
 
                     # mini animation
                     cookie.apply_style(fg = ptg.Color.yellow)
-                    ptg.clock.add_timer(COOKIE_DIM, ticks=1)
+                    game.add_interval(COOKIE_DIM, ticks=1, loops=1)
                 
                 space_last_pressed_time = time
 
@@ -98,7 +98,7 @@ with ptg.Game() as game:
                         score -= factory.cost
                         scoreboard.format(score)
                         
-                        ptg.clock.add_interval(
+                        ptg.clock.add_timer(
                             # (event type, event value)
                             (COOKIES_PRODUCED, factory.cookies_per_second),
                             secs = 1

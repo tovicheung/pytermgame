@@ -5,13 +5,11 @@ This module contains the Game class, which controls the entire game.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Callable, Generator, Literal
+from typing import Any, Callable, Generator, Literal
 import time
 import sys
-
-if TYPE_CHECKING:
-    from .clock import Interval, Timer
 
 from . import terminal, event, cursor
 from .debugger import Debugger
@@ -27,6 +25,13 @@ if sys.platform != "win32":
     import termios
     import fcntl
     import os
+
+@dataclass
+class Interval:
+    event: event.EventLike
+    ticks: int
+    offset: int
+    loops: int = 0
 
 class UpdateScreenSize(StrEnum):
     # always get the latest screen size
@@ -44,7 +49,7 @@ class Game:
     What a Game does:
     - set up terminal for a game
     - attached by an active scene
-    - attached by intervals and timers
+    - attached by intervals
     - blocks (ticks) to maintain fps via Game.tick()
     
     What a Game can do for you:
@@ -93,7 +98,6 @@ class Game:
         # Don't compute every tick
         self.spf = None if self.fps is None else 1 / self.fps
 
-        self.timers: list[Timer] = []
         self.intervals: list[Interval] = []
 
         self.debugger: Debugger | None = None
@@ -225,19 +229,16 @@ class Game:
         self.scene.render(flush=False, erase=True)
         self.scene = scene
         self.scene.render()
-    
-    # Clock
 
-    def add_timer(self, event: event.EventLike, ticks: int):
-        self.timers.append((event, self.ntick + ticks))
-    
-    # def add_timer(self, event: event.EventLike, secs: float)
-    
-    def clear_timers(self):
-        self.timers.clear()
-
-    def add_interval(self, event: event.EventLike, ticks: int):
-        self.intervals.append((event, ticks, self.ntick % ticks))
+    def add_interval(self, event: event.EventLike, ticks: int | None = None, secs: float | None = None, loops: int = 0):
+        if ticks is None:
+            if secs is None:
+                raise ValueError("Either ticks or secs must be a value")
+            fps = Game.get_active().fps
+            if fps is None:
+                raise ValueError("Cannot set secs-based interval on game with fps=None")
+            ticks = round(fps * secs)
+        self.intervals.append(Interval(event, ticks, self.ntick % ticks, loops))
     
     def clear_intervals(self):
         self.intervals.clear()
@@ -272,13 +273,14 @@ class Game:
         #         else:
         #             event._queue.append((event.KEYEVENT, key))
 
-        for interval in self.intervals:
-            if (self.ntick - interval[2]) % interval[1] == 0:
-                event.add_event(interval[0])
-
-        for timer in self.timers:
-            if self.ntick == timer[1]:
-                event.add_event(timer[0])
+        # do not directly iter over self.intervals as it is modified in the loop
+        for interval in tuple(self.intervals):
+            if (self.ntick - interval.offset) % interval.ticks == 0:
+                if interval.loops == 1:
+                    self.intervals.remove(interval)
+                if interval.loops > 0:
+                    interval.loops -= 1
+                event.add_event(interval.event)
 
         if self.update_screen_size == UpdateScreenSize.every_tick:
             terminal.set_size_cache()
