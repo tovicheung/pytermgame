@@ -16,14 +16,6 @@ from .surface import Surface
 if TYPE_CHECKING:
     from .game import Game
 
-class _dummy:
-    def __getattribute__(self, name: str):
-        return self
-    
-    def __call__(self, *args: ..., **kwargs: ...):
-        # dummy method calls
-        return self
-
 class Debugger(Sprite):
     # Debuggers are meant to be ugly
 
@@ -43,6 +35,8 @@ class Debugger(Sprite):
         return self
 
     def render(self, flush: bool = True, erase: bool = False):
+        if not self.active:
+            return
         super().render(flush, True)
         self.surf = Surface("Debug: " + str(self.data))
         super().render(flush, erase)
@@ -89,6 +83,7 @@ class Debugger(Sprite):
         return self
     
     def block_on_key(self, key: str):
+        raise Exception("handle the key event with debugger.block()")
 
         # Technique 1: wrap get() to detect special key
 
@@ -105,15 +100,7 @@ class Debugger(Sprite):
 
         _active.get_active()._block_key = key
         return self
-    
+
     def disable(self):
-        """
-        Add .disable() at the end of your debugger configuration to disable it easily, without needing to comment out all code
-        """
-        from . import event
+        # add .disable() at the end of the chain to quickly hide debugger
         self.active = False
-        self.hide()
-        event.get = event._get
-        _active.get_active()._block_key = None
-        _active.get_active().debugger = None
-        return _dummy()

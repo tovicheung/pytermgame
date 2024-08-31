@@ -82,38 +82,28 @@ MOUSESCROLLUP = 5 # unused for now
 MOUSESCROLLDOWN = 6 # unused for now
 USEREVENT = 31
 
-queue: list[EventLike] = []
+_queue: list[Event] = []
 
 def wait_for_event():
     """blocks until an event is triggered"""
     while True:
-        queue.extend(Event(KEYEVENT, x) for x in get_keys())
-        if len(queue):
+        _queue.extend(Event(KEYEVENT, x) for x in get_keys())
+        if len(_queue):
             break
-    return Event(queue.pop(0))
+    return Event(_queue.pop(0))
     
-
-def get():
+def get() -> list[Event]:
     """non-blocking, should be used in tick-based games"""
-    global _got
-    _got = True
+    events = [Event(KEYEVENT, key) for key in get_keys()]
+    events.extend(_queue)
+    _queue.clear()
 
-    for key in get_keys():
-        yield Event(KEYEVENT, key)
-    
-    # new events may be triggered when looping over get()
-    queued = queue.copy()
-    queue.clear()
-    for event in queued:
-        yield Event(event)
-
-_got = False # has get() been called this tick?
-_get = get
+    return events
 
 def add_event(event: EventLike):
     if not isinstance(event, Event):
         event = Event(event)
-    queue.append(event)
+    _queue.append(event)
 
 def wait_until(event: EventLike):
     """blocks until an event that meets the criteria is triggered

@@ -49,8 +49,7 @@ with ptg.Game(fps=30) as game:
 
     debugger = ptg.Debugger() \
                 .place((0, ptg.terminal.height() - 1)) \
-                .hook(game) \
-                .block_on_key("d")
+                .hook(game)
 
     ball_initial_coords = (ptg.terminal.width() // 2 + random.randint(-5, 5), ptg.terminal.height() // 2)
 
@@ -81,6 +80,8 @@ with ptg.Game(fps=30) as game:
 
     while game.loop():
         for event in ptg.event.get():
+            if event.is_key("d"):
+                debugger.block()
             if event.is_key(ptg.key.LEFT):
                 pad.move(-6, 0)
             if event.is_key(ptg.key.RIGHT):
