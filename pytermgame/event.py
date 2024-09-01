@@ -84,17 +84,18 @@ USEREVENT = 31
 _queue: list[Event] = []
 
 def pump():
-    """Non-blockinb, updates _queue"""
+    """Non-blocking, pushes events to _queue"""
+
+    # Key events
     _queue.extend(Event(KEYEVENT, key) for key in get_keys())
 
+    # Timers
     for timer in _clock.Timer.get_running():
         _queue.extend(timer.emit_events())
 
 def wait_for_event():
     """Blocks until an event is triggered"""
-    if _queue:
-        return _queue.pop(0)
-    while len(_queue) == 0:
+    while not _queue:
         pump()
     return _queue.pop(0)
     

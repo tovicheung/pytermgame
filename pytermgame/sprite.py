@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from functools import wraps
 from math import floor
-from typing import Generator, overload
+from typing import Any, Generator, overload
 import sys
 
 if sys.version_info >= (3, 11):
@@ -83,6 +83,9 @@ class Sprite(Collidable):
 
     # If set to a Group(), automatically add instances to the group
     group: Group
+
+    # Define costumes for a sprite
+    costumes: dict[Any, tuple[Surface | None, Style | None]]
 
     def __init__(self) -> None:
         # sprite is now in abstract state
@@ -512,6 +515,21 @@ class Sprite(Collidable):
         for sp in flatten_collidables(nested_collidables):
             if sp._is_colliding_sprite(self):
                 yield sp
+    
+    # Costumes
+
+    def has_costume(self, identifier):
+        return hasattr(self, "costumes") and identifier in self.costumes
+    
+    def set_costume(self, identifier):
+        if not self.has_costume(identifier):
+            raise KeyError(f"Costume identifier {identifier!r} not found")
+        costume = self.costumes[identifier]
+        surf, style = costume
+        if surf is not None:
+            self.set_surf(surf)
+        if style is not None:
+            self.apply_style(style)
 
 class _Virtual:
     def __init__(self, owner: Sprite):
