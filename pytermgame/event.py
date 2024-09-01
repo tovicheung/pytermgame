@@ -83,23 +83,26 @@ USEREVENT = 31
 
 _queue: list[Event] = []
 
-def wait_for_event():
-    """blocks until an event is triggered"""
-    while True:
-        _queue.extend(Event(KEYEVENT, x) for x in get_keys())
-        if len(_queue):
-            break
-    return Event(_queue.pop(0))
-    
-def get() -> list[Event]:
-    """non-blocking, should be used in tick-based games"""
-    events = [Event(KEYEVENT, key) for key in get_keys()]
-    events.extend(_queue)
-    _queue.clear()
+def pump():
+    """Non-blockinb, updates _queue"""
+    _queue.extend(Event(KEYEVENT, key) for key in get_keys())
 
     for timer in _clock.Timer.get_running():
-        events.extend(timer.emit_events())
+        _queue.extend(timer.emit_events())
 
+def wait_for_event():
+    """Blocks until an event is triggered"""
+    if _queue:
+        return _queue.pop(0)
+    while len(_queue) == 0:
+        pump()
+    return _queue.pop(0)
+    
+def get() -> list[Event]:
+    """Non-blocking, should be used in tick-based games"""
+    pump()
+    events = _queue.copy()
+    _queue.clear()
     return events
 
 def add_event(event: EventLike):

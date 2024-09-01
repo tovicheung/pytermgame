@@ -335,6 +335,19 @@ class Game:
             yield event.wait_for_event()
     
     def event_loop_with_processors(self, *processors: event.EventProcessor, update: bool = True, render: bool = True):
+        """Process events first with processors, then let user handle unprocessed events.
+        
+        Example:
+        ```python
+        text_input = ptg.TextInput()
+
+        # events are first processed by text_input
+        for event in game.event_loop_with_processors(text_input):
+            # any unprocessed events will enter the for loop
+            if event.is_key("enter"):
+                game.break_loop()
+        ```
+        """
         while self.loop():
             if update:
                 self.update()
