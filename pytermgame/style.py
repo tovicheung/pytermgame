@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from enum import Enum, StrEnum
+from enum import Enum
 from typing import TYPE_CHECKING, Literal, TypeAlias
+import sys
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    class StrEnum(str, Enum): ...
 
 if TYPE_CHECKING:
     from .sprite import Sprite
