@@ -19,7 +19,7 @@ class Ball(ptg.Sprite):
     group = ptg.Group()
 
     # default style for all instances
-    style = ptg.Style(fg = ptg.Color.red)
+    style = ptg.Style(fg = "red")
 
     def on_placed(self):
         self.goto(ptg.terminal.width(), ptg.terminal.randy())
@@ -36,13 +36,13 @@ class Ball(ptg.Sprite):
             game.break_loop()
         
         if self.is_colliding(myline):
-            self.apply_style(fg=ptg.Color.red)
+            self.apply_style(fg = "red")
         else:
-            self.apply_style(fg=ptg.Color.default)
+            self.apply_style(fg = "default")
 
 class Line(ptg.Sprite):
     surf = ptg.Surface("-" * (ptg.terminal.width()))
-    style = ptg.Style(fg = ptg.Color.blue)
+    style = ptg.Style(fg = "blue")
 
     def update(self):
         if myjet.y != self.y:

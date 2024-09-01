@@ -52,12 +52,12 @@ with ptg.Game(show_cursor=True) as game:
             for i, char in enumerate(word_input.value):
                 sprite = ptg.Text(char).place((2 + i, 1 + round))
                 if answer[i] == char:
-                    color = ptg.Color.green
+                    color = "green"
                     correct += 1
                 elif char in answer:
-                    color = ptg.Color.yellow
+                    color = "yellow"
                 else:
-                    color = ptg.Color.red
+                    color = "red"
                 sprite.apply_style(ptg.Style(fg = color))
             
             if correct == 5:

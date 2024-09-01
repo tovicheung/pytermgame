@@ -2,11 +2,19 @@ import pytermgame as ptg
 
 import random
 
-class Cell(ptg.Value):
+class Cell(ptg.Sprite):
+    costumes = {
+        "unknown": (ptg.Surface("?"), ptg.Style(fg = "black", bg = "white")),
+        "revealed": (ptg.Surface(" "), ptg.Style(fg = "default", bg = "default")),
+        "flagged": (ptg.Surface("F"), ptg.Style(fg = "red", bg = "white")),
+        "explode": (ptg.Surface("!"), ptg.Style(fg = "red", bg = "white")),
+    }
+
     real_unmarked_mines = 0
 
     def __init__(self, col: int, row: int):
-        super().__init__("?")
+        super().__init__()
+        self.set_costume("unknown")
         self.col = col
         self.row = row
         self.is_mine = False
@@ -21,20 +29,20 @@ class Cell(ptg.Value):
 
         if self.is_mine:
             return
-        if self.n > 0:
-            self.update_value(self.n)
-            return
         
-        self.update_value(" ")
+        self.set_costume("revealed")
+
+        if self.n > 0:
+            self.set_surf(ptg.Surface(str(self.n)))
+            return
         
         for cell in tmap.get_adjacent(self.col, self.row):
             cell.reveal()
     
     def click(self):
         if self.is_mine:
-            self.update_value("!")
+            self.set_costume("explode")
             msg.update_value("Boom!")
-            msg.apply_style(bg = ptg.Color.red)
             game.break_loop()
         else:
             self.reveal()
@@ -112,7 +120,7 @@ with ptg.Game() as game:
                 pass
             elif selected.marked: # cell is marked as a mine
                 selected.marked = False
-                selected.update_value("?")
+                selected.set_costume("unknown")
                 mines_left += 1
                 mines_left_display.format(mines_left)
 
@@ -120,16 +128,16 @@ with ptg.Game() as game:
                     Cell.real_unmarked_mines += 1
             else:
                 selected.marked = True
-                tmap.selected.update_value("F")
+                selected.set_costume("flagged")
                 mines_left -= 1
                 mines_left_display.format(mines_left)
 
-                if tmap.selected.is_mine:
+                if selected.is_mine:
                     Cell.real_unmarked_mines -= 1
         
         if Cell.real_unmarked_mines == 0:
             msg.update_value("You won!")
-            msg.apply_style(bg = ptg.Color.green)
+            msg.apply_style(bg = "green")
             game.break_loop()
 
     game.render() # last render

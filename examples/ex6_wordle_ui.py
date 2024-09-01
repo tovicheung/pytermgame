@@ -44,12 +44,12 @@ with ptg.Game(show_cursor=True) as game:
                 char_sprite = ptg.Text(char)
 
                 if answer[i] == char:
-                    color = ptg.Color.green
+                    color = "green"
                     correct += 1
                 elif char in answer:
-                    color = ptg.Color.yellow
+                    color = "yellow"
                 else:
-                    color = ptg.Color.red
+                    color = "red"
                 
                 char_sprite.apply_style(ptg.Style(fg = color))
                 char_sprites.append(char_sprite)

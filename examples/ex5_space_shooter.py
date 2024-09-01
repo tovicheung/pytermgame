@@ -40,7 +40,7 @@ class Asteroid(ptg.Sprite):
 
 class Bullet(ptg.KinematicSprite):
     surf = ptg.Surface("------")
-    style = ptg.Style(fg = ptg.Color.yellow)
+    style = ptg.Style(fg = "yellow")
 
     def __init__(self):
         super().__init__()
@@ -61,8 +61,8 @@ with ptg.Game(fps=30) as game:
     GAIN_POWER = ptg.event.USEREVENT + 2
     SHIP_END_FLASH = ptg.event.USEREVENT + 3
     
-    ptg.clock.add_interval(SPAWN, secs=1)
-    ptg.clock.add_interval(GAIN_POWER, secs=0.5)
+    ptg.clock.add_timer(SPAWN, secs=1)
+    ptg.clock.add_timer(GAIN_POWER, secs=0.5)
 
     ship = ptg.Object([
         "\\\\",
@@ -91,7 +91,7 @@ with ptg.Game(fps=30) as game:
                     power.update_value(power.value - 1)
 
                     # flash effect
-                    ship.apply_style(bg = ptg.Color.cyan)
+                    ship.apply_style(bg = "cyan")
                     ptg.clock.add_timer(SHIP_END_FLASH, secs = 0.1)
             elif event.is_type(SPAWN):
                 Asteroid()
@@ -99,7 +99,7 @@ with ptg.Game(fps=30) as game:
                 if power.value < power.full:
                     power.update_value(power.value + 1)
             elif event.is_type(SHIP_END_FLASH):
-                ship.apply_style(bg = ptg.Color.default)
+                ship.apply_style(bg = "default")
         
         game.update()
         game.render()

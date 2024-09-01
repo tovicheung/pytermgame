@@ -1,28 +1,44 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
-from enum import Enum, IntEnum
-from typing import TYPE_CHECKING
+from enum import Enum, StrEnum
+from typing import TYPE_CHECKING, Literal, TypeAlias
 
 if TYPE_CHECKING:
     from .sprite import Sprite
 
-class Color(IntEnum):
-    black = 0
-    red = 1
-    green = 2
-    yellow = 3
-    blue = 4
-    magenta = 5
-    cyan = 6
-    white = 7
-    default = 9
+COLOR_8 = {
+    "black": 0,
+    "red": 1,
+    "green": 2,
+    "yellow": 3,
+    "blue": 4,
+    "magenta": 5,
+    "cyan": 6,
+    "white": 7,
+    "default": 9,
+}
 
-    def to_fg_ansi(self):
-        return f"\033[3{self.value}m"
+class Colors(StrEnum):
+    black = "black"
+    red = "red"
+    green = "green"
+    yellow = "yellow"
+    blue = "blue"
+    magenta = "magenta"
+    cyan = "cyan"
+    white = "white"
+    default = "default"
 
-    def to_bg_ansi(self):
-        return f"\033[4{self.value}m"
+    @staticmethod
+    def to_fg_ansi(color: Color):
+        return f"\033[3{COLOR_8[color]}m"
+
+    @staticmethod
+    def to_bg_ansi(color: Color):
+        return f"\033[4{COLOR_8[color]}m"
+
+Color: TypeAlias = Colors | Literal["black", "red", "green", "yellow", "blue", "cyan", "white", "default"]
 
 class Dir(Enum):
     left = "left"
@@ -51,7 +67,7 @@ class Style:
 
     @classmethod
     def default(cls):
-        return cls(Dir.left, Dir.top, Color.default, Color.default, False, False)
+        return cls(Dir.left, Dir.top, Colors.default, Colors.default, False, False)
     
     def merge(self, other: Style) -> bool:
         changed = False
@@ -65,7 +81,7 @@ class Style:
     def to_ansi(self):
         assert self.fg is not None, "Cannot call .to_ansi() on style without fg"
         assert self.bg is not None, "Cannot call .to_ansi() on style without bg"
-        ansi = Color.to_fg_ansi(self.fg) + Color.to_bg_ansi(self.bg)
+        ansi = Colors.to_fg_ansi(self.fg) + Colors.to_bg_ansi(self.bg)
         if self.bold:
             ansi += "\033[1m"
         if self.inverted:

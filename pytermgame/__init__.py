@@ -13,7 +13,7 @@ from .profiler import Profiler
 from .scene import Scene
 from .sprite import Sprite, KinematicSprite, Object
 from .sprites import *
-from .style import Style, Dir, Color
+from .style import Style, Dir, Colors
 from .surface import Surface
 from .ui import *
 

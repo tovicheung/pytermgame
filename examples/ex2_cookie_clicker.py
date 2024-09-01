@@ -33,9 +33,9 @@ class Factory(ptg.Text):
     
     def update(self):
         if score >= self.cost:
-            self.apply_style(fg=ptg.Color.green)
+            self.apply_style(fg = "green")
         else:
-            self.apply_style(fg=ptg.Color.red)
+            self.apply_style(fg = "red")
 
 factories: list[Factory] = []
 
@@ -83,7 +83,7 @@ with ptg.Game() as game:
                     scoreboard.format(score)
 
                     # mini animation
-                    cookie.apply_style(fg = ptg.Color.yellow)
+                    cookie.apply_style(fg = "yellow")
                     game.add_interval(COOKIE_DIM, ticks=1, loops=1)
                 
                 space_last_pressed_time = time
@@ -109,7 +109,7 @@ with ptg.Game() as game:
                 scoreboard.format(score)
             
             elif event.is_type(COOKIE_DIM):
-                cookie.apply_style(fg = ptg.Color.default)
+                cookie.apply_style(fg = "default")
 
         game.update()
         game.render()

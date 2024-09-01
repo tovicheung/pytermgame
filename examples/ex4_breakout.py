@@ -60,13 +60,13 @@ with ptg.Game(fps=30) as game:
     
     pad = ptg.Object("#" * 20) \
         .place((ptg.terminal.width() // 2, ptg.terminal.height() - 3)) \
-        .apply_style(fg = ptg.Color.cyan)
+        .apply_style(fg = "cyan")
 
     # Generate tiles
 
     for y in range(3):
         for x in range(y * 3 % Tile.surf.width - Tile.surf.width + 1, ptg.terminal.width(), Tile.surf.width):
-            Tile().place((x, y)).apply_style(fg = ptg.Color(y + 1))
+            Tile().place((x, y)).apply_style(fg = "yellow")
     
     # Setup win/lose scenes
 
