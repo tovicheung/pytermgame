@@ -29,6 +29,7 @@ pip install .
 - optimized rendering: game calculates the minimum number of objects to erase and re-render **(it takes care of overlapping sprites too!)**
 - cross-platform key event reading
 - includes an integrated debugger and an external profiler
+- (**New**) basic composite UI support: `ptg.ui`
 
 > [!NOTE]
 > This is not a full-fledged game engine, but more of an experiment to create terminal games

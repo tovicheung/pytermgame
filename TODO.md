@@ -1,22 +1,6 @@
 Future updates
 
-- Support basic UI used in games (in progress)
-    * basic UI elements such as borders and paddings
-    ```python
-    ptg.ui.Border()
-        .apply_style(align_horizontal=ptg.Dir.right)
-        .wrap(
-            ptg.ui.Padding.all(2).wrap(
-                ptg.ui.Border().wrap(
-                    text_input := ptg.TextInput().place((16, 6))
-                )
-            )
-        )
-    ```
-    * The goal is to interop nicely with the current sprite structure
-
-
-- Game state?
+- none planned yet
 
 Design choices made
 
