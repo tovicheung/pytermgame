@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from math import floor
 import time
-from typing import TypeAlias
 
 from .event import Event, EventLike
-from .game import Game
 
 class Timer:
+    """A timer emits events periodically based on actual time instead of game ticks.
+    
+    Implementation detail:
+    A timer does not use threads. Instead, events are lazily generated from Timer.emit_events()
+    (called by ptg.event.get()) based on the current time and the last called time.
+    """
+
     _next_id = 0
     _pool: set[Timer] = set()
 
@@ -16,6 +21,10 @@ class Timer:
         return tuple(cls._pool)
     
     def __init__(self, event: Event, secs: float, loops: int = 0):
+        """Initializes a timer, does not start it.
+        loops > 0  =>  [loops] events are emitted at max
+        loops = 0  =>  events are emitted indefinitely
+        """
         self.id = None
         self.event = event
         self.secs = secs
@@ -41,6 +50,7 @@ class Timer:
     def emit_events(self) -> tuple[Event, ...]:
         if not self.running:
             raise Exception("i am not running")
+        
         now = time.time()
 
         n = floor((now - self.last_emit_time) / self.secs)
@@ -48,17 +58,22 @@ class Timer:
             return ()
         
         self.last_emit_time = self.last_emit_time + self.secs * n
+
         if self.loops > 0:
-            if self.loops < n:
+            if self.loops <= n:
                 n = self.loops
-            self.loops -= n
-            if self.loops <= 0:
                 self.stop()
+            self.loops -= n
                 
         return (self.event,) * n
 
-def add_timer(event: EventLike, secs: float, loop: int = 0) -> int:
-    return Timer(Event(event), secs, loop).start()
+def add_timer(event: EventLike, secs: float, loops: int = 0) -> int:
+    """Starts a timer with the given arguments.
+    * event - the event to emit
+    * secs - duration between events
+    * loops - maximal number of events to emit, infinite if 0
+    """
+    return Timer(Event(event), secs, loops).start()
 
 def remove_timer(id: int):
     for timer in Timer.get_running():

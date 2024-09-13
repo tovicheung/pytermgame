@@ -64,7 +64,13 @@ class Dimensions(NamedTuple):
 
 # Base classes
 
-class Container(Parent, Generic[_S]):    
+class Container(Parent, Generic[_S]):
+    """A container modifies its child's dimensions and adds extra surfaces.
+    A container must have zero or one child.
+    """
+    
+    # Initializers
+
     def __init__(self, child: _S | None = None):
         super().__init__()
         self.child = child
@@ -84,6 +90,8 @@ class Container(Parent, Generic[_S]):
             self._scene.move_sprite_to_below(self, child)
         return self
     
+    # Implement Parent ABC
+    
     def has_child(self, child: Sprite) -> bool:
         return child is self.child
     
@@ -93,18 +101,23 @@ class Container(Parent, Generic[_S]):
         child._parent = None
         self.child = None
         self.update_surf()
+
+    def apply_style(self, *args, **kwargs):
+        super().apply_style(*args, **kwargs)
+        if self.child is not None:
+            self.child.unset_resolved_style()
+        return self
+    
+    def unset_children_resolved_style(self) -> None:
+        if self.child is not None:
+            self.child.unset_resolved_style()
     
     def get_inner_dimensions(self) -> tuple[int, int]:
         if self.child is None:
             return 0, 0
         return self.child.width, self.child.height
     
-    @override # TODO: add type support
-    def apply_style(self, *args, **kwargs):
-        super().apply_style(*args, **kwargs)
-        if self.child is not None:
-            self.child._resolved_style = None
-        return self
+    # Sprite overrides
     
     @override
     def set_dirty(self):
@@ -128,7 +141,7 @@ class Container(Parent, Generic[_S]):
     def get_child_offset(self) -> Coords:
         return Coords(0, 0)
     
-    # Subclasses of Container must override:
+    # Subclasses of Container must implement:
     
     def new_surf_factory(self) -> Surface:
         """When implementing:
@@ -138,7 +151,13 @@ class Container(Parent, Generic[_S]):
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
 
 class Collection(Parent):
+    """A collection defines how its children are arranged.
+    A collection must have one or more children.
+    """
+
     children: tuple[Sprite, ...] | None
+
+    # Initializers
     
     def __init__(self, children: Iterable[Sprite] | None = None):
         super().__init__()
@@ -162,6 +181,8 @@ class Collection(Parent):
             child._parent = self
         return self
     
+    # Implement Parent ABC
+    
     def has_child(self, child: Sprite) -> bool:
         return self.children is not None and child is self.children
     
@@ -174,6 +195,10 @@ class Collection(Parent):
 
         self.children = self.children[:index] + self.children[index+1:]
         self.update_surf()
+    
+    def unset_children_resolved_style(self) -> None:
+        for child in self.get_children():
+            child._resolved_style = None
 
     def get_children(self):
         if self.children is None:
@@ -193,12 +218,7 @@ class Collection(Parent):
         self.children = self.children[:position] + (child,) + self.children[position:]
         self.update_surf()
     
-    @override # TODO: add type support
-    def apply_style(self, *args, **kwargs):
-        super().apply_style(*args, **kwargs)
-        for child in self.get_children():
-            child._resolved_style = None
-        return self
+    # Sprite overrides
     
     @override
     def set_dirty(self):
@@ -208,7 +228,7 @@ class Collection(Parent):
             for child in self.children:
                 child.goto(*(child._rendered.coords + delta))
     
-    # Subclasses of Collection must override:
+    # Subclasses of Collection must implement:
 
     def new_surf_factory(self) -> Surface:
         """When implementing:

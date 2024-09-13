@@ -114,6 +114,8 @@ class Scene:
     
     def set_scroll(self, offset: XY):
         self.offset = Coords.coerce(offset)
+        for sprite in self.sprites:
+            sprite.set_dirty()
     
     # Sprite ordering (unstable)
 
@@ -126,8 +128,7 @@ class Scene:
         old_index = self.sprites.index(sprite_to_move)
         new_index = self.sprites.index(reference_sprite)
         
-        # self.sprites.insert(self.sprites.index(reference_sprite), self.sprites.pop(self.sprites.index(sprite_to_move)))
         self.sprites.insert(new_index, self.sprites.pop(old_index))
 
-        for i in range(old_index, new_index+1):
-            self.sprites[i]._z = i
+        for i, sprite in enumerate(self.sprites):
+            sprite._z = i

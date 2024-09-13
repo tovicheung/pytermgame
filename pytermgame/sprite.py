@@ -58,16 +58,16 @@ class Sprite(Collidable):
     For special objects without a surface (eg screen edges) see `ptg.collidable`
 
     Functional states of a sprite:
-    - abstract: sprite is not attached to a scene
-    - placed: sprite is attached to a scene with coordinates and a surface
-    - zombie: sprite is no longer on screen, but object still exists in memory
+    * abstract: sprite is not attached to a scene
+    * placed: sprite is attached to a scene with coordinates and a surface
+    * zombie: sprite is no longer on screen, but object still exists in memory
 
     The respective methods are `.__init__()`, `.place()`, and `.kill()`.
 
     Game states of a sprite:
-    - hidden: sprite is not visible, no collisions
+    * hidden: sprite is not visible, no collisions
         - methods: `.hide()` and `.show()`
-    - virtual: collisions do not affect other sprites
+    * virtual: collisions do not affect other sprites
         - use case: test for collisions without triggering them
         - note: a sprite should not be kept virtual across ticks
         - method: `.virtual()`
@@ -172,20 +172,19 @@ class Sprite(Collidable):
             style = Style(**style_options)
         changed = self.style.merge(style)
         if changed:
-            self._resolved_style = None
-            self.set_dirty()
+            self.unset_resolved_style()
         return self
     
     # State conversion methods
 
     def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None) -> Self:
         """After a sprite is being placed, it:
-        - is attached to a scene
-        - has XYZ coordinates on the scene
-        - has a surface
-        - calls .on_placed(), which can be overriden by subclasses freely
-        - unlocks methods such as .move()
-        - can be killed via .kill()
+        * is attached to a scene
+        * has XYZ coordinates on the scene
+        * has a surface
+        * calls .on_placed(), which can be overriden by subclasses freely
+        * unlocks methods such as .move()
+        * can be killed via .kill()
         """
 
         if self.placed:
@@ -249,7 +248,7 @@ class Sprite(Collidable):
             self._parent.remove_child(self)
         
         # Potential remaining referrers:
-        # * user's variable  --  nothing we can do
+        # * user variables  --  nothing we can do
         # * RenderedState.collisions -- will eventually be taken care of by gc
 
     # Methods subclasses can override
@@ -307,8 +306,6 @@ class Sprite(Collidable):
         
         if (not erase) and not self._rendered.on_screen:
             self._rendered.on_screen = True
-        
-        # self._render(flush, erase)
 
         if erase:
             coords = self._rendered.screen_coords
@@ -324,22 +321,27 @@ class Sprite(Collidable):
             ansi += self._resolved_style.to_ansi()
         
         surf.render(coords, ansi, flush=flush)
-        
-        self._rendered.coords = self._coords
-        self._rendered.screen_coords = self._scene.apply_scroll(self._coords)
-        self._rendered.surf = self.surf
-        self._rendered.dirty = False
-        try:
-            self._rendered.collisions = self._collisions
-        except AttributeError:
-            ...
 
-    # Movement
+        if not erase:
+            self._rendered.coords = self._coords
+            self._rendered.screen_coords = self._scene.apply_scroll(self._coords)
+            self._rendered.surf = self.surf
+            self._rendered.dirty = False
+            try:
+                self._rendered.collisions = self._collisions
+            except AttributeError:
+                ...
 
     def set_dirty(self) -> None:
         if self._virtual or (not self.placed) or self._rendered.dirty:
             return
         self._rendered.dirty = True
+    
+    def unset_resolved_style(self) -> None:
+        self._resolved_style = None
+        self.set_dirty()
+
+    # Movement
 
     def goto(self, x: int | float | Fraction, y: int | float | Fraction) -> None:
         self._coords = Coords(x, y)
@@ -554,6 +556,9 @@ def Object(surf: SurfaceLike) -> Sprite:
     return sprite
 
 class Parent(Sprite, ABC):
+    """Parents can be set as Sprite._parent and must implement these methods.
+    Parents can use any way to store children, as long as their presence can be checked and they can be removed.
+    """
     @abstractmethod
     def remove_child(self, child: Sprite) -> None:
         pass
@@ -562,13 +567,21 @@ class Parent(Sprite, ABC):
     def has_child(self, child: Sprite) -> bool:
         pass
 
+    def unset_resolved_style(self) -> None:
+        super().unset_resolved_style()
+        self.unset_children_resolved_style()
+    
+    @abstractmethod
+    def unset_children_resolved_style(self) -> None:
+        pass
+
 class KinematicSprite(Sprite):
     """A KinematicSprite has velocity, unlocking more complex interactions
     
     When to use KinematicSprite:
-    - collisions
-    - bouncing
-    - acceleration of sprites
+    * collisions
+    * bouncing
+    * acceleration of sprites
     """
 
     def __init__(self):

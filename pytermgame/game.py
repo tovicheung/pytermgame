@@ -47,14 +47,14 @@ class Game:
     """The class that ties everything together.
     
     What a Game does:
-    - set up terminal for a game
-    - attached by an active scene
-    - attached by intervals
-    - blocks (ticks) to maintain fps via Game.tick()
+    * set up terminal for a game
+    * attached by an active scene
+    * attached by intervals
+    * blocks (ticks) to maintain fps via Game.tick()
     
     What a Game can do for you:
-    - calls .update() on the active scene via Game.update()
-    - renders the terminal via Game.render() which just calls Scene.rerender()
+    * calls .update() on the active scene via Game.update()
+    * renders the terminal via Game.render() which just calls Scene.rerender()
     """
 
     # reference to currently active game
@@ -72,16 +72,16 @@ class Game:
             time_source: Callable[[], int | float] = time.perf_counter,
             ):
         """Initialization options:
-        - fps - frames per second, execute as fast as possible if set to None
-        - alternate_screen - whether to use an alternate terminal screen
-        - show_cursor - whether to show the cursor (shorthand to cursor.show())
-        - silent_errors - what errors should not be displayed
-        - text_wrapping - whether to wrap overflow in terminal
-        - clear_first - whether to clear the terminal before starting
-        - update_screen_size - when to get the latest screen size via os.get_terminal_size()
-        - cache_nested_collidables - whether to @lru_cache collidable.flatten_collidables
+        * fps - frames per second, execute as fast as possible if set to None
+        * alternate_screen - whether to use an alternate terminal screen
+        * show_cursor - whether to show the cursor (shorthand to cursor.show())
+        * silent_errors - what errors should not be displayed
+        * text_wrapping - whether to wrap overflow in terminal
+        * clear_first - whether to clear the terminal before starting
+        * update_screen_size - when to get the latest screen size via os.get_terminal_size()
+        * cache_nested_collidables - whether to @lru_cache collidable.flatten_collidables
             : results in huge performance boost in collision-heavy games, but killed sprites may not be immediately collected by gc
-        - time_source: function to get time eg time.perf_counter or time.time
+        * time_source: function to get time eg time.perf_counter or time.time
         """
 
         # Initialization options

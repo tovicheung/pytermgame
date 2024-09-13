@@ -114,14 +114,16 @@ def add_event(event: EventLike):
 def wait_until(event: EventLike):
     """blocks until an event that meets the criteria is triggered
     Note: any events that are triggered while waiting are discarded
-    For a more safer method to wait for events use wait_for_event()"""
+    """
     while True:
         for e in get():
             if event == e:
                 return e
 
 class EventProcessor(Protocol):
-    """Tries to process the event and returns True if processed, else False.
+    """A class (usually a sprite) that implements the .process() method.
+    
+    The .process() method tries to process the event and returns True if processed, else False.
 
     Example:
     ```python
