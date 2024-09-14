@@ -9,6 +9,12 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from .sprite import Sprite
 
+def _traverse_sprite(sprite: Sprite, dirty_set: set):
+    dirty_set.add(sprite)
+    for sp in sprite.get_required_renders():
+        if sp not in dirty_set:
+            _traverse_sprite(sp, dirty_set)
+
 class Scene:
     """A scene is essentially a list of sprites ordered by z-coordinate."""
 
@@ -19,17 +25,21 @@ class Scene:
     def __init__(self):
         self.sprites: list[Sprite] = []
         self.offset = Coords.ORIGIN
-        self._next_z = 0
+    
+    def _reassign_z(self, start: int, stop: int):
+        for i, sprite in enumerate(self.sprites[start:stop]):
+            sprite._z = start + i
     
     # Sprite interaction
 
-    def _get_next_z(self):
-        """called by sprites to get the next available z-coordinate"""
-        self._next_z += 1
-        return self._next_z - 1
-
     def add(self, sprite: Sprite):
+        """Adds sprite to scene and assigns a z-index"""
+        sprite._z = len(self.sprites)
         self.sprites.append(sprite)
+    
+    def remove(self, sprite: Sprite):
+        self.sprites.remove(sprite)
+        self._reassign_z(sprite._z, len(self.sprites))
     
     def update(self):
         """Call .update() on every sprite in the scene"""
@@ -48,26 +58,18 @@ class Scene:
     def get_rerender_queue(self) -> list[Sprite]:
         dirty: set[Sprite] = set()
 
-        def _traverse(sprite: Sprite, dirty_set: set):
-            dirty_set.add(sprite)
-            for sp in sprite.get_movement_collisions():
-                if sp not in dirty_set:
-                    _traverse(sp, dirty_set)
-
         for sprite in filter(lambda sp: sp._rendered.dirty, self.sprites):
-            _traverse(sprite, dirty)
+            _traverse_sprite(sprite, dirty)
         
         return sorted(dirty, key=lambda sp: sp._z)
     
     def rerender(self):
         """Erases and re-renders dirty sprites.
-        Not to be confused with Scene.render(), it only calls .render() on all sprites.
+        Not to be confused with Scene.render() that calls .render() on all sprites.
         """
-        # dirty = sorted(set(self.get_render_queue()), key=lambda sp: sp._z)
+        rerender_queue = self.get_rerender_queue()
 
-        dirty = self.get_rerender_queue()
-
-        if len(dirty) == 0: # prevents rapid cursor blinks
+        if len(rerender_queue) == 0: # prevents rapid cursor blinks
             if cursor.state.dirty:
                 cursor.write_ansi()
                 terminal.flush()
@@ -75,11 +77,11 @@ class Scene:
         
         if cursor.is_visible():
             terminal.hide_cursor(flush=True)
-        for dirty_sprite in dirty:
+        for dirty_sprite in rerender_queue:
             dirty_sprite.render(flush=False, erase=True)
             if dirty_sprite.zombie:
                 dirty_sprite._kill()
-        for dirty_sprite in dirty:
+        for dirty_sprite in rerender_queue:
             if not dirty_sprite.zombie:
                 dirty_sprite.render(flush=False, erase=False)
         
@@ -124,11 +126,12 @@ class Scene:
             raise ValueError("sprite to move is not in sprites")
         if reference_sprite not in self.sprites:
             raise ValueError("reference sprite is not in sprites")
+        if sprite_to_move is reference_sprite:
+            raise ValueError("sprite to move and reference sprite cannot be the same")
         
         old_index = self.sprites.index(sprite_to_move)
         new_index = self.sprites.index(reference_sprite)
         
         self.sprites.insert(new_index, self.sprites.pop(old_index))
 
-        for i, sprite in enumerate(self.sprites):
-            sprite._z = i
+        self._reassign_z(min(old_index, new_index), max(old_index, new_index) + 1)

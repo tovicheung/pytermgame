@@ -198,12 +198,12 @@ class Sprite(Collidable):
             else:
                 scene = _active.get_scene()
         self._scene = scene
+        self._z: int = -1 # will be assigned in scene.add(), here for typing purposes
         scene.add(self)
 
-        # Resolve coords: set self._coords, self._z
+        # Resolve coords: set self._coords
     
         self._coords = Coords.coerce(coords)
-        self._z = scene._get_next_z()
         
         # Resolve surface: set self.surf
         
@@ -224,11 +224,7 @@ class Sprite(Collidable):
         return self
 
     def kill(self) -> None:
-        """Set the sprite as a zombie and erases it from the scene.
-    
-        Zombies are truly killed in Group.update() via Sprite._kill() (see below)
-        Therefore, it is recommended to use Sprite.kill() in Sprite.update()
-        """
+        """Set the sprite as a zombie, hide it, and removes it from all groups."""
         if self.zombie:
             return
         
@@ -243,6 +239,8 @@ class Sprite(Collidable):
         """Frees as much references as possible.
         This should only be called by Scene after ensuring it is erased.
         """
+
+        self._scene.remove(self)
         
         if self._parent is not None:
             self._parent.remove_child(self)
@@ -273,10 +271,6 @@ class Sprite(Collidable):
     @property
     def y(self) -> int:
         return floor(self._coords.y)
-    
-    @property
-    def z(self) -> int:
-        return self._z
     
     @property
     def width(self) -> int:
@@ -425,13 +419,11 @@ class Sprite(Collidable):
     # disambiguation: collision = overlap
     
     @_ensure_placed
-    def get_movement_collisions(self) -> Generator[Sprite]:
-        """Get collision of both old and new states"""
-        # TODO: better name and documentation
-
+    def get_required_renders(self) -> Generator[Sprite]:
+        """Returns sprites to re-render if self needs to be re-rendered."""
         self._collisions = set()
         for sprite in self._scene.sprites:
-            if sprite is not self and (sprite._is_colliding_sprite(self)): # or sprite._is_colliding_sprite(self, old=True)):
+            if sprite is not self and (sprite._is_colliding_sprite(self)):
                 self._collisions.add(sprite)
                 yield sprite
         yield from self._rendered.collisions
