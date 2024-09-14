@@ -119,19 +119,29 @@ class Scene:
         for sprite in self.sprites:
             sprite.set_dirty()
     
-    # Sprite ordering (unstable)
+    # Layering
+
+    def move_sprite_to(self, sprite: Sprite, new_index: int):
+        if sprite not in self.sprites:
+            raise ValueError("sprite to move is not in sprites")
+        
+        old_index = self.sprites.index(sprite)
+
+        if old_index == new_index:
+            return
+
+        self.sprites.insert(new_index, self.sprites.pop(old_index))
+        self._reassign_z(min(old_index, new_index), max(old_index, new_index) + 1)
+
+        sprite.set_dirty()
 
     def move_sprite_to_below(self, sprite_to_move: Sprite, reference_sprite: Sprite):
-        if sprite_to_move not in self.sprites:
-            raise ValueError("sprite to move is not in sprites")
         if reference_sprite not in self.sprites:
             raise ValueError("reference sprite is not in sprites")
         if sprite_to_move is reference_sprite:
             raise ValueError("sprite to move and reference sprite cannot be the same")
         
-        old_index = self.sprites.index(sprite_to_move)
         new_index = self.sprites.index(reference_sprite)
-        
-        self.sprites.insert(new_index, self.sprites.pop(old_index))
 
-        self._reassign_z(min(old_index, new_index), max(old_index, new_index) + 1)
+        self.move_sprite_to(sprite_to_move, new_index)
+    

@@ -524,6 +524,20 @@ class Sprite(Collidable):
             self.set_surf(surf)
         if style is not None:
             self.apply_style(style)
+    
+    # Layering (wrapped around the scene layering api)
+
+    def move_to_front(self):
+        self._scene.move_sprite_to(self, len(self._scene.sprites))
+
+    def move_to_back(self):
+        self._scene.move_sprite_to(self, 0)
+    
+    def move_forwards(self, layers: int):
+        self._scene.move_sprite_to(self, self._z + layers)
+    
+    def move_backwards(self, layers: int):
+        self._scene.move_sprite_to(self, self._z - layers)
 
 class _Virtual:
     def __init__(self, owner: Sprite):
