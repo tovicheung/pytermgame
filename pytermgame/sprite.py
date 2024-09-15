@@ -222,6 +222,17 @@ class Sprite(Collidable):
         self.placed = True
 
         return self
+    
+    def put(self, coords: XY):
+        """Generalized sprite placement
+        Not placed => .place()
+        Placed => .goto()
+        """
+        coords = Coords.coerce(coords)
+        if self.placed:
+            self.goto_coords(coords)
+        else:
+            self.place(coords)
 
     def kill(self) -> None:
         """Set the sprite as a zombie, hide it, and removes it from all groups."""
@@ -253,8 +264,7 @@ class Sprite(Collidable):
 
     def on_placed(self) -> None:
         """called AUTOMATICALLY after place()
-        Initial coordinates and styles can be customized.
-        Position methods such as .goto() and .move() can be used.
+        Initial coordinates and styles can be customized.x
         """
 
     def update(self) -> None:
@@ -263,6 +273,11 @@ class Sprite(Collidable):
         """
 
     # Properties of a sprite
+
+    @property
+    def coords(self) -> Coords:
+        # note: unfloored raw coords
+        return self._coords
 
     @property
     def x(self) -> int:
@@ -339,6 +354,10 @@ class Sprite(Collidable):
 
     def goto(self, x: int | float | Fraction, y: int | float | Fraction) -> None:
         self._coords = Coords(x, y)
+        self.set_dirty()
+    
+    def goto_coords(self, coords: Coords):
+        self._coords = coords
         self.set_dirty()
 
     def bound(self, x_min: int | None = None, x_max: int | None = None, y_min: int | None = None, y_max: int | None = None) -> None:

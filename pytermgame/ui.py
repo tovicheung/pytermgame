@@ -13,6 +13,7 @@ Collection
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import sys
 from typing import Callable, Generator, Iterable, TypeVar, Generic, TYPE_CHECKING, NamedTuple, overload
 
@@ -39,12 +40,6 @@ _S2 = TypeVar("_S2", bound=Sprite)
 __all__ = ["Container", "MinSize", "MaxSize", "Padding", "Border"]
 
 # Helpers
-
-def place_or_set_coords(sprite: Sprite, coords: Coords):
-    if sprite.placed:
-        sprite.goto(*coords)
-    else:
-        sprite.place(coords)
 
 # unused for now
 class Dimensions(NamedTuple):
@@ -126,14 +121,14 @@ class Container(Parent, Generic[_S]):
             # this is here because
             # 1. coords may be modified in .set_surf() eg align right
             # 2. child needs to move when (a) parent moves and (b) parent surf changes (eg padding change)
-            self.child.goto(*(self._coords + self.get_child_offset()))
+            self.child.goto_coords(self._coords + self.get_child_offset())
     
     @override
     def update_surf(self):
         if self.child is not None:
             # this is currently the reason why coords is set before surf
             # should only be called in self.place()
-            place_or_set_coords(self.child, self._coords + self.get_child_offset())
+            self.child.put(self._coords + self.get_child_offset())
         super().update_surf()
     
     # Subclasses of Container may override:
@@ -150,7 +145,7 @@ class Container(Parent, Generic[_S]):
         """
         raise NotImplementedError("Subclasses of Container must implement .new_surf_factory()")
 
-class Collection(Parent):
+class Collection(Parent, ABC):
     """A collection defines how its children are arranged.
     A collection must have one or more children.
     """
@@ -226,7 +221,7 @@ class Collection(Parent):
         if self.children is not None and self.placed and self._rendered.coords != self._coords:
             delta = self._coords - self._rendered.coords
             for child in self.children:
-                child.goto(*(child._rendered.coords + delta))
+                child.goto_coords(child._rendered.coords + delta)
     
     # Subclasses of Collection must implement:
 
@@ -234,16 +229,17 @@ class Collection(Parent):
         """When implementing:
         * use _place_or_set_coords(x) on children
         * determine dimensions
-        * create surf, usually from Surface.blank(width, height)
+        * create surf, usually from Surface.blank(width, height) or Surface.phantom(width, height)
         """
-        raise NotImplementedError("Subclasses of Collection must implement .new_surf_factory()")
-    
-    # Unused:
-    
-    def build(self) -> Dimensions:
-        # might be used when constraints are implemented
-        raise Exception("Method is unused")
-        raise NotImplementedError("Subclasses of Collection must implement .build()")
+        width, height = self.build()
+        return Surface.phantom(width, height)
+
+    @abstractmethod
+    def build(self) -> tuple[int, int] | Dimensions:
+        """Build the UI tree. Responsibilities of this method:
+        * call child.put() on all children
+        * return the PARENT dimensions as (width, height) or a Dimensions object
+        """
 
 # Containers
 
@@ -335,26 +331,26 @@ class Border(Container[_S]):
 # Collections
 
 class Column(Collection):    
-    def new_surf_factory(self):
+    def build(self):
         width = height = 0
 
         for child in self.get_children():
-            place_or_set_coords(child, self._coords.dy(height))
+            child.put(self._coords.dy(height))
             height += child.height
             width = max(width, child.width)
         
-        return Surface.phantom(width, height)
+        return width, height
 
 class Row(Collection):
-    def new_surf_factory(self):
+    def build(self):
         width = height = 0
 
         for child in self.get_children():
-            place_or_set_coords(child, self._coords.dx(width))
+            child.put(self._coords.dx(width))
             width += child.width
             height = max(height, child.height)
         
-        return Surface.phantom(width, height)
+        return width, height
 
 class SelectionMenu(Column):
     def on_placed(self):
@@ -454,7 +450,7 @@ class TileMap(Collection, Generic[_S]):
                 self.selected.apply_style(inverted=True)
         return False
     
-    def new_surf_factory(self) -> Surface:
+    def build(self):
         # child_width, child_height = self.get_children()[0].surf.get_dimensions()
         width = height = 0
 
@@ -467,7 +463,7 @@ class TileMap(Collection, Generic[_S]):
 
             for col in range(self.cols):
                 child = children[row * self.cols + col]
-                place_or_set_coords(child, child_coords)
+                child.put(child_coords)
 
                 child_coords = child_coords.dx(child.width)
                 total_width += child.width
@@ -477,5 +473,4 @@ class TileMap(Collection, Generic[_S]):
             width = max(width, total_width)
             height += max_height
         
-        return Surface.phantom(width, height)
-
+        return width, height
