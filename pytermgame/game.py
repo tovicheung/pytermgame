@@ -256,15 +256,6 @@ class Game:
             self.debugger.block() # type: ignore
             _tick_ignore_duration = get_time() - start
         
-        # if self.debugger is not None and self._block_key is not None and not event._got:
-        #     for key in event.get_keys():
-        #         if key == self._block_key:
-        #             start = get_time()
-        #             self.debugger.block() # type: ignore
-        #             _tick_ignore_duration = get_time() - start
-        #         else:
-        #             event._queue.append((event.KEYEVENT, key))
-
         # do not directly iter over self.intervals as it is modified in the loop
         for interval in tuple(self.intervals):
             if (self.ntick - interval.offset) % interval.ticks == 0:
@@ -276,8 +267,6 @@ class Game:
 
         if self.update_screen_size == UpdateScreenSize.every_tick:
             terminal.set_size_cache()
-        
-        # event._got = False
 
         if (not timeless) and self.fps is not None and self.spf is not None:
             end_of_tick = self._tick_start + self.spf
@@ -307,6 +296,7 @@ class Game:
     # Game loop controls
 
     def loop(self):
+        """General game loop. Returns true unless .break_loop() is called"""
         if self._break_loop:
             self._break_loop = False
             return False

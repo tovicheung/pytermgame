@@ -7,7 +7,7 @@ from functools import wraps
 import os
 from random import randint
 import sys
-from typing import SupportsInt
+from typing import Any, SupportsInt
 
 # Terminal size
 
@@ -49,7 +49,7 @@ if sys.platform != "win32":
     import termios
     import fcntl
 
-def config_raw() -> tuple[int, list, int]:
+def config_raw() -> tuple[int, list[Any], int]:
     """Returns old (fd, attrs, flags)"""
     if sys.platform == "win32":
         return 0, [], 0
@@ -63,7 +63,7 @@ def config_raw() -> tuple[int, list, int]:
 
     return fd, old_attrs, old_flags
 
-def config_normal() -> tuple[int, list, int]:
+def config_normal() -> tuple[int, list[Any], int]:
     """Returns old (fd, attrs, flags)"""
     if sys.platform == "win32":
         return 0, [], 0
@@ -77,7 +77,7 @@ def config_normal() -> tuple[int, list, int]:
 
     return fd, old_attrs, old_flags
 
-def config(fd: int, old_attrs: list, old_flags: int):
+def config(fd: int, old_attrs: list[Any], old_flags: int):
     if sys.platform == "win32":
         return
     termios.tcsetattr(fd, termios.TCSAFLUSH, old_attrs)

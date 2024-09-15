@@ -213,7 +213,7 @@ class Sprite(Collidable):
             self.surf = Surface.coerce(self.surf)
 
         # add to class group if one exists
-        if hasattr(type(self), "group") and isinstance(type(self).group, Group):
+        if hasattr(type(self), "group"):
             self.group.add(self)
 
         self.on_placed()
@@ -440,7 +440,7 @@ class Sprite(Collidable):
     @_ensure_placed
     def get_required_renders(self) -> Generator[Sprite]:
         """Returns sprites to re-render if self needs to be re-rendered."""
-        self._collisions = set()
+        self._collisions: set[Sprite] = set()
         for sprite in self._scene.sprites:
             if sprite is not self and (sprite._is_colliding_sprite(self)):
                 self._collisions.add(sprite)
