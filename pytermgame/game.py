@@ -133,14 +133,7 @@ class Game:
         # determine the control codes to send
 
         if sys.platform != "win32":
-            # set terminal attributes to raw mode
-            self._nix_fd = fd = sys.stdin.fileno()
-            self._nix_old_term = termios.tcgetattr(fd)
-            new_term = termios.tcgetattr(fd)
-            new_term[3] = new_term[3] & ~(termios.ICANON | termios.ECHO)
-            termios.tcsetattr(fd, termios.TCSANOW, new_term)
-            self._nix_old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-            fcntl.fcntl(fd, fcntl.F_SETFL, self._nix_old_flags | os.O_NONBLOCK)
+            self._nix_fd, self._nix_old_attrs, self._nix_old_flags = terminal.config_raw()
         
         if self.alternate_screen:
             terminal.enable_alternate_buffer()
@@ -171,8 +164,7 @@ class Game:
         terminal.show_cursor()
 
         if sys.platform != "win32":
-            termios.tcsetattr(self._nix_fd, termios.TCSAFLUSH, self._nix_old_term)
-            fcntl.fcntl(self._nix_fd, fcntl.F_SETFL, self._nix_old_flags)
+            terminal.config(self._nix_fd, self._nix_old_attrs, self._nix_old_flags)
         
         type(self)._active = None
         

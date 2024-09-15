@@ -47,20 +47,13 @@ class Debugger(Sprite):
             term.goto(0, term.height()-2)
             
             if sys.platform != "win32":
-                fd = sys.stdin.fileno()
-                old_term = termios.tcgetattr(fd)
-                new_term = termios.tcgetattr(fd)
-                new_term[3] = new_term[3] | termios.ICANON | termios.ECHO
-                termios.tcsetattr(fd, termios.TCSANOW, new_term)
-                old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags & (~os.O_NONBLOCK))
+                fd, old_attrs, old_flags = term.config_normal()
             
             print("empty=leave | [t]ick | fps <N>")
             cmd = input(">").strip()
             
             if sys.platform != "win32":
-                termios.tcsetattr(fd, termios.TCSANOW, old_term)
-                fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
+                term.config(fd, old_attrs, old_flags)
             
             if len(cmd) == 0:
                 break

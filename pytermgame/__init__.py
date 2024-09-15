@@ -25,7 +25,8 @@ from . import cursor, event, key, terminal
 try:
     terminal.width()
 except OSError as e:
-    if terminal.WINDOWS and e.winerror == 6:
+    import sys
+    if sys.platform == "win32" and e.winerror == 6:
         raise Exception("Terminal is not available (maybe you are piping it?)") from None
     elif e.errno == 25:
         raise Exception("Terminal is not available (maybe you are piping it?)") from None

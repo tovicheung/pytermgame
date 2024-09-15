@@ -9,8 +9,6 @@ from random import randint
 import sys
 from typing import SupportsInt
 
-WINDOWS = sys.platform == "win32"
-
 # Terminal size
 
 ## Normal use
@@ -46,6 +44,44 @@ def flush():
     sys.stdout.flush()
 
 # Terminal configuration
+
+if sys.platform != "win32":
+    import termios
+    import fcntl
+
+def config_raw() -> tuple[int, list, int]:
+    """Returns old (fd, attrs, flags)"""
+    if sys.platform == "win32":
+        return 0, [], 0
+    fd = sys.stdin.fileno()
+    old_attrs = termios.tcgetattr(fd)
+    new_attrs = termios.tcgetattr(fd)
+    new_attrs[3] = new_attrs[3] & ~(termios.ICANON | termios.ECHO)
+    termios.tcsetattr(fd, termios.TCSANOW, new_attrs)
+    old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags | os.O_NONBLOCK)
+
+    return fd, old_attrs, old_flags
+
+def config_normal() -> tuple[int, list, int]:
+    """Returns old (fd, attrs, flags)"""
+    if sys.platform == "win32":
+        return 0, [], 0
+    fd = sys.stdin.fileno()
+    old_attrs = termios.tcgetattr(fd)
+    new_attrs = termios.tcgetattr(fd)
+    new_attrs[3] = new_attrs[3] | termios.ICANON | termios.ECHO
+    termios.tcsetattr(fd, termios.TCSANOW, new_attrs)
+    old_flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags & (~os.O_NONBLOCK))
+
+    return fd, old_attrs, old_flags
+
+def config(fd: int, old_attrs: list, old_flags: int):
+    if sys.platform == "win32":
+        return
+    termios.tcsetattr(fd, termios.TCSAFLUSH, old_attrs)
+    fcntl.fcntl(fd, fcntl.F_SETFL, old_flags)
 
 def enable_alternate_buffer(flush: bool = True):
     write("\033[?1049h", flush)

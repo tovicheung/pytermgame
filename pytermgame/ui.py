@@ -39,9 +39,6 @@ _S2 = TypeVar("_S2", bound=Sprite)
 # only export stable sprites
 __all__ = ["Container", "MinSize", "MaxSize", "Padding", "Border"]
 
-# Helpers
-
-# unused for now
 class Dimensions(NamedTuple):
     width: int
     height: int
