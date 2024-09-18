@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from math import floor
 import string
-from typing import TypeVar, Generic
+from typing import Callable, TypeVar, Generic
 
-from .event import Event
 from . import cursor, key
+from .event import Event
 from .sprite import NestedCollidables, Sprite, KinematicSprite
 from .surface import Surface
 
@@ -15,60 +15,75 @@ __all__ = [
     "Text", "FText", "Value", "Counter", "Gauge", "TextInput", "BouncingBall"
 ]
 
+
 class Text(Sprite):
     """Text display
     
     Note: ptg.Text(x) is functionally the same as ptg.Object(x)
-    but users can subclass ptg.Text to create text displays with custom behaviour
+    but this can be subclassed to create text displays with custom behaviour
     """
 
     def __init__(self, text: str):
         super().__init__()
         self.surf = Surface(text)
 
-class FText(Sprite):
-    """Formatted text display
-    
-    Example
-    >>> counter = FText("You have {} points", 0).place(5, 5)
-    >>> # default: You have 0 points
-    >>> counter.format(6) # -> You have 6 points
-    >>> counter.format(7) # -> You have 7 points
-    >>> counter.format(8) # -> You have 8 points
 
+class FText(Sprite):
+    """Text display with format options
+    
+    Example:
+    ```python
+    counter = FText("You have {} points", 0).place(5, 5)
+    # default: You have 0 points
+    counter.format(6) # You have 6 points
+    counter.format(7) # You have 7 points
+    counter.format(8) # You have 8 points
+    ```
     """
 
     def __init__(self, string: str, *args, **kwargs):
         super().__init__()
         self.string = string
-        self.format(*args, **kwargs)
-
-    def format(self, *args, **kwargs):
-        self.set_surf(Surface(self.string.format(*args, **kwargs)))
-
-class Value(Sprite, Generic[_T]):
-    "Value display"
-
-    def __init__(self, value: _T):
-        super().__init__()
-        self.value = value
+        self.args = args
+        self.kwargs = kwargs
     
     def new_surf_factory(self) -> Surface:
-        return Surface(str(self.value))
+        return Surface(self.string.format(*self.args, **self.kwargs))
 
-    def update_value(self, value: _T):
+    def format(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+        self.update_surf()
+
+
+class Value(Sprite, Generic[_T]):
+    """Generic value display"""
+
+    def __init__(self, value: _T, to_string: Callable[[_T], str] = str):
+        super().__init__()
+        self.value = value
+        self.to_string = to_string
+    
+    def new_surf_factory(self) -> Surface:
+        return Surface(self.to_string(self.value))
+    
+    def set(self, value: _T):
         self.value = value
         self.update_surf()
+    
+    update_value = set
 
     def __str__(self):
         return str(self.value)
 
+
 class Counter(Value[int]):
     def increment(self, by: int = 1):
-        self.update_value(self.value + by)
+        self.set(self.value + by)
 
     def decrement(self, by: int = 1):
         self.increment(-by)
+
 
 class Gauge(Sprite):
     def __init__(self, full: int, length: int, value: int | float = 0):
@@ -85,9 +100,11 @@ class Gauge(Sprite):
         self.value = value
         self.update_surf()
 
+
 class TextInput(Sprite):
-    """A simple text input interface.
-    Note: requires .update()"""
+    """A simple text input box
+    Note: requires .update()
+    """
 
     def __init__(self, allow_insert: str = string.digits + string.ascii_letters + string.punctuation + " "):
         super().__init__()
@@ -135,8 +152,14 @@ class TextInput(Sprite):
     def update(self):
         cursor.goto(self.x + self.cur, self.y)
 
+
 class BouncingBall(KinematicSprite):
+    """A bouncing ball
+    Note: requires .update()
+    """
+
     surf = Surface("O")
+
     def __init__(self, vx: int, vy: int, bounce_on: NestedCollidables):
         super().__init__()
         self.vx = vx

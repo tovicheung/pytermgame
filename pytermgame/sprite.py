@@ -30,9 +30,7 @@ def _ensure_placed(f):
     @wraps(f)
     def _new(self: Sprite, *args, **kwargs):
         if not self.placed:
-            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it by calling Sprite.place() ({self._debug()})")
-        if self.zombie and False:
-            raise RuntimeError(f"Sprite.{f.__name__}() should not be called when the sprite is zombie and waiting to be garbage collected ({self._debug()})")
+            raise RuntimeError(f"Sprite.{f.__name__}() should be called after placing it by calling Sprite.place() ({self!r})")
         return f(self, *args, **kwargs)
     return _new
 
@@ -114,16 +112,14 @@ class Sprite(Collidable):
         # a sprite's parent updates its surface if the sprite's surface changes
         self._parent: Parent | None = None
 
-    def _debug(self) -> str:
+    def __repr__(self) -> str:
         # returns a debug info string
-        debug = f"{type(self).__name__}"
+        result = f"{type(self).__name__}"
         if self.placed:
-            debug += f"({self._coords})"
+            result += f"({self._coords})"
         if self.zombie:
-            debug = "zombie " + debug
-        return debug
-    
-    __repr__ = _debug
+            result = "zombie " + result
+        return result
     
     def new_surf_factory(self) -> Surface:
         """A factory to dynamically generate a sprite's surface.
@@ -275,16 +271,28 @@ class Sprite(Collidable):
     # Properties of a sprite
 
     @property
+    def scene(self) -> Scene:
+        if not self.placed:
+            raise SpriteNotPlacedError(self)
+        return self._scene
+
+    @property
     def coords(self) -> Coords:
         # note: unfloored raw coords
+        if not self.placed:
+            raise SpriteNotPlacedError(self)
         return self._coords
 
     @property
     def x(self) -> int:
+        if not self.placed:
+            raise SpriteNotPlacedError(self)
         return floor(self._coords.x)
     
     @property
     def y(self) -> int:
+        if not self.placed:
+            raise SpriteNotPlacedError(self)
         return floor(self._coords.y)
     
     @property
@@ -558,6 +566,13 @@ class Sprite(Collidable):
     def move_backwards(self, layers: int):
         self._scene.move_sprite_to(self, self._z - layers)
 
+class SpriteNotPlacedError(Exception):
+    def __init__(self, sprite: Sprite):
+        self.sprite = sprite
+    
+    def __str__(self):
+        return f"{self.sprite!r} is not placed"
+
 class _Virtual:
     def __init__(self, owner: Sprite):
         self.owner = owner
@@ -579,6 +594,8 @@ def Object(surf: SurfaceLike) -> Sprite:
     sprite = Sprite()
     sprite.surf = Surface.coerce(surf)
     return sprite
+
+# Extensions of Sprite
 
 class Parent(Sprite, ABC):
     """Parents can be set as Sprite._parent and must implement these methods.
