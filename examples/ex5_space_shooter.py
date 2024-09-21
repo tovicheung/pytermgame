@@ -20,10 +20,8 @@ class Asteroid(ptg.Sprite):
     group = ptg.Group()
     style = ptg.Style(inverted = True)
 
-    def __init__(self):
-        super().__init__()
-        self.update_surf()
-        self.place((ptg.terminal.width(), random.randint(0, ptg.terminal.height() - 1 - self.surf.height)))
+    def default_coords_factory(self):
+        return ptg.terminal.width(), random.randint(0, ptg.terminal.height() - 2)
     
     def new_surf_factory(self) -> ptg.Surface:
         height = random.randint(1, 3)
@@ -42,9 +40,10 @@ class Bullet(ptg.KinematicSprite):
     surf = ptg.Surface("------")
     style = ptg.Style(fg = "yellow")
 
-    def __init__(self):
-        super().__init__()
-        self.place((ship.x + ship.width + 1, ship.y + 1))
+    def default_coords_factory(self):
+        return ship.x + ship.width + 1, ship.y + 1
+
+    def on_placed(self):
         self.vx = 6
 
     def update(self):
@@ -77,7 +76,7 @@ with ptg.Game(fps = 30) as game:
     
     # Using callback timers:
     ptg.clock.add_callback_timer(
-        callback = Asteroid, # same as lambda: Asteroid()
+        callback = lambda: Asteroid().place(),
         secs = 1,
     )
     ptg.clock.add_callback_timer(
@@ -97,7 +96,7 @@ with ptg.Game(fps = 30) as game:
                 ship.move(1, 0)
             elif event.is_key("space"):
                 if power.value > 0:
-                    Bullet()
+                    Bullet().place()
                     power.update_value(power.value - 1)
 
                     # flash effect

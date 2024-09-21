@@ -173,7 +173,13 @@ class Sprite(Collidable):
     
     # State conversion methods
 
-    def place(self, coords: XY = Coords.ORIGIN, scene: Scene | None = None) -> Self:
+    def default_coords_factory(self) -> XY:
+        """Returns the default coords for .place()
+        Note: self.surf is not accessible here yet
+        """
+        return Coords.ORIGIN
+
+    def place(self, coords: XY | None = None, scene: Scene | None = None) -> Self:
         """After a sprite is being placed, it:
         * is attached to a scene
         * has XYZ coordinates on the scene
@@ -199,6 +205,8 @@ class Sprite(Collidable):
 
         # Resolve coords: set self._coords
     
+        if coords is None:
+            coords = self.default_coords_factory()
         self._coords = Coords.coerce(coords)
         
         # Resolve surface: set self.surf
