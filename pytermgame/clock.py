@@ -74,6 +74,10 @@ class Timer:
 
 
 class CallbackTimer(Timer):
+    """A timer with a callback.
+    No events will be emitted. Instead, the callback will be called.
+    """
+
     def __init__(self, event: Callback, secs: float, loops: int = 0):
         self.id = None
         self.event = event
