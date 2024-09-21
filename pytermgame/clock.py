@@ -132,6 +132,11 @@ def remove_timer(id: int):
             return
 
 
+def remove_all_timers():
+    for timer in Timer.get_running():
+        timer.stop()
+
+
 # Convenient aliases
 wait = sleep = time.sleep
 get_time = gettime = time.time

@@ -56,13 +56,7 @@ class Bullet(ptg.KinematicSprite):
                     sprite.kill()
                     score_counter.increment()
 
-with ptg.Game(fps=30) as game:
-    SPAWN = ptg.event.USEREVENT + 1
-    GAIN_POWER = ptg.event.USEREVENT + 2
-    SHIP_END_FLASH = ptg.event.USEREVENT + 3
-    
-    ptg.clock.add_timer(SPAWN, secs=1)
-    ptg.clock.add_timer(GAIN_POWER, secs=0.5)
+with ptg.Game(fps = 30) as game:
 
     ship = ptg.Object([
         "\\\\",
@@ -74,6 +68,22 @@ with ptg.Game(fps=30) as game:
 
     score_text = ptg.Text("Score:").place((14, ptg.terminal.height() - 1))
     score_counter = ptg.Counter(0).place((21, ptg.terminal.height() - 1))
+    
+    # Using normal timers:
+    # SPAWN = ptg.event.USEREVENT + 1
+    # GAIN_POWER = ptg.event.USEREVENT + 2
+    # ptg.clock.add_timer(SPAWN, secs = 1)
+    # ptg.clock.add_timer(GAIN_POWER, secs = 0.5)
+    
+    # Using callback timers:
+    ptg.clock.add_callback_timer(
+        callback = Asteroid, # same as lambda: Asteroid()
+        secs = 1,
+    )
+    ptg.clock.add_callback_timer(
+        callback = lambda: power.update_value(min(power.full, power.value + 1)),
+        secs = 0.5,
+    )
     
     while game.loop():
         for event in ptg.event.get():
@@ -92,14 +102,16 @@ with ptg.Game(fps=30) as game:
 
                     # flash effect
                     ship.apply_style(bg = "cyan")
-                    ptg.clock.add_timer(SHIP_END_FLASH, secs = 0.1, loops = 1)
-            elif event.is_type(SPAWN):
-                Asteroid()
-            elif event.is_type(GAIN_POWER):
-                if power.value < power.full:
-                    power.update_value(power.value + 1)
-            elif event.is_type(SHIP_END_FLASH):
-                ship.apply_style(bg = "default")
+                    ptg.clock.add_callback_timer(
+                        lambda: ship.apply_style(bg = "default"),
+                        secs = 0.1, loops = 1
+                    )
+            # These event handlers are needed if we use normal timers
+            # elif event.is_type(SPAWN):
+            #     Asteroid()
+            # elif event.is_type(GAIN_POWER):
+            #     if power.value < power.full:
+            #         power.update_value(power.value + 1)
         
         game.update()
         game.render()
