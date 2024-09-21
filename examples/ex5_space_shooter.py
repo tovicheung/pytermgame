@@ -92,7 +92,7 @@ with ptg.Game(fps=30) as game:
 
                     # flash effect
                     ship.apply_style(bg = "cyan")
-                    ptg.clock.add_timer(SHIP_END_FLASH, secs = 0.1)
+                    ptg.clock.add_timer(SHIP_END_FLASH, secs = 0.1, loops = 1)
             elif event.is_type(SPAWN):
                 Asteroid()
             elif event.is_type(GAIN_POWER):

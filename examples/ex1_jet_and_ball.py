@@ -82,7 +82,7 @@ with ptg.Game() as game:
             elif event.is_key("h"):
                 if not myjet.hidden:
                     myjet.hide()
-                    ptg.clock.add_timer(SHOWJET, secs=3)
+                    ptg.clock.add_timer(SHOWJET, secs = 3, loops = 1)
 
             elif event == NEWBALL:
                 Ball().place()

@@ -84,7 +84,7 @@ with ptg.Game() as game:
 
                     # mini animation
                     cookie.apply_style(fg = "yellow")
-                    game.add_interval(COOKIE_DIM, ticks=1, loops=1)
+                    game.add_interval(COOKIE_DIM, ticks = 1, loops = 1)
                 
                 space_last_pressed_time = time
 
