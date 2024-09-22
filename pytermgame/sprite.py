@@ -246,7 +246,7 @@ class Sprite(Collidable):
         self.hide()
         self.zombie = True
 
-        while len(self._groups) > 1:
+        while len(self._groups) > 0:
             group = self._groups[0]
             group.remove(self)
 
