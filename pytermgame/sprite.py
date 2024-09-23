@@ -247,8 +247,7 @@ class Sprite(Collidable):
         self.zombie = True
 
         while len(self._groups) > 0:
-            group = self._groups[0]
-            group.remove(self)
+            self._groups.pop().remove(self)
 
     def _kill(self) -> None:
         """Frees as much references as possible.
