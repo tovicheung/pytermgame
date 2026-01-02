@@ -134,3 +134,69 @@ def randx():
 def is_valid_term_coords(x: SupportsInt, y: SupportsInt):
     # Note: 1-based coords
     return 1 <= int(x) <= width() and 1 <= int(y) <= height()
+
+# Events
+
+from . import _get_key
+
+mouse_enabled = False
+
+if sys.platform == "win32":
+    from typing import Any, final
+    import win32console
+    import win32con
+    @final
+    class PyCOORD:
+        @property
+        def X(self): ...
+        @property
+        def Y(self): ...
+
+    @final
+    class PyINPUT_RECORD:
+        EventType: int
+        KeyDown: int | bool
+        RepeatCount: int
+        VirtualKeyCode: int
+        VirtualScanCode: Any
+        Char: str
+        ControlKeyState: int
+        ButtonState: int
+        EventFlags: int
+        MousePosition: PyCOORD
+        Size: PyCOORD
+        SetFocus: Any
+        CommandId: Any
+
+    ENABLE_EXTENDED_FLAGS = 0x0080
+
+    MOUSE_SCROLL_UP = 8388608
+    MOUSE_SCROLL_DOWN = 4286578688
+
+    win_in = None
+    old_mode = None
+
+    def setup_mouse_input():
+        global win_in, old_mode, mouse_enabled
+        win_in = win32console.GetStdHandle(win32console.STD_INPUT_HANDLE)
+        old_mode = win_in.GetConsoleMode()
+        win_in.SetConsoleMode(win32console.ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS) # 0x0080 is EXTENDED_FLAGS
+        mouse_enabled = True
+    
+    def reset_mouse_input():
+        global mouse_enabled
+        win_in.SetConsoleMode(old_mode)
+        mouse_enabled = False
+        
+    def get_events() -> list:
+        if mouse_enabled:
+            num_events = win_in.GetNumberOfConsoleInputEvents()
+            if num_events <= 0:
+                return []
+            return list(win_in.ReadConsoleInput(num_events))
+        return _get_key.get_keys()
+
+else:
+    ...
+
+

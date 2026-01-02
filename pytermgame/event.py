@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any, Callable, Protocol
 
 from ._get_key import get_keys
-from . import key as _key, clock as _clock
+from . import key as _key, clock as _clock, terminal as _terminal
+
 
 class Event:
     __slots__ = ("type", "value")
@@ -22,8 +23,6 @@ class Event:
         else:
             self.type = type
             self.value = value
-
-    # Methods of convenience
     
     def is_key(self, key: str | None = None):
         """Checks if event is a key event
@@ -75,10 +74,11 @@ EventLike = int | tuple[int, Any] | Event
 
 EXIT = 1 # unused for now
 KEYEVENT = 2
-MOUSECLICK = MOUSELEFTCLICK = 3 # unused for now
-MOUSERIGHTCLICK = 4 # unused for now
-MOUSESCROLLUP = 5 # unused for now
-MOUSESCROLLDOWN = 6 # unused for now
+MOUSEMOVE = 3
+MOUSECLICK = MOUSELEFTCLICK = 4
+MOUSERIGHTCLICK = 5
+MOUSESCROLLUP = 6
+MOUSESCROLLDOWN = 7
 USEREVENT = 31
 
 _queue: list[Event] = []
@@ -100,7 +100,9 @@ def wait_for_event():
     return _queue.pop(0)
     
 def get() -> list[Event]:
-    """Non-blocking, should be used in tick-based games"""
+    """Non-blocking, should be used in tick-based games.
+    The user is responsible to process the events returned.
+    """
     pump()
     events = _queue.copy()
     _queue.clear()
